@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MiGLPI — Sistema de Activos y Tickets</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1EFE8;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+:root{
+  --bg:#ffffff;--bg2:#F8F8F6;--bg3:#F1EFE8;
+  --text:#1a1a1a;--text2:#555;--text3:#999;
+  --border:#E0DDD6;--border2:#C8C5BE;
+  --purple:#534AB7;--purple-l:#EEEDFE;--purple-m:#AFA9EC;--purple-d:#26215C;
+  --green-l:#EAF3DE;--green:#085041;--green-m:#9FE1CB;
+  --amber-l:#FAEEDA;--amber:#633806;--amber-m:#FAC775;
+  --red-l:#FCEBEB;--red:#791F1F;--red-m:#F7C1C1;
+  --blue-l:#E6F1FB;--blue:#0C447C;--blue-m:#B5D4F4;
+  --teal-l:#E1F5EE;--teal:#085041;
+  --r-md:8px;--r-lg:12px;--r-xl:16px;
+  --shadow:0 2px 12px rgba(0,0,0,.08);
+}
+.screen{width:100%;max-width:1200px;height:100vh;max-height:760px;background:var(--bg);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;}
+
+/* LOGIN */
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg3);}
+.login-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 40px;width:360px;box-shadow:var(--shadow);}
+.login-logo{font-size:26px;font-weight:700;color:var(--purple);letter-spacing:-0.5px;}
+.login-sub{font-size:12px;color:var(--text3);margin-top:2px;margin-bottom:6px;}
+.sheets-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-l);border:1px solid var(--green-m);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--green);font-weight:600;margin-bottom:22px;}
+.sheets-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite;}
+.f-lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.f-row{margin-bottom:14px;}
+.f-inp{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;}
+.f-inp:focus{border-color:var(--purple);}
+.f-inp::placeholder{color:var(--text3);}
+.f-sel{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;cursor:pointer;}
+.btn-full{width:100%;padding:10px;border-radius:var(--r-md);background:var(--purple);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px;}
+.btn-full:hover{opacity:.88;}
+.login-err{font-size:12px;color:var(--red);background:var(--red-l);border-radius:var(--r-md);padding:8px 12px;margin-bottom:12px;display:none;border:1px solid var(--red-m);}
+.demo-hint{font-size:11px;color:var(--text3);margin-top:16px;padding-top:14px;border-top:1px solid var(--border);line-height:1.9;}
+.demo-hint strong{color:var(--text2);}
+
+/* APP */
+.app{display:none;flex:1;overflow:hidden;}
+.app.visible{display:flex;}
+.sb{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+.sb-logo{font-size:16px;font-weight:700;color:var(--purple);}
+.sb-user{font-size:11px;color:var(--text3);margin-top:2px;}
+.sb-conn{font-size:10px;color:var(--green);background:var(--green-l);border-radius:20px;padding:2px 8px;display:inline-block;margin-top:4px;font-weight:600;}
+.sb-role{display:inline-block;margin-top:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;}
+.role-admin{background:var(--purple-l);color:var(--purple);}
+.role-tecnico{background:var(--blue-l);color:var(--blue);}
+.role-consultor{background:var(--green-l);color:var(--green);}
+.role-inventario{background:var(--amber-l);color:var(--amber);}
+.sb-sec{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;padding:12px 16px 3px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .1s;}
+.sb-item:hover{background:var(--bg);color:var(--text);}
+.sb-item.on{background:var(--bg);color:var(--purple);border-left-color:var(--purple);font-weight:600;}
+.sb-item.locked{opacity:.3;cursor:not-allowed;pointer-events:none;}
+.sb-logout{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);}
+.btn-logout{width:100%;padding:7px;border-radius:var(--r-md);border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;}
+.btn-logout:hover{background:var(--red-l);color:var(--red);border-color:var(--red-m);}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.sync-bar{display:flex;align-items:center;gap:8px;padding:5px 14px;background:var(--green-l);border-bottom:1px solid var(--green-m);font-size:11px;color:var(--green);flex-shrink:0;font-weight:500;}
+.sync-bar.err{background:var(--amber-l);border-color:var(--amber-m);color:var(--amber);}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#1D9E75;flex-shrink:0;}
+.sync-dot.err{background:#BA7517;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+.sync-dot{animation:pulse 2.5s infinite;}
+.topbar{display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border);flex-shrink:0;background:var(--bg);}
+.topbar-title{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.btn{padding:6px 13px;border-radius:var(--r-md);border:1px solid var(--border2);background:transparent;font-size:12px;font-weight:500;color:var(--text);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.btn:hover{background:var(--bg2);}
+.btn-p{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple);font-weight:600;}
+.btn-p:hover{background:var(--purple-m);}
+.btn-warn{background:var(--red-l);border-color:var(--red-m);color:var(--red);}
+.content{flex:1;overflow-y:auto;padding:16px;}
+.pnl{display:none;}
+.pnl.on{display:block;}
+
+/* METRICS */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.met{background:var(--bg2);border-radius:var(--r-md);padding:12px 14px;border:1px solid var(--border);}
+.met-v{font-size:22px;font-weight:700;color:var(--text);}
+.met-l{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500;}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.ccard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;}
+.ctitle{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.bar-lbl{font-size:10px;color:var(--text2);width:72px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.bar-f{height:100%;border-radius:4px;transition:width .4s;}
+.bar-v{font-size:10px;color:var(--text3);width:28px;text-align:right;flex-shrink:0;}
+.empty-c{font-size:11px;color:var(--text3);text-align:center;padding:16px 0;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+thead th{background:var(--bg2);padding:7px 9px;text-align:left;font-weight:600;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
+tbody td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+tbody tr:hover{background:var(--bg2);cursor:pointer;}
+tbody tr.del-row{opacity:.4;}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;}
+.s-activo{background:var(--green-l);color:var(--green);}
+.s-asignado{background:var(--blue-l);color:var(--blue);}
+.s-disponible{background:var(--teal-l);color:var(--teal);}
+.s-mantenimiento{background:var(--amber-l);color:var(--amber);}
+.s-baja,.s-eliminado{background:#F1EFE8;color:#5F5E5A;}
+.s-abierto{background:var(--amber-l);color:var(--amber);}
+.s-progreso{background:var(--blue-l);color:var(--blue);}
+.s-revision{background:var(--purple-l);color:var(--purple);}
+.s-cerrado{background:var(--green-l);color:var(--green);}
+.s-urgente{background:var(--red-l);color:var(--red);}
+.s-importante{background:var(--amber-l);color:var(--amber);}
+.s-normal{background:var(--green-l);color:var(--green);}
+.s-CREAR{background:var(--green-l);color:var(--green);}
+.s-EDITAR{background:var(--amber-l);color:var(--amber);}
+.s-ELIMINAR{background:var(--red-l);color:var(--red);}
+.s-LOGIN{background:var(--blue-l);color:var(--blue);}
+.s-LOGOUT{background:var(--teal-l);color:var(--teal);}
+.s-LOGIN_FAIL{background:var(--red-l);color:var(--red);}
+.code-cell{font-family:'Courier New',monospace;font-size:10px;color:var(--text3);}
+.act-btn{background:none;border:none;font-size:13px;cursor:pointer;color:var(--text3);padding:2px 5px;border-radius:4px;}
+.act-btn:hover{background:var(--bg2);color:var(--text);}
+.prog-wrap{display:flex;align-items:center;gap:5px;}
+.prog-bg{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;min-width:40px;}
+.prog-f{height:100%;border-radius:3px;background:var(--purple);}
+.prog-t{font-size:10px;color:var(--text3);width:26px;text-align:right;}
+
+/* TAB ROW */
+.tab-row{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;}
+.tab-btn{padding:5px 12px;border-radius:var(--r-md);border:1px solid transparent;font-size:11px;color:var(--text2);cursor:pointer;background:transparent;font-weight:500;transition:all .1s;}
+.tab-btn.on{background:var(--purple-l);color:var(--purple);border-color:var(--purple-m);font-weight:600;}
+.tab-btn:hover:not(.on){background:var(--bg2);}
+
+/* DETAIL */
+.det-header{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.det-icon{width:48px;height:48px;border-radius:var(--r-md);background:var(--purple-l);border:1px solid var(--purple-m);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.det-title{font-size:16px;font-weight:700;color:var(--text);}
+.det-code{font-size:11px;font-family:monospace;color:var(--text3);margin-top:3px;}
+.det-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.det-field{background:var(--bg2);border-radius:var(--r-md);padding:8px 12px;border:1px solid var(--border);}
+.det-fl{font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+.det-fv{font-size:13px;color:var(--text);font-weight:500;}
+.sec-title{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);}
+.hist-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.hist-item:last-child{border-bottom:none;}
+.hist-dot{width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:4px;}
+.hist-dot.red{background:#D85A30;}
+.hist-dot.green{background:#1D9E75;}
+.hist-dot.amber{background:#BA7517;}
+.hist-dot.blue{background:#185FA5;}
+.hist-t{font-size:12px;color:var(--text);}
+.hist-m{font-size:10px;color:var(--text3);margin-top:2px;}
+
+/* KANBAN */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.k-col{background:var(--bg2);border-radius:var(--r-lg);padding:10px;border:1px solid var(--border);}
+.k-hdr{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.k-cnt{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:1px 7px;font-size:10px;color:var(--text3);}
+.k-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-md);padding:9px;margin-bottom:6px;transition:box-shadow .15s;}
+.k-card:hover{box-shadow:var(--shadow);}
+.k-card-t{font-size:12px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.k-card-m{font-size:10px;color:var(--text3);display:flex;justify-content:space-between;margin-top:3px;}
+.k-prog{height:3px;background:var(--bg3);border-radius:2px;margin-top:6px;overflow:hidden;}
+.k-pf{height:100%;border-radius:2px;background:var(--purple);}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:flex-start;justify-content:center;padding-top:40px;}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:20px;width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.18);}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:16px;}
+.f-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
+.req-note{font-size:11px;color:var(--red);background:var(--red-l);padding:6px 10px;border-radius:var(--r-md);margin-bottom:12px;border:1px solid var(--red-m);}
+
+/* LOADING */
+.loading-overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;border-radius:var(--r-xl);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.loading-text{font-size:13px;color:var(--text2);font-weight:500;}
+.loading-sub{font-size:11px;color:var(--text3);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
+</style>
+</head>
+<body>
+<div class="screen" id="screen">
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Iniciando MiGLPI...</div>
+  <div class="loading-sub" id="loading-sub">Conectando a Google Sheets</div>
+</div>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="login-screen" style="display:none;">
+  <div class="login-card">
+    <div class="login-logo">MiGLPI</div>
+    <div class="login-sub">Sistema de activos, tickets e inventario</div>
+    <div class="sheets-badge"><span class="sheets-dot"></span> Conectado a Google Sheets</div>
+    <div class="login-err" id="login-err">Usuario o contraseña incorrectos.</div>
+    <div class="f-row"><div class="f-lbl">Usuario</div><input class="f-inp" id="l-user" placeholder="Ingresa tu usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="f-row"><div class="f-lbl">Contraseña</div><input class="f-inp" type="password" id="l-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn-full" onclick="doLogin()">Iniciar sesión</button>
+    <div class="demo-hint">
+      <strong>Usuarios del sistema:</strong><br>
+      admin / admin123 → Administrador<br>
+      tecnico / tec123 → Técnico<br>
+      consultor / con123 → Consultor<br>
+      inventario / inv123 → Inventario
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="app-screen">
+  <div class="sb">
+    <div class="sb-head">
+      <div class="sb-logo">MiGLPI</div>
+      <div class="sb-user" id="sb-username">—</div>
+      <div class="sb-conn">● Google Sheets</div><br>
+      <span class="sb-role" id="sb-role-badge">—</span>
+    </div>
+    <div class="sb-sec">General</div>
+    <div class="sb-item on" id="nav-dashboard" onclick="go('dashboard',this)">◈ Dashboard</div>
+    <div class="sb-sec">Activos</div>
+    <div class="sb-item" id="nav-activos" onclick="go('activos',this)">▤ Inventario</div>
+    <div class="sb-item" id="nav-detalle" style="display:none;" onclick="go('detalle',this)">◉ Detalle activo</div>
+    <div class="sb-sec">Tickets</div>
+    <div class="sb-item" id="nav-tickets" onclick="go('tickets',this)">◉ Tickets</div>
+    <div class="sb-item" id="nav-kanban" onclick="go('kanban',this)">▦ Kanban</div>
+    <div class="sb-sec">Sistema</div>
+    <div class="sb-item" id="nav-auditoria" onclick="go('auditoria',this)">📋 Auditoría</div>
+    <div class="sb-item" id="nav-usuarios" onclick="go('usuarios',this)">👤 Usuarios</div>
+    <div class="sb-logout"><button class="btn-logout" onclick="doLogout()">Cerrar sesión</button></div>
+  </div>
+  <div class="main">
+    <div class="sync-bar" id="sync-bar">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-msg">Sincronizado con Google Sheets</span>
+    </div>
+    <div class="topbar">
+      <div class="topbar-title" id="tb-title">Dashboard</div>
+      <div id="tb-buttons"></div>
+    </div>
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="pnl on" id="pnl-dashboard">
+        <div class="metrics">
+          <div class="met"><div class="met-v" id="d-act">0</div><div class="met-l">Activos registrados</div></div>
+          <div class="met"><div class="met-v" id="d-tkt" style="color:#185FA5">0</div><div class="met-l">Tickets abiertos</div></div>
+          <div class="met"><div class="met-v" id="d-mnt" style="color:#BA7517">0</div><div class="met-l">En mantenimiento</div></div>
+          <div class="met"><div class="met-v" id="d-val" style="color:#3B6D11">$0</div><div class="met-l">Valor inventario</div></div>
+        </div>
+        <div class="charts">
+          <div class="ccard"><div class="ctitle">Activos por tipo</div><div id="ch-tipos"><div class="empty-c">Sin activos aún</div></div></div>
+          <div class="ccard"><div class="ctitle">Tickets por estado</div><div id="ch-est"><div class="empty-c">Sin tickets aún</div></div></div>
+        </div>
+        <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Crea activos o tickets para ver actividad</div></div></div>
+      </div>
+
+      <!-- INVENTARIO -->
+      <div class="pnl" id="pnl-activos">
+        <div class="tab-row">
+          <button class="tab-btn on" onclick="filterA('todos',this)">Todos</button>
+          <button class="tab-btn" onclick="filterA('activo',this)">Activos</button>
+          <button class="tab-btn" onclick="filterA('asignado',this)">Asignados</button>
+          <button class="tab-btn" onclick="filterA('mantenimiento',this)">Mantenimiento</button>
+          <button class="tab-btn" onclick="filterA('baja',this)">Baja</button>
+          <button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead>
+          <tbody id="tb-activos"></tbody>
+        </table></div>
+      </div>
+
+      <!-- DETALLE -->
+      <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
+
+      <!-- TICKETS -->
+      <div class="pnl" id="pnl-tickets">
+        <div class="tab-row">
+          <button class="tab-btn on" onclick="filterT('todos',this)">Todos</button>
+          <button class="tab-btn" onclick="filterT('abierto',this)">Abiertos</button>
+          <button class="tab-btn" onclick="filterT('progreso',this)">En progreso</button>
+          <button class="tab-btn" onclick="filterT('revision',this)">En revisión</button>
+          <button class="tab-btn" onclick="filterT('cerrado',this)">Cerrados</button>
+          <button class="tab-btn" onclick="filterT('eliminado',this)">Eliminados</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Código</th><th>Título</th><th>Activo vinculado</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Avance</th><th>Deadline</th><th></th></tr></thead>
+          <tbody id="tb-tickets"></tbody>
+        </table></div>
+      </div>
+
+      <!-- KANBAN -->
+      <div class="pnl" id="pnl-kanban">
+        <div class="kanban">
+          <div class="k-col"><div class="k-hdr">Abierto <span class="k-cnt" id="kc-abierto">0</span></div><div id="k-abierto"></div></div>
+          <div class="k-col"><div class="k-hdr">En progreso <span class="k-cnt" id="kc-progreso">0</span></div><div id="k-progreso"></div></div>
+          <div class="k-col"><div class="k-hdr">En revisión <span class="k-cnt" id="kc-revision">0</span></div><div id="k-revision"></div></div>
+          <div class="k-col"><div class="k-hdr">Cerrado <span class="k-cnt" id="kc-cerrado">0</span></div><div id="k-cerrado"></div></div>
+        </div>
+      </div>
+
+      <!-- AUDITORÍA -->
+      <div class="pnl" id="pnl-auditoria">
+        <div class="tab-row">
+          <button class="tab-btn on" onclick="filterAud('todos',this)">Todo</button>
+          <button class="tab-btn" onclick="filterAud('CREAR',this)">Creaciones</button>
+          <button class="tab-btn" onclick="filterAud('EDITAR',this)">Ediciones</button>
+          <button class="tab-btn" onclick="filterAud('ELIMINAR',this)">Eliminaciones</button>
+          <button class="tab-btn" onclick="filterAud('LOGIN',this)">Accesos</button>
+        </div>
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Rol</th><th>Acción</th><th>Objeto</th><th>Código</th><th>Detalle / Motivo</th></tr></thead>
+          <tbody id="tb-audit"></tbody>
+        </table></div>
+      </div>
+
+      <!-- USUARIOS -->
+      <div class="pnl" id="pnl-usuarios">
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>Usuario</th><th>Nombre completo</th><th>Rol</th><th>Último acceso</th><th>Estado</th></tr></thead>
+          <tbody id="tb-usuarios"></tbody>
+        </table></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ACTIVO -->
+<div class="modal-bg" id="mod-activo">
+  <div class="modal">
+    <div class="modal-title" id="mod-activo-title">Registrar nuevo activo</div>
+    <input type="hidden" id="ea-id">
+    <div class="f-row"><div class="f-lbl">Nombre *</div><input class="f-inp" id="ea-nombre" placeholder="Ej: Laptop Dell Inspiron 15"></div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Tipo *</div><select class="f-inp f-sel" id="ea-tipo"><option>Computadora</option><option>Laptop</option><option>Impresora</option><option>Servidor</option><option>Red / Switch</option><option>Móvil</option><option>Tablet</option><option>Monitor</option><option>Software</option><option>Vehículo</option><option>Otro</option></select></div>
+      <div class="f-row"><div class="f-lbl">Estado *</div><select class="f-inp f-sel" id="ea-estado"><option value="activo">Activo</option><option value="asignado">Asignado</option><option value="disponible">Disponible</option><option value="mantenimiento">Mantenimiento</option><option value="baja">Baja</option></select></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Marca</div><input class="f-inp" id="ea-marca" placeholder="Dell, HP, Apple..."></div>
+      <div class="f-row"><div class="f-lbl">Modelo</div><input class="f-inp" id="ea-modelo" placeholder="Inspiron 15..."></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Número de serie</div><input class="f-inp" id="ea-serial" placeholder="SN-XXXX"></div>
+      <div class="f-row"><div class="f-lbl">Ubicación física</div><input class="f-inp" id="ea-ubicacion" placeholder="Oficina 3, Bodega A..."></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Asignado a</div><input class="f-inp" id="ea-asignado" placeholder="Nombre completo"></div>
+      <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="ea-depto" placeholder="TI, Finanzas, RRHH..."></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Fecha de compra</div><input class="f-inp" type="date" id="ea-compra"></div>
+      <div class="f-row"><div class="f-lbl">Garantía hasta</div><input class="f-inp" type="date" id="ea-garantia"></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Valor de compra ($)</div><input class="f-inp" type="number" id="ea-valor" placeholder="0.00"></div>
+      <div class="f-row"><div class="f-lbl">Vida útil (años)</div><input class="f-inp" type="number" id="ea-vida" value="3"></div>
+    </div>
+    <div class="f-row"><div class="f-lbl">Observaciones</div><input class="f-inp" id="ea-obs" placeholder="Notas adicionales..."></div>
+    <div class="f-row" id="ea-motivo-wrap" style="display:none;">
+      <div class="req-note">Motivo de edición obligatorio — queda registrado en auditoría con quién, cuándo y qué cambió.</div>
+      <div class="f-lbl">Motivo de la edición *</div>
+      <input class="f-inp" id="ea-motivo" placeholder="Ej: Corrección de nombre, cambio de departamento...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-p" id="ea-save-btn" onclick="saveActivo()">Guardar activo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TICKET -->
+<div class="modal-bg" id="mod-ticket">
+  <div class="modal">
+    <div class="modal-title" id="mod-ticket-title">Crear nuevo ticket</div>
+    <input type="hidden" id="et-id">
+    <div class="f-row"><div class="f-lbl">Título *</div><input class="f-inp" id="et-titulo" placeholder="Describe el problema, incidencia o tarea..."></div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Activo vinculado</div><select class="f-inp f-sel" id="et-activo"><option value="">— Sin activo —</option></select></div>
+      <div class="f-row"><div class="f-lbl">Responsable</div><input class="f-inp" id="et-resp" placeholder="Nombre completo"></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Tipo</div><select class="f-inp f-sel" id="et-tipo"><option value="incidencia">Incidencia</option><option value="mantenimiento">Mantenimiento</option><option value="solicitud">Solicitud</option><option value="tarea">Tarea</option></select></div>
+      <div class="f-row"><div class="f-lbl">Prioridad</div><select class="f-inp f-sel" id="et-prior"><option value="urgente">Urgente</option><option value="importante" selected>Importante</option><option value="normal">Normal</option></select></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Estado inicial</div><select class="f-inp f-sel" id="et-estado"><option value="abierto" selected>Abierto</option><option value="progreso">En progreso</option><option value="revision">En revisión</option><option value="cerrado">Cerrado</option></select></div>
+      <div class="f-row"><div class="f-lbl">Avance %</div><input class="f-inp" type="number" id="et-avance" min="0" max="100" value="0"></div>
+    </div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Deadline</div><input class="f-inp" type="date" id="et-dead"></div>
+      <div class="f-row"><div class="f-lbl">Proyecto / Cliente</div><input class="f-inp" id="et-proy" placeholder="Nombre del proyecto"></div>
+    </div>
+    <div class="f-row"><div class="f-lbl">Descripción / Motivo</div><input class="f-inp" id="et-desc" placeholder="Detalle completo del ticket..."></div>
+    <div class="f-row" id="et-motivo-wrap" style="display:none;">
+      <div class="req-note">Motivo de edición obligatorio — queda registrado en auditoría.</div>
+      <div class="f-lbl">Motivo de la edición *</div>
+      <input class="f-inp" id="et-motivo" placeholder="Ej: Corrección de nombre del responsable...">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-p" id="et-save-btn" onclick="saveTicket()">Guardar ticket</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL ELIMINAR -->
+<div class="modal-bg" id="mod-delete">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-title">Confirmar eliminación lógica</div>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7;">
+      El registro <strong id="del-code" style="color:var(--purple);font-family:monospace;"></strong> quedará marcado como <strong>eliminado</strong>. No se borrará físicamente — el historial completo se conserva para siempre. Esta acción queda registrada en auditoría con tu usuario y hora exacta.
+    </p>
+    <div class="req-note">El motivo es obligatorio para continuar</div>
+    <div class="f-row"><div class="f-lbl">Motivo de eliminación *</div><input class="f-inp" id="del-motivo" placeholder="Explica por qué se elimina este registro..."></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-warn" onclick="confirmDelete()">Eliminar con registro</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MANTENIMIENTO -->
+<div class="modal-bg" id="mod-mant">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-title">Registrar mantenimiento</div>
+    <div class="f-row"><div class="f-lbl">Tipo de mantenimiento</div><select class="f-inp f-sel" id="mm-tipo"><option>Preventivo</option><option>Correctivo</option><option>Actualización</option><option>Limpieza</option><option>Reparación</option><option>Inspección</option></select></div>
+    <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó exactamente?"></div>
+    <div class="f-2">
+      <div class="f-row"><div class="f-lbl">Técnico responsable</div><input class="f-inp" id="mm-tec" placeholder="Nombre del técnico"></div>
+      <div class="f-row"><div class="f-lbl">Fecha del mantenimiento</div><input class="f-inp" type="date" id="mm-fecha"></div>
+    </div>
+    <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveMant()">Registrar mantenimiento</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbzdNQoAbHpe6trcx8EmZAo3SLO2o9SajFZP0L-2OvWnXCPJYTmtz2J6zLRX3c8ZUS1ezQ/exec";
+
+const USERS = {
+  admin:      {pass:'admin123',   nombre:'Administrador', rol:'admin'},
+  tecnico:    {pass:'tec123',     nombre:'Técnico',       rol:'tecnico'},
+  consultor:  {pass:'con123',     nombre:'Consultor',     rol:'consultor'},
+  inventario: {pass:'inv123',     nombre:'Inventario',    rol:'inventario'}
+};
+const ROL_LABELS = {admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
+const ROL_CLASS  = {admin:'role-admin',tecnico:'role-tecnico',consultor:'role-consultor',inventario:'role-inventario'};
+const TIPO_ICON  = {Computadora:'🖥️',Laptop:'💻',Impresora:'🖨️',Servidor:'🗄️','Red / Switch':'🔌',Móvil:'📱',Tablet:'📱',Monitor:'🖥️',Software:'💿',Vehículo:'🚗',Otro:'📦'};
+const PERMS = {
+  admin:      {activos:true, tickets:true, kanban:true, auditoria:true, usuarios:true, edit:true, delete:true},
+  tecnico:    {activos:false,tickets:true, kanban:true, auditoria:false,usuarios:false,edit:true, delete:false},
+  consultor:  {activos:true, tickets:true, kanban:true, auditoria:true, usuarios:false,edit:false,delete:false},
+  inventario: {activos:true, tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true, delete:false}
+};
+
+let session=null, activos=[], tickets=[], auditLog=[], activoActual=null;
+let cntActivos=0, cntTickets=0, filtroA='todos', filtroT='todos', filtroAud='todos';
+let pendingDelete={type:null,id:null};
+
+function ts(){return new Date().toLocaleString('es-PA',{dateStyle:'short',timeStyle:'short'});}
+function genCode(pre,n){return pre+'-'+String(n+1).padStart(4,'0');}
+function parseHist(v){if(Array.isArray(v))return v;if(typeof v==='string'&&v.startsWith('[')){ try{return JSON.parse(v);}catch(e){} }return [];}
+
+function setSyncStatus(ok,msg){
+  const bar=document.getElementById('sync-bar');
+  const dot=document.getElementById('sync-dot');
+  bar.className='sync-bar'+(ok?'':' err');
+  dot.className='sync-dot'+(ok?'':' err');
+  document.getElementById('sync-msg').textContent=msg;
+}
+
+async function apiPost(sheet,action,payload){
+  try{
+    await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet,action,payload})});
+    setSyncStatus(true,'Guardado en Google Sheets · '+ts());
+    return true;
+  }catch(e){
+    setSyncStatus(false,'Error al guardar — verifica tu conexión');
+    return false;
+  }
+}
+
+async function apiGet(sheet){
+  try{
+    const r=await fetch(API+'?sheet='+sheet,{mode:'cors'});
+    if(!r.ok)return[];
+    const d=await r.json();
+    return Array.isArray(d)?d:[];
+  }catch(e){return[];}
+}
+
+function audit(accion,tipo,codigo,detalle){
+  const e={ts:ts(),usuario:session.username,nombre:session.nombre,rol:session.rol,accion,tipo,codigo,detalle};
+  auditLog.unshift(e);
+  apiPost('auditoria','insert',e);
+}
+
+async function loadFromSheets(){
+  const lt=document.getElementById('loading-text');
+  const ls=document.getElementById('loading-sub');
+  lt.textContent='Cargando activos...';
+  const rawA=await apiGet('activos');
+  activos=rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
+  cntActivos=activos.length;
+  lt.textContent='Cargando tickets...';
+  const rawT=await apiGet('tickets');
+  tickets=rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
+  cntTickets=tickets.length;
+  lt.textContent='Cargando auditoría...';
+  const rawAud=await apiGet('auditoria');
+  auditLog=rawAud.slice().reverse();
+  ls.textContent=activos.length+tickets.length>0?`${activos.length} activos · ${tickets.length} tickets cargados`:'Base de datos lista';
+  lt.textContent='¡Listo!';
+  setTimeout(()=>{
+    document.getElementById('loading-overlay').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    setSyncStatus(true,activos.length+tickets.length>0?`Sincronizado · ${activos.length} activos, ${tickets.length} tickets`:'Conectado · Sin datos aún');
+  },600);
+}
+
+function doLogin(){
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const err=document.getElementById('login-err');
+  if(USERS[u]&&USERS[u].pass===p){
+    session={username:u,...USERS[u]};
+    err.style.display='none';
+    USERS[u].lastLogin=ts();
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('app-screen').classList.add('visible');
+    document.getElementById('sb-username').textContent=session.nombre+' ('+u+')';
+    const rb=document.getElementById('sb-role-badge');
+    rb.textContent=ROL_LABELS[session.rol];
+    rb.className='sb-role '+ROL_CLASS[session.rol];
+    applyPerms();
+    audit('LOGIN','Sistema','—','Inicio de sesión exitoso');
+    renderDash();
+  }else{
+    err.style.display='block';
+    audit('LOGIN_FAIL','Sistema','—','Intento fallido: '+u);
+  }
+}
+
+function doLogout(){
+  audit('LOGOUT','Sistema','—','Cierre de sesión');
+  session=null;
+  document.getElementById('app-screen').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('l-user').value='';
+  document.getElementById('l-pass').value='';
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pnl-dashboard').classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  document.getElementById('nav-dashboard').classList.add('on');
+}
+
+function applyPerms(){
+  const p=PERMS[session.rol];
+  ['activos','tickets','kanban','auditoria','usuarios'].forEach(m=>{
+    const el=document.getElementById('nav-'+m);
+    if(!el)return;
+    el.classList.toggle('locked',!p[m]);
+  });
+}
+
+function go(panel,el){
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  document.querySelectorAll('.pnl').forEach(i=>i.classList.remove('on'));
+  if(el&&!el.classList.contains('locked'))el.classList.add('on');
+  document.getElementById('pnl-'+panel).classList.add('on');
+  const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',auditoria:'Registro de auditoría',usuarios:'Usuarios del sistema'};
+  document.getElementById('tb-title').textContent=titles[panel]||panel;
+  renderTopbarBtns(panel);
+  if(panel==='dashboard')renderDash();
+  if(panel==='activos')renderActivos();
+  if(panel==='tickets')renderTickets();
+  if(panel==='kanban')renderKanban();
+  if(panel==='auditoria')renderAudit();
+  if(panel==='usuarios')renderUsuarios();
+}
+
+function renderTopbarBtns(p){
+  const c=document.getElementById('tb-buttons');
+  const per=PERMS[session.rol];
+  c.innerHTML='';
+  if(p==='activos'&&per.edit) c.innerHTML+='<button class="btn btn-p" onclick="openActivo(null)" style="margin-right:6px;">+ Nuevo activo</button>';
+  if(p==='tickets'&&per.edit) c.innerHTML+='<button class="btn btn-p" onclick="openTicket(null)" style="margin-right:6px;">+ Nuevo ticket</button>';
+  if(p==='detalle'&&activoActual){
+    if(per.edit) c.innerHTML+='<button class="btn btn-p" onclick="openActivo(activoActual.codigo)" style="margin-right:6px;">✎ Editar</button>';
+    if(per.edit) c.innerHTML+='<button class="btn" onclick="openMant()" style="margin-right:6px;">+ Mantenimiento</button>';
+    if(per.delete&&activoActual.estado!=='eliminado') c.innerHTML+='<button class="btn btn-warn" onclick="openDelete(\'activo\',activoActual.codigo)">Eliminar</button>';
+  }
+}
+
+function openActivo(id){
+  const isEdit=id!=null;
+  document.getElementById('mod-activo-title').textContent=isEdit?'Editar activo':'Registrar nuevo activo';
+  document.getElementById('ea-save-btn').textContent=isEdit?'Guardar cambios':'Guardar activo';
+  document.getElementById('ea-motivo-wrap').style.display=isEdit?'block':'none';
+  document.getElementById('ea-motivo').value='';
+  document.getElementById('ea-id').value=id||'';
+  if(isEdit){
+    const a=activos.find(x=>x.codigo===id);
+    if(!a)return;
+    document.getElementById('ea-nombre').value=a.nombre||'';
+    document.getElementById('ea-tipo').value=a.tipo||'Otro';
+    document.getElementById('ea-estado').value=a.estado||'activo';
+    document.getElementById('ea-marca').value=a.marca||'';
+    document.getElementById('ea-modelo').value=a.modelo||'';
+    document.getElementById('ea-serial').value=a.serial||'';
+    document.getElementById('ea-ubicacion').value=a.ubicacion||'';
+    document.getElementById('ea-asignado').value=a.asignado||'';
+    document.getElementById('ea-depto').value=a.depto||'';
+    document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';
+    document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
+    document.getElementById('ea-valor').value=a.valor||'';
+    document.getElementById('ea-vida').value=a.vida||3;
+    document.getElementById('ea-obs').value=a.obs||'';
+  }else{
+    ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('ea-valor').value='';
+    document.getElementById('ea-vida').value=3;
+    document.getElementById('ea-compra').value='';
+    document.getElementById('ea-garantia').value='';
+    document.getElementById('ea-estado').value='activo';
+  }
+  document.getElementById('mod-activo').classList.add('open');
+}
+
+async function saveActivo(){
+  const nombre=document.getElementById('ea-nombre').value.trim();
+  if(!nombre){alert('El nombre es obligatorio.');return;}
+  const editId=document.getElementById('ea-id').value;
+  const isEdit=editId!=='';
+  if(isEdit){
+    const motivo=document.getElementById('ea-motivo').value.trim();
+    if(!motivo){alert('El motivo de edición es obligatorio.');return;}
+    const a=activos.find(x=>x.codigo===editId);
+    if(!a)return;
+    const cambios=[];
+    const fields={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
+    Object.entries(fields).forEach(([k,fid])=>{
+      const nv=document.getElementById(fid).value.trim();
+      if((a[k]||'')!==nv){cambios.push(`${k}: "${a[k]||''}" → "${nv}"`);a[k]=nv;}
+    });
+    a.compra=document.getElementById('ea-compra').value||'—';
+    a.garantia=document.getElementById('ea-garantia').value||'—';
+    a.valor=parseFloat(document.getElementById('ea-valor').value)||0;
+    a.vida=parseInt(document.getElementById('ea-vida').value)||3;
+    const det=`Motivo: ${motivo}. Cambios: ${cambios.length?cambios.join('; '):'Sin cambios de texto'}`;
+    a.historial=a.historial||[];
+    a.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
+    await apiPost('activos','update',a);
+    audit('EDITAR','Activo',a.codigo,det);
+  }else{
+    const code=genCode('ACT',cntActivos++);
+    const a={
+      id:code,codigo:code,nombre,
+      tipo:document.getElementById('ea-tipo').value,
+      estado:document.getElementById('ea-estado').value,
+      marca:document.getElementById('ea-marca').value.trim()||'—',
+      modelo:document.getElementById('ea-modelo').value.trim()||'—',
+      serial:document.getElementById('ea-serial').value.trim()||'—',
+      ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',
+      asignado:document.getElementById('ea-asignado').value.trim()||'—',
+      depto:document.getElementById('ea-depto').value.trim()||'—',
+      compra:document.getElementById('ea-compra').value||'—',
+      garantia:document.getElementById('ea-garantia').value||'—',
+      valor:parseFloat(document.getElementById('ea-valor').value)||0,
+      vida:parseInt(document.getElementById('ea-vida').value)||3,
+      obs:document.getElementById('ea-obs').value.trim(),
+      historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],
+      fechaCreacion:ts()
+    };
+    activos.push(a);
+    await apiPost('activos','insert',a);
+    audit('CREAR','Activo',code,'Activo registrado: '+nombre);
+  }
+  closeModals();renderAll();
+  if(isEdit&&activoActual)showDetalle(activoActual.codigo);
+}
+
+function openTicket(id){
+  const isEdit=id!=null;
+  document.getElementById('mod-ticket-title').textContent=isEdit?'Editar ticket':'Crear nuevo ticket';
+  document.getElementById('et-save-btn').textContent=isEdit?'Guardar cambios':'Guardar ticket';
+  document.getElementById('et-motivo-wrap').style.display=isEdit?'block':'none';
+  document.getElementById('et-motivo').value='';
+  document.getElementById('et-id').value=id||'';
+  const sel=document.getElementById('et-activo');
+  sel.innerHTML='<option value="">— Sin activo —</option>'+activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${a.nombre}</option>`).join('');
+  if(isEdit){
+    const t=tickets.find(x=>x.codigo===id);
+    if(!t)return;
+    document.getElementById('et-titulo').value=t.titulo||'';
+    document.getElementById('et-activo').value=t.activoId||'';
+    document.getElementById('et-resp').value=t.resp||'';
+    document.getElementById('et-tipo').value=t.tipo||'incidencia';
+    document.getElementById('et-prior').value=t.prior||'importante';
+    document.getElementById('et-estado').value=t.estado||'abierto';
+    document.getElementById('et-avance').value=t.avance||0;
+    document.getElementById('et-dead').value=t.dead!=='—'?t.dead:'';
+    document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';
+    document.getElementById('et-desc').value=t.desc||'';
+  }else{
+    ['et-titulo','et-resp','et-proy','et-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('et-avance').value=0;
+    document.getElementById('et-estado').value='abierto';
+    document.getElementById('et-dead').value='';
+    document.getElementById('et-prior').value='importante';
+  }
+  document.getElementById('mod-ticket').classList.add('open');
+}
+
+async function saveTicket(){
+  const titulo=document.getElementById('et-titulo').value.trim();
+  if(!titulo){alert('El título es obligatorio.');return;}
+  const editId=document.getElementById('et-id').value;
+  const isEdit=editId!=='';
+  if(isEdit){
+    const motivo=document.getElementById('et-motivo').value.trim();
+    if(!motivo){alert('El motivo de edición es obligatorio.');return;}
+    const t=tickets.find(x=>x.codigo===editId);
+    if(!t)return;
+    const cambios=[];
+    const nTitulo=titulo;
+    const nResp=document.getElementById('et-resp').value.trim();
+    if(t.titulo!==nTitulo)cambios.push(`Título: "${t.titulo}" → "${nTitulo}"`);
+    if(t.resp!==nResp)cambios.push(`Responsable: "${t.resp}" → "${nResp}"`);
+    t.titulo=nTitulo; t.resp=nResp;
+    t.tipo=document.getElementById('et-tipo').value;
+    t.prior=document.getElementById('et-prior').value;
+    t.estado=document.getElementById('et-estado').value;
+    t.avance=Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0));
+    t.dead=document.getElementById('et-dead').value||'—';
+    t.proy=document.getElementById('et-proy').value.trim()||'—';
+    t.desc=document.getElementById('et-desc').value.trim();
+    const det=`Motivo: ${motivo}. ${cambios.length?'Cambios: '+cambios.join('; '):''}`;
+    t.historial=t.historial||[];
+    t.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
+    await apiPost('tickets','update',t);
+    audit('EDITAR','Ticket',t.codigo,det);
+  }else{
+    const code=genCode('TKT',cntTickets++);
+    const aId=document.getElementById('et-activo').value;
+    const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
+    const t={
+      id:code,codigo:code,titulo,
+      activoId:aId||'',activoNombre:aNom,
+      resp:document.getElementById('et-resp').value.trim()||'—',
+      tipo:document.getElementById('et-tipo').value,
+      prior:document.getElementById('et-prior').value,
+      estado:document.getElementById('et-estado').value,
+      avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),
+      dead:document.getElementById('et-dead').value||'—',
+      proy:document.getElementById('et-proy').value.trim()||'—',
+      desc:document.getElementById('et-desc').value.trim(),
+      historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],
+      fechaCreacion:ts()
+    };
+    tickets.push(t);
+    if(aId){
+      const act=activos.find(a=>a.codigo===aId);
+      if(act){
+        act.historial=act.historial||[];
+        act.historial.push({tipo:'Ticket vinculado',desc:code+': '+titulo,fecha:ts(),usuario:session.nombre,color:'blue'});
+        await apiPost('activos','update',act);
+      }
+      if(t.tipo==='mantenimiento'&&act)act.estado='mantenimiento';
+    }
+    await apiPost('tickets','insert',t);
+    audit('CREAR','Ticket',code,'Ticket creado: '+titulo);
+  }
+  closeModals();renderAll();
+}
+
+function openDelete(type,id){
+  pendingDelete={type,id};
+  const obj=type==='activo'?activos.find(a=>a.codigo===id):tickets.find(t=>t.codigo===id);
+  document.getElementById('del-code').textContent=obj?obj.codigo:'';
+  document.getElementById('del-motivo').value='';
+  document.getElementById('mod-delete').classList.add('open');
+}
+
+async function confirmDelete(){
+  const motivo=document.getElementById('del-motivo').value.trim();
+  if(!motivo){alert('El motivo es obligatorio.');return;}
+  const{type,id}=pendingDelete;
+  if(type==='activo'){
+    const a=activos.find(x=>x.codigo===id);
+    if(!a)return;
+    a.estado='eliminado';
+    a.historial=a.historial||[];
+    a.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
+    await apiPost('activos','update',a);
+    audit('ELIMINAR','Activo',a.codigo,`Eliminado por ${session.nombre}. Motivo: ${motivo}`);
+  }else{
+    const t=tickets.find(x=>x.codigo===id);
+    if(!t)return;
+    t.estado='eliminado';
+    t.historial=t.historial||[];
+    t.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
+    await apiPost('tickets','update',t);
+    audit('ELIMINAR','Ticket',t.codigo,`Eliminado por ${session.nombre}. Motivo: ${motivo}`);
+  }
+  closeModals();renderAll();
+  if(type==='activo')go('activos',document.getElementById('nav-activos'));
+}
+
+function openMant(){document.getElementById('mod-mant').classList.add('open');}
+
+async function saveMant(){
+  if(!activoActual)return;
+  const desc=document.getElementById('mm-desc').value.trim();
+  if(!desc){alert('La descripción es obligatoria.');return;}
+  const e={tipo:document.getElementById('mm-tipo').value,desc,fecha:document.getElementById('mm-fecha').value||ts(),tec:document.getElementById('mm-tec').value.trim()||session.nombre,costo:parseFloat(document.getElementById('mm-costo').value)||0,usuario:session.nombre,color:'amber'};
+  activoActual.historial=activoActual.historial||[];
+  activoActual.historial.push(e);
+  await apiPost('activos','update',activoActual);
+  audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
+  ['mm-desc','mm-tec','mm-costo','mm-fecha'].forEach(i=>document.getElementById(i).value='');
+  closeModals();showDetalle(activoActual.codigo);
+}
+
+function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}
+
+function calcDepre(a){
+  if(!a.valor||!a.compra||a.compra==='—')return a.valor||0;
+  const y=(new Date()-new Date(a.compra))/(365.25*24*3600*1000);
+  return Math.max(0,Math.round(a.valor-(a.valor*(y/(a.vida||3)))));
+}
+
+function showDetalle(id){
+  activoActual=activos.find(a=>a.codigo===id);
+  if(!activoActual)return;
+  document.getElementById('nav-detalle').style.display='flex';
+  const tks=tickets.filter(t=>t.activoId===id);
+  const vd=calcDepre(activoActual);
+  document.getElementById('det-content').innerHTML=`
+    <div class="det-header">
+      <div class="det-icon">${TIPO_ICON[activoActual.tipo]||'📦'}</div>
+      <div style="flex:1">
+        <div class="det-title">${activoActual.nombre}</div>
+        <div class="det-code">${activoActual.codigo} · ${activoActual.marca||''} ${activoActual.modelo||''} · S/N: ${activoActual.serial||'—'}</div>
+        <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+          <span class="badge s-${activoActual.estado}">${activoActual.estado}</span>
+          <span class="badge" style="background:var(--bg2);color:var(--text2)">${activoActual.tipo}</span>
+          <span class="badge" style="background:var(--bg2);color:var(--text2)">${activoActual.depto||'Sin depto'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="det-grid">
+      <div class="det-field"><div class="det-fl">Asignado a</div><div class="det-fv">${activoActual.asignado||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Departamento</div><div class="det-fv">${activoActual.depto||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Ubicación física</div><div class="det-fv">${activoActual.ubicacion||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Fecha de compra</div><div class="det-fv">${activoActual.compra||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Garantía hasta</div><div class="det-fv">${activoActual.garantia||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Valor de compra</div><div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div></div>
+      <div class="det-field"><div class="det-fl">Valor depreciado</div><div class="det-fv" style="color:#3B6D11;font-weight:700">$${vd.toLocaleString()}</div></div>
+      <div class="det-field"><div class="det-fl">Vida útil</div><div class="det-fv">${activoActual.vida||3} años</div></div>
+    </div>
+    ${activoActual.obs?`<div style="background:var(--bg2);border-radius:var(--r-md);padding:9px 12px;font-size:12px;color:var(--text2);margin-bottom:14px;border:1px solid var(--border)">${activoActual.obs}</div>`:''}
+    <div style="margin-bottom:14px">
+      <div class="sec-title">Tickets vinculados (${tks.length})</div>
+      ${tks.length?tks.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:5px;background:var(--bg)">
+        <span class="code-cell" style="font-size:11px">${t.codigo}</span>
+        <span class="badge s-${t.estado}">${t.estado}</span>
+        <span style="flex:1;font-size:12px;font-weight:500">${t.titulo}</span>
+        <span style="font-size:11px;color:var(--text3)">${t.resp} · ${t.dead||'—'}</span>
+      </div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">Sin tickets vinculados a este activo.</div>'}
+    </div>
+    <div>
+      <div class="sec-title">Historial completo del activo (${(activoActual.historial||[]).length} eventos)</div>
+      ${(activoActual.historial||[]).map(h=>`<div class="hist-item">
+        <div class="hist-dot ${h.color||''}"></div>
+        <div>
+          <div class="hist-t"><strong>${h.tipo}</strong> — ${h.desc}</div>
+          <div class="hist-m">${h.fecha||''} · Usuario: ${h.usuario||'—'}${h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:''}${h.costo?' · Costo: $'+h.costo:''}</div>
+        </div>
+      </div>`).join('')}
+    </div>`;
+  go('detalle',document.getElementById('nav-detalle'));
+}
+
+function renderActivos(){
+  const tb=document.getElementById('tb-activos');
+  const list=filtroA==='todos'?activos:activos.filter(a=>a.estado===filtroA);
+  if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin activos${filtroA!=='todos'?' en este estado':''}.${filtroA==='todos'?' Usa "+ Nuevo activo" para registrar tu primer equipo.':''}</td></tr>`;return;}
+  const per=PERMS[session.rol];
+  tb.innerHTML=list.map(a=>`<tr class="${a.estado==='eliminado'?'del-row':''}" onclick="showDetalle('${a.codigo}')">
+    <td class="code-cell">${a.codigo}</td>
+    <td><div style="font-weight:600;font-size:12px">${a.nombre}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
+    <td>${a.tipo}</td>
+    <td><div style="font-size:12px">${a.asignado||'—'}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
+    <td style="font-size:11px">${a.ubicacion||'—'}</td>
+    <td><span class="badge s-${a.estado}">${a.estado}</span></td>
+    <td style="font-size:11px;color:var(--text3)">${a.garantia||'—'}</td>
+    <td style="font-size:12px;font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+    <td onclick="event.stopPropagation()">
+      ${per.edit&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openActivo('${a.codigo}')" title="Editar">✎</button>`:''}
+      ${per.delete&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('activo','${a.codigo}')" title="Eliminar" style="color:var(--red)">×</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function renderTickets(){
+  const tb=document.getElementById('tb-tickets');
+  const list=filtroT==='todos'?tickets:tickets.filter(t=>t.estado===filtroT);
+  if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin tickets.</td></tr>`;return;}
+  const per=PERMS[session.rol];
+  tb.innerHTML=list.map(t=>`<tr class="${t.estado==='eliminado'?'del-row':''}">
+    <td class="code-cell">${t.codigo}</td>
+    <td><div style="font-weight:600;font-size:12px">${t.titulo}</div><div style="font-size:10px;color:var(--text3)">${t.tipo} · ${t.proy||'—'}</div></td>
+    <td style="font-size:11px">${t.activoNombre||'—'}</td>
+    <td style="font-size:12px">${t.resp||'—'}</td>
+    <td><span class="badge s-${t.prior}">${t.prior}</span></td>
+    <td><span class="badge s-${t.estado}">${t.estado}</span></td>
+    <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
+    <td style="font-size:11px;color:var(--text3)">${t.dead||'—'}</td>
+    <td>
+      ${per.edit&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openTicket('${t.codigo}')" title="Editar">✎</button>`:''}
+      ${per.delete&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('ticket','${t.codigo}')" title="Eliminar" style="color:var(--red)">×</button>`:''}
+    </td>
+  </tr>`).join('');
+}
+
+function renderKanban(){
+  ['abierto','progreso','revision','cerrado'].forEach(col=>{
+    const items=tickets.filter(t=>t.estado===col);
+    document.getElementById('kc-'+col).textContent=items.length;
+    document.getElementById('k-'+col).innerHTML=items.length?items.map(t=>`<div class="k-card">
+      <div class="code-cell" style="font-size:9px;margin-bottom:3px">${t.codigo}</div>
+      <div class="k-card-t">${t.titulo}</div>
+      <div class="k-card-m"><span>${t.activoNombre!=='—'?t.activoNombre:t.proy||'—'}</span><span class="badge s-${t.prior}" style="font-size:9px">${t.prior}</span></div>
+      <div class="k-card-m"><span>${t.resp||'—'}</span><span>${t.dead||'—'}</span></div>
+      <div class="k-prog"><div class="k-pf" style="width:${t.avance||0}%"></div></div>
+    </div>`).join(''):'<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Vacío</div>';
+  });
+}
+
+function renderAudit(){
+  const tb=document.getElementById('tb-audit');
+  const list=filtroAud==='todos'?auditLog:auditLog.filter(a=>a.accion===filtroAud);
+  if(!list.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin registros de auditoría.</td></tr>';return;}
+  tb.innerHTML=list.map(a=>`<tr>
+    <td style="font-size:10px;white-space:nowrap;color:var(--text3)">${a.ts}</td>
+    <td><div style="font-size:12px;font-weight:600">${a.nombre||a.usuario}</div><div style="font-size:10px;color:var(--text3)">${a.username||a.usuario}</div></td>
+    <td><span class="badge ${ROL_CLASS[a.rol]||''}" style="font-size:10px">${ROL_LABELS[a.rol]||a.rol}</span></td>
+    <td><span class="badge s-${a.accion}">${a.accion}</span></td>
+    <td style="font-size:11px">${a.tipo}</td>
+    <td class="code-cell">${a.codigo}</td>
+    <td style="font-size:11px;max-width:200px;color:var(--text2)">${a.detalle}</td>
+  </tr>`).join('');
+}
+
+function renderUsuarios(){
+  const tb=document.getElementById('tb-usuarios');
+  tb.innerHTML=Object.entries(USERS).map(([u,d])=>`<tr>
+    <td class="code-cell" style="font-size:12px">${u}</td>
+    <td style="font-weight:600">${d.nombre}</td>
+    <td><span class="badge ${ROL_CLASS[d.rol]||''}">${ROL_LABELS[d.rol]||d.rol}</span></td>
+    <td style="font-size:11px;color:var(--text3)">${d.lastLogin||'Nunca'}</td>
+    <td><span class="badge s-activo">Activo</span></td>
+  </tr>`).join('');
+}
+
+function renderDash(){
+  const av=activos.filter(a=>a.estado!=='eliminado');
+  const ta=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado');
+  const val=av.reduce((s,a)=>s+calcDepre(a),0);
+  document.getElementById('d-act').textContent=av.length;
+  document.getElementById('d-tkt').textContent=ta.length;
+  document.getElementById('d-mnt').textContent=activos.filter(a=>a.estado==='mantenimiento').length;
+  document.getElementById('d-val').textContent='$'+val.toLocaleString();
+  const tm={};av.forEach(a=>{tm[a.tipo]=(tm[a.tipo]||0)+1;});
+  const maxT=Math.max(1,...Object.values(tm));
+  const cols=['#534AB7','#1D9E75','#BA7517','#185FA5','#D85A30','#639922'];
+  document.getElementById('ch-tipos').innerHTML=Object.keys(tm).length?
+    Object.entries(tm).map(([t,v],i)=>`<div class="bar-row"><span class="bar-lbl">${t}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxT*100)}%;background:${cols[i%cols.length]}"></div></div><span class="bar-v">${v}</span></div>`).join(''):
+    '<div class="empty-c">Sin activos aún</div>';
+  const ests=['abierto','progreso','revision','cerrado'];
+  const ec={abierto:'#BA7517',progreso:'#185FA5',revision:'#534AB7',cerrado:'#3B6D11'};
+  const maxE=Math.max(1,...ests.map(e=>tickets.filter(t=>t.estado===e).length));
+  document.getElementById('ch-est').innerHTML=tickets.length?
+    ests.map(e=>{const v=tickets.filter(t=>t.estado===e).length;return`<div class="bar-row"><span class="bar-lbl">${e}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxE*100)}%;background:${ec[e]}"></div></div><span class="bar-v">${v}</span></div>`;}).join(''):
+    '<div class="empty-c">Sin tickets aún</div>';
+  const rec=[...activos.map(a=>({txt:a.codigo+': '+a.nombre,sub:'Activo · '+(a.asignado||'—')})),...tickets.map(t=>({txt:t.codigo+': '+t.titulo,sub:'Ticket · '+(t.resp||'—')}))].slice(-6).reverse();
+  document.getElementById('ch-rec').innerHTML=rec.length?
+    rec.map(r=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0"></div><div><div style="font-size:12px;font-weight:500;color:var(--text)">${r.txt}</div><div style="font-size:10px;color:var(--text3)">${r.sub}</div></div></div>`).join(''):
+    '<div class="empty-c">Sin actividad aún</div>';
+}
+
+function filterA(f,el){filtroA=f;document.querySelectorAll('#pnl-activos .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterT(f,el){filtroT=f;document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTickets();}
+function filterAud(f,el){filtroAud=f;document.querySelectorAll('#pnl-auditoria .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAudit();}
+function renderAll(){renderDash();renderActivos();renderTickets();renderKanban();renderAudit();}
+
+loadFromSheets();
+</script>
+</body>
+</html>
