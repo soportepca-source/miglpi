@@ -9,14 +9,22 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F1EFE8;min-height:100vh;display:flex;align-items:center;justify-content:center;}
 :root{--bg:#fff;--bg2:#F8F8F6;--bg3:#F1EFE8;--text:#1a1a1a;--text2:#555;--text3:#999;--border:#E0DDD6;--border2:#C8C5BE;--purple:#534AB7;--purple-l:#EEEDFE;--purple-m:#AFA9EC;--green-l:#EAF3DE;--green:#085041;--green-m:#9FE1CB;--amber-l:#FAEEDA;--amber:#633806;--amber-m:#FAC775;--red-l:#FCEBEB;--red:#791F1F;--red-m:#F7C1C1;--blue-l:#E6F1FB;--blue:#0C447C;--blue-m:#B5D4F4;--teal-l:#E1F5EE;--teal:#085041;--r-md:8px;--r-lg:12px;--r-xl:16px;--shadow:0 2px 16px rgba(0,0,0,.09);}
 .screen{width:100%;max-width:1200px;height:100vh;max-height:760px;background:var(--bg);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;}
-.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg3);}
-.login-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 40px;width:360px;box-shadow:var(--shadow);}
-.login-logo{font-size:26px;font-weight:700;color:var(--purple);letter-spacing:-.5px;}
-.login-sub{font-size:12px;color:var(--text3);margin-top:2px;margin-bottom:6px;}
-.sheets-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-l);border:1px solid var(--green-m);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--green);font-weight:600;margin-bottom:22px;}
-.sdot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* LOADING */
+.loading-overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;border-radius:var(--r-xl);}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
+.loading-text{font-size:13px;color:var(--text2);font-weight:500;}
+.loading-sub{font-size:11px;color:var(--text3);}
+
+/* SHARED CARD */
+.center-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg3);}
+.auth-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 40px;width:380px;box-shadow:var(--shadow);}
+.auth-logo{font-size:24px;font-weight:700;color:var(--purple);letter-spacing:-.5px;}
+.auth-sub{font-size:12px;color:var(--text3);margin-top:2px;margin-bottom:6px;}
+.sheets-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-l);border:1px solid var(--green-m);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--green);font-weight:600;margin-bottom:20px;}
+.sdot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite;}
 .f-lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
 .f-row{margin-bottom:13px;}
 .f-inp{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;}
@@ -25,8 +33,22 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .f-sel{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;cursor:pointer;}
 .btn-full{width:100%;padding:10px;border-radius:var(--r-md);background:var(--purple);border:none;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px;}
 .btn-full:hover{opacity:.88;}
-.login-err{font-size:12px;color:var(--red);background:var(--red-l);border-radius:var(--r-md);padding:8px 12px;margin-bottom:12px;display:none;border:1px solid var(--red-m);}
-.login-loading{font-size:12px;color:var(--text3);text-align:center;margin-top:10px;display:none;}
+.err-box{font-size:12px;color:var(--red);background:var(--red-l);border-radius:var(--r-md);padding:8px 12px;margin-bottom:12px;display:none;border:1px solid var(--red-m);}
+.info-loading{font-size:12px;color:var(--text3);text-align:center;margin-top:10px;display:none;}
+.pass-wrap{position:relative;}
+.pass-wrap .f-inp{padding-right:38px;}
+.pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;}
+
+/* FORCED PASSWORD CHANGE */
+.change-icon{font-size:28px;margin-bottom:8px;}
+.change-title{font-size:18px;font-weight:700;color:var(--purple);margin-bottom:6px;}
+.change-desc{font-size:12px;color:var(--text2);line-height:1.7;margin-bottom:18px;padding:10px 12px;background:var(--amber-l);border:1px solid var(--amber-m);border-radius:var(--r-md);}
+.strength-wrap{margin-top:6px;}
+.strength-bar{height:4px;border-radius:2px;background:var(--border);transition:all .3s;}
+.strength-fill{height:100%;border-radius:2px;width:0%;transition:all .3s;}
+.strength-lbl{font-size:10px;margin-top:3px;color:var(--text3);}
+
+/* APP */
 .app{display:none;flex:1;overflow:hidden;}
 .app.visible{display:flex;}
 .sb{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;}
@@ -64,6 +86,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .btn-p{background:var(--purple-l);border-color:var(--purple-m);color:var(--purple);font-weight:600;}
 .btn-p:hover{background:var(--purple-m);}
 .btn-warn{background:var(--red-l);border-color:var(--red-m);color:var(--red);}
+.btn-amber{background:var(--amber-l);border-color:var(--amber-m);color:var(--amber);}
 .content{flex:1;overflow-y:auto;padding:16px;}
 .pnl{display:none;}
 .pnl.on{display:block;}
@@ -117,16 +140,14 @@ tbody tr.clickable{cursor:pointer;}
 .hist-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
 .hist-item:last-child{border-bottom:none;}
 .hist-dot{width:8px;height:8px;border-radius:50%;background:var(--purple);flex-shrink:0;margin-top:4px;}
-.hist-dot.red{background:#D85A30;}
-.hist-dot.green{background:#1D9E75;}
-.hist-dot.amber{background:#BA7517;}
-.hist-dot.blue{background:#185FA5;}
-.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;}
+.hist-dot.red{background:#D85A30;}.hist-dot.green{background:#1D9E75;}.hist-dot.amber{background:#BA7517;}.hist-dot.blue{background:#185FA5;}
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;}
 .user-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;display:flex;flex-direction:column;gap:8px;}
 .user-card-head{display:flex;align-items:center;gap:10px;}
 .user-name{font-size:13px;font-weight:600;color:var(--text);}
 .user-cargo{font-size:11px;color:var(--text3);}
 .user-detail{font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:3px;}
+.temp-badge{display:inline-block;background:var(--amber-l);color:var(--amber);border:1px solid var(--amber-m);border-radius:20px;padding:1px 8px;font-size:10px;font-weight:600;margin-left:4px;}
 .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
 .k-col{background:var(--bg2);border-radius:var(--r-lg);padding:10px;border:1px solid var(--border);}
 .k-hdr{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
@@ -146,13 +167,6 @@ tbody tr.clickable{cursor:pointer;}
 .modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);}
 .req-note{font-size:11px;color:var(--red);background:var(--red-l);padding:6px 10px;border-radius:var(--r-md);margin-bottom:12px;border:1px solid var(--red-m);}
 .info-note{font-size:11px;color:var(--blue);background:var(--blue-l);padding:6px 10px;border-radius:var(--r-md);margin-bottom:12px;border:1px solid var(--blue-m);}
-.pass-wrap{position:relative;}
-.pass-wrap .f-inp{padding-right:38px;}
-.pass-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;}
-.loading-overlay{position:absolute;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:999;border-radius:var(--r-xl);}
-.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .7s linear infinite;}
-.loading-text{font-size:13px;color:var(--text2);font-weight:500;}
-.loading-sub{font-size:11px;color:var(--text3);}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
 ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px;}
@@ -161,28 +175,64 @@ tbody tr.clickable{cursor:pointer;}
 <body>
 <div class="screen" id="screen">
 
+<!-- LOADING -->
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Iniciando MiGLPI...</div>
   <div class="loading-sub" id="loading-sub">Conectando a Google Sheets</div>
 </div>
 
-<div class="login-wrap" id="login-screen" style="display:none;">
-  <div class="login-card">
-    <div class="login-logo">MiGLPI</div>
-    <div class="login-sub">Sistema de activos, tickets e inventario</div>
+<!-- LOGIN -->
+<div class="center-wrap" id="login-screen" style="display:none;">
+  <div class="auth-card">
+    <div class="auth-logo">MiGLPI</div>
+    <div class="auth-sub">Sistema de activos, tickets e inventario</div>
     <div class="sheets-badge"><span class="sdot"></span> Conectado a Google Sheets</div>
-    <div class="login-err" id="login-err"></div>
-    <div class="f-row"><div class="f-lbl">Usuario</div><input class="f-inp" id="l-user" placeholder="Tu nombre de usuario" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="err-box" id="login-err"></div>
+    <div class="f-row"><div class="f-lbl">Usuario</div>
+      <input class="f-inp" id="l-user" placeholder="Tu nombre de usuario" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
     <div class="f-row"><div class="f-lbl">Contraseña</div>
-      <div class="pass-wrap"><input class="f-inp" type="password" id="l-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
-      <button class="pass-toggle" onclick="togglePass('l-pass',this)" type="button">👁</button></div>
+      <div class="pass-wrap">
+        <input class="f-inp" type="password" id="l-pass" placeholder="Contraseña" onkeydown="if(event.key==='Enter')doLogin()">
+        <button class="pass-toggle" onclick="togglePass('l-pass',this)" type="button">👁</button>
+      </div>
     </div>
     <button class="btn-full" onclick="doLogin()">Iniciar sesión</button>
-    <div class="login-loading" id="login-loading">Verificando credenciales...</div>
+    <div class="info-loading" id="login-loading">Verificando credenciales...</div>
   </div>
 </div>
 
+<!-- CAMBIO DE CONTRASEÑA FORZADO (primer acceso o reset) -->
+<div class="center-wrap" id="change-screen" style="display:none;">
+  <div class="auth-card">
+    <div class="change-icon">🔐</div>
+    <div class="change-title">Crea tu contraseña</div>
+    <div class="change-desc" id="change-desc">
+      Es tu primer acceso. Por seguridad debes crear una contraseña personal antes de continuar. La contraseña temporal no puede seguir usándose.
+    </div>
+    <div class="err-box" id="change-err"></div>
+    <div class="f-row"><div class="f-lbl">Nueva contraseña *</div>
+      <div class="pass-wrap">
+        <input class="f-inp" type="password" id="new-pass" placeholder="Mínimo 8 caracteres" oninput="evalStrength(this.value)">
+        <button class="pass-toggle" onclick="togglePass('new-pass',this)" type="button">👁</button>
+      </div>
+      <div class="strength-wrap">
+        <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+        <div class="strength-lbl" id="strength-lbl">Escribe tu contraseña</div>
+      </div>
+    </div>
+    <div class="f-row"><div class="f-lbl">Confirmar contraseña *</div>
+      <div class="pass-wrap">
+        <input class="f-inp" type="password" id="new-pass2" placeholder="Repite la contraseña">
+        <button class="pass-toggle" onclick="togglePass('new-pass2',this)" type="button">👁</button>
+      </div>
+    </div>
+    <button class="btn-full" onclick="doForceChange()">Guardar y entrar al sistema</button>
+  </div>
+</div>
+
+<!-- APP -->
 <div class="app" id="app-screen">
   <div class="sb">
     <div class="sb-head">
@@ -216,6 +266,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="sync-bar" id="sync-bar"><div class="sync-dot" id="sync-dot"></div><span id="sync-msg">Conectado</span></div>
     <div class="topbar"><div class="topbar-title" id="tb-title">Dashboard</div><div id="tb-buttons"></div></div>
     <div class="content">
+
       <div class="pnl on" id="pnl-dashboard">
         <div class="metrics">
           <div class="met"><div class="met-v" id="d-act">0</div><div class="met-l">Activos registrados</div></div>
@@ -229,15 +280,19 @@ tbody tr.clickable{cursor:pointer;}
         </div>
         <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Sin actividad</div></div></div>
       </div>
+
       <div class="pnl" id="pnl-activos">
         <div class="tab-row"><button class="tab-btn on" onclick="filterA('todos',this)">Todos</button><button class="tab-btn" onclick="filterA('activo',this)">Activos</button><button class="tab-btn" onclick="filterA('asignado',this)">Asignados</button><button class="tab-btn" onclick="filterA('mantenimiento',this)">Mantenimiento</button><button class="tab-btn" onclick="filterA('baja',this)">Baja</button><button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
       </div>
+
       <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
+
       <div class="pnl" id="pnl-tickets">
         <div class="tab-row"><button class="tab-btn on" onclick="filterT('todos',this)">Todos</button><button class="tab-btn" onclick="filterT('abierto',this)">Abiertos</button><button class="tab-btn" onclick="filterT('progreso',this)">En progreso</button><button class="tab-btn" onclick="filterT('revision',this)">En revisión</button><button class="tab-btn" onclick="filterT('cerrado',this)">Cerrados</button><button class="tab-btn" onclick="filterT('eliminado',this)">Eliminados</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Título</th><th>Activo vinculado</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Avance</th><th>Deadline</th><th></th></tr></thead><tbody id="tb-tickets"></tbody></table></div>
       </div>
+
       <div class="pnl" id="pnl-kanban">
         <div class="kanban">
           <div class="k-col"><div class="k-hdr">Abierto <span class="k-cnt" id="kc-abierto">0</span></div><div id="k-abierto"></div></div>
@@ -246,12 +301,16 @@ tbody tr.clickable{cursor:pointer;}
           <div class="k-col"><div class="k-hdr">Cerrado <span class="k-cnt" id="kc-cerrado">0</span></div><div id="k-cerrado"></div></div>
         </div>
       </div>
+
       <div class="pnl" id="pnl-usuarios"><div class="user-grid" id="user-grid"></div></div>
+
       <div class="pnl" id="pnl-auditoria">
         <div class="tab-row"><button class="tab-btn on" onclick="filterAud('todos',this)">Todo</button><button class="tab-btn" onclick="filterAud('CREAR',this)">Creaciones</button><button class="tab-btn" onclick="filterAud('EDITAR',this)">Ediciones</button><button class="tab-btn" onclick="filterAud('ELIMINAR',this)">Eliminaciones</button><button class="tab-btn" onclick="filterAud('LOGIN',this)">Accesos</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Rol</th><th>Acción</th><th>Objeto</th><th>Código</th><th>Detalle</th></tr></thead><tbody id="tb-audit"></tbody></table></div>
       </div>
+
       <div class="pnl" id="pnl-miperfil"><div id="mi-perfil-content"></div></div>
+
     </div>
   </div>
 </div>
@@ -328,14 +387,18 @@ tbody tr.clickable{cursor:pointer;}
 <div class="modal-bg" id="mod-usuario"><div class="modal">
   <div class="modal-title"><span id="mod-usuario-title">Nuevo usuario</span><button class="modal-close" onclick="closeModals()">✕</button></div>
   <input type="hidden" id="eu-id">
-  <div class="info-note">Las contraseñas se almacenan como hash en Google Sheets. Nunca son visibles en el código del sistema.</div>
+  <div class="info-note">🔒 Las contraseñas se almacenan como hash en Google Sheets. Nadie puede verlas, ni el administrador.</div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Usuario *</div><input class="f-inp" id="eu-username" placeholder="Ej: jperez" autocomplete="off"></div>
     <div class="f-row"><div class="f-lbl">Rol *</div><select class="f-inp f-sel" id="eu-rol"><option value="admin">Administrador</option><option value="tecnico">Técnico</option><option value="consultor">Consultor</option><option value="inventario">Inventario</option></select></div>
   </div>
-  <div class="f-row"><div class="f-lbl">Contraseña *</div>
-    <div class="pass-wrap"><input class="f-inp" type="password" id="eu-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
-    <button class="pass-toggle" onclick="togglePass('eu-pass',this)" type="button">👁</button></div>
+  <div class="f-row" id="eu-pass-row">
+    <div class="f-lbl">Contraseña temporal *</div>
+    <div class="pass-wrap">
+      <input class="f-inp" type="password" id="eu-pass" placeholder="El usuario deberá cambiarla en su primer acceso" autocomplete="new-password">
+      <button class="pass-toggle" onclick="togglePass('eu-pass',this)" type="button">👁</button>
+    </div>
+    <div style="font-size:10px;color:var(--amber);margin-top:4px;">⚠ El usuario será obligado a cambiarla en su primer inicio de sesión.</div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Nombre completo *</div><input class="f-inp" id="eu-nombre" placeholder="Juan Pérez"></div>
@@ -352,10 +415,29 @@ tbody tr.clickable{cursor:pointer;}
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" id="eu-save-btn" onclick="saveUsuario()">Guardar usuario</button></div>
 </div></div>
 
+<!-- MODAL RESET CONTRASEÑA (admin) -->
+<div class="modal-bg" id="mod-reset"><div class="modal" style="max-width:420px;">
+  <div class="modal-title"><span>Resetear contraseña</span><button class="modal-close" onclick="closeModals()">✕</button></div>
+  <input type="hidden" id="reset-username">
+  <div class="info-note">
+    Estás reseteando la contraseña de <strong id="reset-nombre"></strong>.<br>
+    La contraseña actual <strong>no es visible</strong> para nadie. Asigna una contraseña temporal — el usuario deberá cambiarla en su próximo acceso.
+  </div>
+  <div class="f-row">
+    <div class="f-lbl">Nueva contraseña temporal *</div>
+    <div class="pass-wrap">
+      <input class="f-inp" type="password" id="reset-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+      <button class="pass-toggle" onclick="togglePass('reset-pass',this)" type="button">👁</button>
+    </div>
+  </div>
+  <div style="font-size:10px;color:var(--amber);margin-bottom:10px;">⚠ El usuario será obligado a cambiarla en su próximo inicio de sesión.</div>
+  <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-amber" onclick="confirmReset()">Resetear contraseña</button></div>
+</div></div>
+
 <!-- MODAL ELIMINAR -->
 <div class="modal-bg" id="mod-delete"><div class="modal" style="max-width:400px;">
   <div class="modal-title"><span>Eliminación lógica</span><button class="modal-close" onclick="closeModals()">✕</button></div>
-  <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7">El registro <strong id="del-code" style="color:var(--purple);font-family:monospace"></strong> quedará marcado como eliminado. El historial se conserva. Esta acción queda en auditoría.</p>
+  <p style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7">El registro <strong id="del-code" style="color:var(--purple);font-family:monospace"></strong> quedará marcado como eliminado. El historial se conserva. Queda registrado en auditoría.</p>
   <div class="req-note">El motivo es obligatorio</div>
   <div class="f-row"><div class="f-lbl">Motivo *</div><input class="f-inp" id="del-motivo" placeholder="Explica por qué se elimina..."></div>
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-warn" onclick="confirmDelete()">Eliminar con registro</button></div>
@@ -374,104 +456,229 @@ tbody tr.clickable{cursor:pointer;}
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" onclick="saveMant()">Registrar</button></div>
 </div></div>
 
-</div>
+</div><!-- /screen -->
 <script>
+// ─── CONFIG ───────────────────────────────────────────────────────────
 const API="https://script.google.com/macros/s/AKfycbzdNQoAbHpe6trcx8EmZAo3SLO2o9SajFZP0L-2OvWnXCPJYTmtz2J6zLRX3c8ZUS1ezQ/exec";
+// Contraseña inicial del primer admin — solo se usa una vez, en el primer arranque
+// El sistema obliga a cambiarla inmediatamente después del primer login
+const INITIAL_ADMIN_PASS = "Admin2024!";
+
 const ROL_LABELS={admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
 const ROL_CLASS={admin:'s-admin',tecnico:'s-tecnico',consultor:'s-consultor',inventario:'s-inventario'};
 const TIPO_ICON={Computadora:'🖥️',Laptop:'💻',Impresora:'🖨️',Servidor:'🗄️','Red / Switch':'🔌',Móvil:'📱',Tablet:'📱',Monitor:'🖥️',Software:'💿',Vehículo:'🚗',Otro:'📦'};
-const PERMS={admin:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},tecnico:{activos:false,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},consultor:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},inventario:{activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
+const PERMS={
+  admin:      {activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},
+  tecnico:    {activos:false,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},
+  consultor:  {activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},
+  inventario: {activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}
+};
+
+// ─── ESTADO ───────────────────────────────────────────────────────────
 let session=null,activos=[],tickets=[],auditLog=[],usuarios=[],activoActual=null;
 let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos';
 let pendingDelete={type:null,id:null};
+let pendingSession=null; // usuario autenticado pendiente de forzar cambio
 
+// ─── UTILIDADES ───────────────────────────────────────────────────────
 function ts(){return new Date().toLocaleString('es-PA',{dateStyle:'short',timeStyle:'short'});}
 function genCode(pre,n){return pre+'-'+String(n+1).padStart(4,'0');}
 function parseHist(v){if(Array.isArray(v))return v;if(typeof v==='string'&&v.startsWith('['))try{return JSON.parse(v);}catch(e){}return[];}
-function initials(n){if(!n)return '?';const p=n.trim().split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
-function hashPass(p){let h=0;for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;}return 'H'+Math.abs(h).toString(16);}
-function togglePass(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
-function setSyncStatus(ok,msg){const b=document.getElementById('sync-bar'),d=document.getElementById('sync-dot');b.className='sync-bar'+(ok?'':' err');d.className='sync-dot'+(ok?'':' err');document.getElementById('sync-msg').textContent=msg;}
+function initials(n){if(!n)return'?';const p=n.trim().split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
 
+function hashPass(p){
+  // Hash simple pero consistente — suficiente para este contexto
+  let h=5381;for(let i=0;i<p.length;i++){h=((h<<5)+h)^p.charCodeAt(i);h=h&h;}
+  return 'H'+Math.abs(h).toString(36);
+}
+
+function togglePass(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
+
+function evalStrength(p){
+  const fill=document.getElementById('strength-fill'),lbl=document.getElementById('strength-lbl');
+  if(!p){fill.style.width='0%';fill.style.background='';lbl.textContent='Escribe tu contraseña';return;}
+  let score=0;
+  if(p.length>=8)score++;if(p.length>=12)score++;
+  if(/[A-Z]/.test(p))score++;if(/[0-9]/.test(p))score++;if(/[^A-Za-z0-9]/.test(p))score++;
+  const levels=[{w:'15%',c:'#D85A30',t:'Muy débil'},{w:'30%',c:'#BA7517',t:'Débil'},{w:'55%',c:'#FAC775',t:'Regular'},{w:'75%',c:'#1D9E75',t:'Buena'},{w:'100%',c:'#085041',t:'Excelente'}];
+  const l=levels[Math.min(score,4)];
+  fill.style.width=l.w;fill.style.background=l.c;lbl.textContent=l.t;lbl.style.color=l.c;
+}
+
+function setSyncStatus(ok,msg){
+  const b=document.getElementById('sync-bar'),d=document.getElementById('sync-dot');
+  b.className='sync-bar'+(ok?'':' err');d.className='sync-dot'+(ok?'':' err');
+  document.getElementById('sync-msg').textContent=msg;
+}
+
+// ─── API ──────────────────────────────────────────────────────────────
 async function apiPost(sheet,action,payload){
-  try{await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet,action,payload})});setSyncStatus(true,'Guardado · '+ts());return true;}
-  catch(e){setSyncStatus(false,'Error al guardar');return false;}
+  try{
+    await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet,action,payload})});
+    setSyncStatus(true,'Guardado en Google Sheets · '+ts());return true;
+  }catch(e){setSyncStatus(false,'Error al guardar — verifica tu conexión');return false;}
 }
 async function apiGet(sheet){
   try{const r=await fetch(API+'?sheet='+sheet,{mode:'cors'});if(!r.ok)return[];const d=await r.json();return Array.isArray(d)?d:[];}
   catch(e){return[];}
 }
 
-function audit(accion,tipo,codigo,detalle){
-  const e={ts:ts(),usuario:session.username,nombre:session.nombre,rol:session.rol,accion,tipo,codigo,detalle};
+function audit(accion,tipo,codigo,detalle,usuario){
+  const u=usuario||session;
+  const e={ts:ts(),usuario:u.username,nombre:u.nombre,rol:u.rol,accion,tipo,codigo,detalle};
   auditLog.unshift(e);apiPost('auditoria','insert',e);
 }
 
+// ─── CARGA INICIAL ────────────────────────────────────────────────────
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
   lt.textContent='Cargando usuarios...';
-  const rawU=await apiGet('usuarios');
-  usuarios=rawU.map(r=>({...r}));
+  const rawU=await apiGet('usuarios');usuarios=rawU.map(r=>({...r}));
+
   lt.textContent='Cargando activos...';
   const rawA=await apiGet('activos');
   activos=rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
   cntActivos=activos.length;
+
   lt.textContent='Cargando tickets...';
   const rawT=await apiGet('tickets');
   tickets=rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
   cntTickets=tickets.length;
+
   lt.textContent='Cargando auditoría...';
   const rawAud=await apiGet('auditoria');
   auditLog=rawAud.slice().reverse();
+
+  // Primer arranque: crear admin con contraseña temporal
   if(!usuarios.length){
-    const a={username:'admin',passHash:hashPass('admin123'),rol:'admin',nombre:'Administrador',email:'admin@miglpi.com',tel:'',depto:'TI',cargo:'Administrador del sistema',estado:'activo',fechaCreacion:ts(),ultimoAcceso:'Nunca'};
+    const a={
+      username:'admin',
+      passHash:hashPass(INITIAL_ADMIN_PASS),
+      mustChange:true, // obliga cambio inmediato
+      rol:'admin',nombre:'Administrador',email:'',tel:'',depto:'TI',
+      cargo:'Administrador del sistema',estado:'activo',
+      fechaCreacion:ts(),ultimoAcceso:'Nunca'
+    };
     usuarios.push(a);await apiPost('usuarios','insert',a);
   }
+
   ls.textContent=`${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
   lt.textContent='¡Sistema listo!';
-  setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
+  setTimeout(()=>{
+    document.getElementById('loading-overlay').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+    setSyncStatus(true,'Conectado a Google Sheets');
+  },500);
 }
 
+// ─── LOGIN ────────────────────────────────────────────────────────────
 async function doLogin(){
-  const u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
-  const err=document.getElementById('login-err'),ll=document.getElementById('login-loading');
+  const u=document.getElementById('l-user').value.trim();
+  const p=document.getElementById('l-pass').value;
+  const err=document.getElementById('login-err');
+  const ll=document.getElementById('login-loading');
   err.style.display='none';
   if(!u||!p){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
   ll.style.display='block';
+
   const usuario=usuarios.find(x=>x.username===u&&x.estado!=='inactivo');
-  if(usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p)){
-    session={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
-    usuario.ultimoAcceso=ts();await apiPost('usuarios','update',usuario);
+  const passOk=usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p);
+
+  if(passOk){
     ll.style.display='none';
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('app-screen').classList.add('visible');
-    document.getElementById('sb-username').textContent=u;
-    document.getElementById('sb-avatar').textContent=initials(usuario.nombre);
-    document.getElementById('sb-profile-name').textContent=usuario.nombre;
-    document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
-    const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
-    applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
+    // ¿Debe cambiar contraseña?
+    if(usuario.mustChange==='true'||usuario.mustChange===true){
+      pendingSession={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
+      document.getElementById('login-screen').style.display='none';
+      document.getElementById('change-desc').textContent=
+        usuario.ultimoAcceso==='Nunca'
+          ? 'Es tu primer acceso. Por seguridad debes crear una contraseña personal antes de continuar. La contraseña temporal no puede seguir usándose.'
+          : 'El administrador reseteó tu contraseña. Debes crear una nueva contraseña personal para continuar.';
+      document.getElementById('change-screen').style.display='flex';
+      document.getElementById('change-err').style.display='none';
+      document.getElementById('new-pass').value='';
+      document.getElementById('new-pass2').value='';
+    }else{
+      enterApp(usuario,u);
+    }
   }else{
-    ll.style.display='none';err.textContent=usuario?'Contraseña incorrecta.':'Usuario no encontrado o inactivo.';err.style.display='block';
-    audit('LOGIN_FAIL','Sistema','—','Intento fallido: '+u);
+    ll.style.display='none';
+    err.textContent=usuario?'Contraseña incorrecta.':'Usuario no encontrado o inactivo.';
+    err.style.display='block';
+    // Auditar intento fallido sin session activa
+    auditLog.unshift({ts:ts(),usuario:u,nombre:u,rol:'—',accion:'LOGIN_FAIL',tipo:'Sistema',codigo:'—',detalle:'Intento fallido'});
+    apiPost('auditoria','insert',{ts:ts(),usuario:u,nombre:u,rol:'—',accion:'LOGIN_FAIL',tipo:'Sistema',codigo:'—',detalle:'Intento fallido de acceso'});
   }
 }
 
-function doLogout(){
-  audit('LOGOUT','Sistema','—','Cierre de sesión');session=null;activoActual=null;
-  document.getElementById('app-screen').classList.remove('visible');document.getElementById('login-screen').style.display='flex';
-  document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
-  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));document.getElementById('pnl-dashboard').classList.add('on');
-  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));document.getElementById('nav-dashboard').classList.add('on');
-  document.getElementById('nav-detalle').style.display='none';document.getElementById('nav-miperfil').style.display='none';
+async function doForceChange(){
+  const p1=document.getElementById('new-pass').value;
+  const p2=document.getElementById('new-pass2').value;
+  const err=document.getElementById('change-err');
+  err.style.display='none';
+  if(!p1||p1.length<8){err.textContent='La contraseña debe tener al menos 8 caracteres.';err.style.display='block';return;}
+  if(p1!==p2){err.textContent='Las contraseñas no coinciden.';err.style.display='block';return;}
+  // Verificar que no use la contraseña temporal
+  const u=pendingSession.data;
+  if(u.passHash===hashPass(p1)||u.pass===p1){err.textContent='No puedes usar la contraseña temporal como nueva contraseña.';err.style.display='block';return;}
+
+  u.passHash=hashPass(p1);
+  u.mustChange=false;
+  u.pass=''; // limpiar pass legacy si existe
+  await apiPost('usuarios','update',u);
+
+  // Auditar
+  auditLog.unshift({ts:ts(),usuario:pendingSession.username,nombre:pendingSession.nombre,rol:pendingSession.rol,accion:'EDITAR',tipo:'Usuario',codigo:pendingSession.username,detalle:'Contraseña cambiada en primer acceso'});
+  apiPost('auditoria','insert',{ts:ts(),usuario:pendingSession.username,nombre:pendingSession.nombre,rol:pendingSession.rol,accion:'EDITAR',tipo:'Usuario',codigo:pendingSession.username,detalle:'Contraseña cambiada en primer acceso'});
+
+  document.getElementById('change-screen').style.display='none';
+  enterApp(u,pendingSession.username);
+  pendingSession=null;
 }
 
+function enterApp(usuario,username){
+  session={username,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
+  usuario.ultimoAcceso=ts();
+  apiPost('usuarios','update',usuario);
+
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').classList.add('visible');
+  document.getElementById('sb-username').textContent=username;
+  document.getElementById('sb-avatar').textContent=initials(usuario.nombre);
+  document.getElementById('sb-profile-name').textContent=usuario.nombre;
+  document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
+  const rb=document.getElementById('sb-role-badge');
+  rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;
+  rb.className='sb-role role-'+usuario.rol;
+  applyPerms();
+  audit('LOGIN','Sistema','—','Inicio de sesión exitoso');
+  renderDash();
+}
+
+function doLogout(){
+  audit('LOGOUT','Sistema','—','Cierre de sesión');
+  session=null;activoActual=null;
+  document.getElementById('app-screen').classList.remove('visible');
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
+  document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pnl-dashboard').classList.add('on');
+  document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
+  document.getElementById('nav-dashboard').classList.add('on');
+  document.getElementById('nav-detalle').style.display='none';
+  document.getElementById('nav-miperfil').style.display='none';
+}
+
+// ─── PERMISOS ─────────────────────────────────────────────────────────
 function applyPerms(){
   const p=PERMS[session.rol]||{};
-  ['activos','tickets','kanban','auditoria','usuarios'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
+  ['activos','tickets','kanban','auditoria','usuarios'].forEach(m=>{
+    const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);
+  });
   document.getElementById('nav-miperfil').style.display='flex';
 }
 
+// ─── NAVEGACIÓN ───────────────────────────────────────────────────────
 function go(panel,el){
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));
   document.querySelectorAll('.pnl').forEach(i=>i.classList.remove('on'));
@@ -496,23 +703,31 @@ function renderTopbarBtns(p){
   }
 }
 
+// ─── GESTIÓN DE USUARIOS ──────────────────────────────────────────────
 function openUsuario(id){
   const isEdit=id!=null;
   document.getElementById('mod-usuario-title').textContent=isEdit?'Editar usuario':'Nuevo usuario';
   document.getElementById('eu-save-btn').textContent=isEdit?'Guardar cambios':'Crear usuario';
   document.getElementById('eu-id').value=id||'';
+  const passRow=document.getElementById('eu-pass-row');
   if(isEdit){
     const u=usuarios.find(x=>x.username===id);if(!u)return;
-    document.getElementById('eu-username').value=u.username;document.getElementById('eu-username').disabled=true;
-    document.getElementById('eu-rol').value=u.rol;document.getElementById('eu-pass').value='';
-    document.getElementById('eu-pass').placeholder='Dejar vacío para no cambiar';
-    document.getElementById('eu-nombre').value=u.nombre||'';document.getElementById('eu-email').value=u.email||'';
-    document.getElementById('eu-tel').value=u.tel||'';document.getElementById('eu-depto').value=u.depto||'';
-    document.getElementById('eu-cargo').value=u.cargo||'';document.getElementById('eu-estado').value=u.estado||'activo';
+    document.getElementById('eu-username').value=u.username;
+    document.getElementById('eu-username').disabled=true;
+    passRow.style.display='none'; // no mostrar campo contraseña al editar — usar reset
+    document.getElementById('eu-rol').value=u.rol;
+    document.getElementById('eu-nombre').value=u.nombre||'';
+    document.getElementById('eu-email').value=u.email||'';
+    document.getElementById('eu-tel').value=u.tel||'';
+    document.getElementById('eu-depto').value=u.depto||'';
+    document.getElementById('eu-cargo').value=u.cargo||'';
+    document.getElementById('eu-estado').value=u.estado||'activo';
   }else{
     ['eu-username','eu-pass','eu-nombre','eu-email','eu-tel','eu-depto','eu-cargo'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('eu-username').disabled=false;document.getElementById('eu-pass').placeholder='Mínimo 6 caracteres';
-    document.getElementById('eu-rol').value='tecnico';document.getElementById('eu-estado').value='activo';
+    document.getElementById('eu-username').disabled=false;
+    passRow.style.display='block';
+    document.getElementById('eu-rol').value='tecnico';
+    document.getElementById('eu-estado').value='activo';
   }
   document.getElementById('mod-usuario').classList.add('open');
 }
@@ -524,20 +739,70 @@ async function saveUsuario(){
   const nombre=document.getElementById('eu-nombre').value.trim();
   if(!username){alert('El nombre de usuario es obligatorio.');return;}
   if(!nombre){alert('El nombre completo es obligatorio.');return;}
-  if(!isEdit&&!pass){alert('La contraseña es obligatoria para nuevos usuarios.');return;}
-  if(pass&&pass.length<6){alert('La contraseña debe tener al menos 6 caracteres.');return;}
-  if(!isEdit&&usuarios.find(x=>x.username===username)){alert('Ya existe un usuario con ese nombre.');return;}
-  const u={username,rol:document.getElementById('eu-rol').value,nombre,email:document.getElementById('eu-email').value.trim(),tel:document.getElementById('eu-tel').value.trim(),depto:document.getElementById('eu-depto').value.trim(),cargo:document.getElementById('eu-cargo').value.trim(),estado:document.getElementById('eu-estado').value};
-  if(pass)u.passHash=hashPass(pass);
-  if(isEdit){
-    const idx=usuarios.findIndex(x=>x.username===username);
-    if(idx>=0){if(!pass)u.passHash=usuarios[idx].passHash;u.fechaCreacion=usuarios[idx].fechaCreacion;u.ultimoAcceso=usuarios[idx].ultimoAcceso;usuarios[idx]={...usuarios[idx],...u};}
-    await apiPost('usuarios','update',u);audit('EDITAR','Usuario',username,`Editado por ${session.nombre}`);
+  if(!isEdit){
+    if(!pass){alert('La contraseña temporal es obligatoria.');return;}
+    if(pass.length<6){alert('Mínimo 6 caracteres.');return;}
+    if(usuarios.find(x=>x.username===username)){alert('Ya existe ese nombre de usuario.');return;}
+  }
+  const u={
+    username,rol:document.getElementById('eu-rol').value,nombre,
+    email:document.getElementById('eu-email').value.trim(),
+    tel:document.getElementById('eu-tel').value.trim(),
+    depto:document.getElementById('eu-depto').value.trim(),
+    cargo:document.getElementById('eu-cargo').value.trim(),
+    estado:document.getElementById('eu-estado').value
+  };
+  if(!isEdit){
+    u.passHash=hashPass(pass);
+    u.mustChange=true; // forzar cambio en primer acceso
+    u.fechaCreacion=ts();u.ultimoAcceso='Nunca';
+    usuarios.push(u);
+    await apiPost('usuarios','insert',u);
+    audit('CREAR','Usuario',username,`Creado por ${session.nombre}. Rol: ${u.rol}. Contraseña temporal asignada.`);
   }else{
-    u.fechaCreacion=ts();u.ultimoAcceso='Nunca';usuarios.push(u);
-    await apiPost('usuarios','insert',u);audit('CREAR','Usuario',username,`Creado por ${session.nombre}. Rol: ${u.rol}`);
+    const idx=usuarios.findIndex(x=>x.username===username);
+    if(idx>=0){
+      u.passHash=usuarios[idx].passHash;
+      u.mustChange=usuarios[idx].mustChange;
+      u.fechaCreacion=usuarios[idx].fechaCreacion;
+      u.ultimoAcceso=usuarios[idx].ultimoAcceso;
+      usuarios[idx]={...usuarios[idx],...u};
+    }
+    await apiPost('usuarios','update',u);
+    audit('EDITAR','Usuario',username,`Editado por ${session.nombre}`);
   }
   closeModals();renderUsuarios();
+}
+
+function openReset(username){
+  const u=usuarios.find(x=>x.username===username);if(!u)return;
+  document.getElementById('reset-username').value=username;
+  document.getElementById('reset-nombre').textContent=u.nombre;
+  document.getElementById('reset-pass').value='';
+  document.getElementById('mod-reset').classList.add('open');
+}
+
+async function confirmReset(){
+  const username=document.getElementById('reset-username').value;
+  const pass=document.getElementById('reset-pass').value;
+  if(!pass||pass.length<6){alert('La contraseña temporal debe tener al menos 6 caracteres.');return;}
+  const u=usuarios.find(x=>x.username===username);if(!u)return;
+  u.passHash=hashPass(pass);
+  u.mustChange=true; // forzar cambio en próximo acceso
+  await apiPost('usuarios','update',u);
+  audit('EDITAR','Usuario',username,`Contraseña reseteada por ${session.nombre}. El usuario deberá cambiarla en su próximo acceso.`);
+  closeModals();renderUsuarios();
+  alert(`Contraseña temporal asignada a "${username}". El usuario deberá cambiarla en su próximo inicio de sesión.`);
+}
+
+async function toggleUsuarioEstado(username){
+  const u=usuarios.find(x=>x.username===username);if(!u)return;
+  const nuevo=u.estado==='activo'?'inactivo':'activo';
+  if(!confirm(`¿${nuevo==='inactivo'?'Desactivar':'Activar'} al usuario "${username}"?`))return;
+  u.estado=nuevo;
+  await apiPost('usuarios','update',u);
+  audit('EDITAR','Usuario',username,`Estado cambiado a ${nuevo} por ${session.nombre}`);
+  renderUsuarios();
 }
 
 function renderUsuarios(){
@@ -546,37 +811,41 @@ function renderUsuarios(){
   grid.innerHTML=usuarios.map(u=>`<div class="user-card">
     <div class="user-card-head">
       <div class="sb-avatar" style="width:40px;height:40px;font-size:14px">${initials(u.nombre)}</div>
-      <div><div class="user-name">${u.nombre||'—'}</div><div class="user-cargo">${u.cargo||'—'}</div></div>
+      <div>
+        <div class="user-name">${u.nombre||'—'}${(u.mustChange===true||u.mustChange==='true')?'<span class="temp-badge">Temporal</span>':''}</div>
+        <div class="user-cargo">${u.cargo||'—'}</div>
+      </div>
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap"><span class="badge ${ROL_CLASS[u.rol]||''}">${ROL_LABELS[u.rol]||u.rol}</span><span class="badge ${u.estado==='activo'?'s-activo':'s-inactivo'}">${u.estado||'activo'}</span></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap">
+      <span class="badge ${ROL_CLASS[u.rol]||''}">${ROL_LABELS[u.rol]||u.rol}</span>
+      <span class="badge ${u.estado==='activo'?'s-activo':'s-inactivo'}">${u.estado||'activo'}</span>
+    </div>
     <div class="user-detail">
-      <span>✉ ${u.email||'Sin correo'}</span><span>📞 ${u.tel||'Sin teléfono'}</span>
+      <span>✉ ${u.email||'Sin correo'}</span>
+      <span>📞 ${u.tel||'Sin teléfono'}</span>
       <span>🏢 ${u.depto||'Sin departamento'}</span>
       <span style="color:var(--text3);font-size:10px">Usuario: <strong>${u.username}</strong></span>
       <span style="color:var(--text3);font-size:10px">Último acceso: ${u.ultimoAcceso||'Nunca'}</span>
     </div>
-    ${per.usuarios?`<div style="display:flex;gap:6px;margin-top:4px">
+    ${per.usuarios?`<div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap">
       <button class="btn btn-p" style="flex:1;font-size:11px" onclick="openUsuario('${u.username}')">✎ Editar</button>
-      ${u.username!==session.username?`<button class="btn ${u.estado==='activo'?'btn-warn':''}" style="font-size:11px" onclick="toggleUsuarioEstado('${u.username}')">${u.estado==='activo'?'Desactivar':'Activar'}</button>`:''}
+      <button class="btn btn-amber" style="font-size:11px" onclick="openReset('${u.username}')" title="Resetear contraseña">🔑 Reset</button>
+      ${u.username!==session.username?`<button class="btn ${u.estado==='activo'?'btn-warn':''}" style="font-size:11px" onclick="toggleUsuarioEstado('${u.username}')">${u.estado==='activo'?'🚫':'✓'}</button>`:''}
     </div>`:''}
   </div>`).join('');
 }
 
-async function toggleUsuarioEstado(username){
-  const u=usuarios.find(x=>x.username===username);if(!u)return;
-  const nuevo=u.estado==='activo'?'inactivo':'activo';
-  if(!confirm(`¿${nuevo==='inactivo'?'Desactivar':'Activar'} al usuario "${username}"?`))return;
-  u.estado=nuevo;await apiPost('usuarios','update',u);
-  audit('EDITAR','Usuario',username,`Estado cambiado a ${nuevo} por ${session.nombre}`);renderUsuarios();
-}
-
+// ─── MI PERFIL ────────────────────────────────────────────────────────
 function renderMiPerfil(){
   const u=session.data||{};
   document.getElementById('mi-perfil-content').innerHTML=`<div style="max-width:500px">
     <div class="det-header">
       <div class="sb-avatar" style="width:56px;height:56px;font-size:20px;border-radius:50%">${initials(u.nombre)}</div>
-      <div><div class="det-title">${u.nombre||'—'}</div><div class="det-code">${u.username} · ${u.cargo||'Sin cargo'}</div>
-      <div style="margin-top:5px"><span class="badge ${ROL_CLASS[u.rol]||''}">${ROL_LABELS[u.rol]||u.rol}</span></div></div>
+      <div>
+        <div class="det-title">${u.nombre||'—'}</div>
+        <div class="det-code">${u.username} · ${u.cargo||'Sin cargo'}</div>
+        <div style="margin-top:5px"><span class="badge ${ROL_CLASS[u.rol]||''}">${ROL_LABELS[u.rol]||u.rol}</span></div>
+      </div>
     </div>
     <div class="det-grid">
       <div class="det-field"><div class="det-fl">Correo</div><div class="det-fv">${u.email||'—'}</div></div>
@@ -584,12 +853,15 @@ function renderMiPerfil(){
       <div class="det-field"><div class="det-fl">Departamento</div><div class="det-fv">${u.depto||'—'}</div></div>
       <div class="det-field"><div class="det-fl">Último acceso</div><div class="det-fv">${u.ultimoAcceso||'—'}</div></div>
     </div>
-    <div><div class="sec-title">Cambiar mi contraseña</div>
-      <div class="f-row"><div class="f-lbl">Nueva contraseña</div>
-        <div class="pass-wrap"><input class="f-inp" type="password" id="perfil-pass" placeholder="Mínimo 6 caracteres">
+    <div>
+      <div class="sec-title">Cambiar mi contraseña</div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:12px">Por seguridad, nadie más puede ver tu contraseña actual. Para cambiarla, solo necesitas escribir la nueva.</div>
+      <div class="f-row"><div class="f-lbl">Nueva contraseña *</div>
+        <div class="pass-wrap"><input class="f-inp" type="password" id="perfil-pass" placeholder="Mínimo 8 caracteres" oninput="evalStrength(this.value)">
         <button class="pass-toggle" onclick="togglePass('perfil-pass',this)" type="button">👁</button></div>
+        <div class="strength-wrap"><div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div><div class="strength-lbl" id="strength-lbl">Escribe tu contraseña</div></div>
       </div>
-      <div class="f-row"><div class="f-lbl">Confirmar contraseña</div>
+      <div class="f-row"><div class="f-lbl">Confirmar contraseña *</div>
         <div class="pass-wrap"><input class="f-inp" type="password" id="perfil-pass2" placeholder="Repite la contraseña">
         <button class="pass-toggle" onclick="togglePass('perfil-pass2',this)" type="button">👁</button></div>
       </div>
@@ -600,14 +872,17 @@ function renderMiPerfil(){
 
 async function cambiarMiPass(){
   const p1=document.getElementById('perfil-pass').value,p2=document.getElementById('perfil-pass2').value;
-  if(!p1||p1.length<6){alert('Mínimo 6 caracteres.');return;}
+  if(!p1||p1.length<8){alert('Mínimo 8 caracteres.');return;}
   if(p1!==p2){alert('Las contraseñas no coinciden.');return;}
   const u=usuarios.find(x=>x.username===session.username);if(!u)return;
-  u.passHash=hashPass(p1);await apiPost('usuarios','update',u);
-  audit('EDITAR','Usuario',session.username,'Cambio de contraseña propio');
-  alert('Contraseña actualizada.');document.getElementById('perfil-pass').value='';document.getElementById('perfil-pass2').value='';
+  u.passHash=hashPass(p1);u.mustChange=false;
+  await apiPost('usuarios','update',u);
+  audit('EDITAR','Usuario',session.username,'Contraseña actualizada por el propio usuario');
+  alert('Contraseña actualizada correctamente.');
+  document.getElementById('perfil-pass').value='';document.getElementById('perfil-pass2').value='';
 }
 
+// ─── ACTIVOS ──────────────────────────────────────────────────────────
 function openActivo(id){
   const isEdit=id!=null;
   document.getElementById('mod-activo-title').textContent=isEdit?'Editar activo':'Nuevo activo';
@@ -618,7 +893,8 @@ function openActivo(id){
     const a=activos.find(x=>x.codigo===id);if(!a)return;
     const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
     Object.entries(fs).forEach(([k,fid])=>document.getElementById(fid).value=a[k]||'');
-    document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
+    document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';
+    document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
     document.getElementById('ea-valor').value=a.valor||'';document.getElementById('ea-vida').value=a.vida||3;
   }else{
     ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs'].forEach(i=>document.getElementById(i).value='');
@@ -650,6 +926,7 @@ async function saveActivo(){
   closeModals();renderAll();if(isEdit&&activoActual)showDetalle(activoActual.codigo);
 }
 
+// ─── TICKETS ──────────────────────────────────────────────────────────
 function openTicket(id){
   const isEdit=id!=null;
   document.getElementById('mod-ticket-title').textContent=isEdit?'Editar ticket':'Nuevo ticket';
@@ -667,7 +944,8 @@ function openTicket(id){
     document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';document.getElementById('et-desc').value=t.desc||'';
   }else{
     ['et-titulo','et-resp','et-proy','et-desc'].forEach(i=>document.getElementById(i).value='');
-    document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';
+    document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';
+    document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';
   }
   document.getElementById('mod-ticket').classList.add('open');
 }
@@ -697,9 +975,12 @@ async function saveTicket(){
   closeModals();renderAll();
 }
 
+// ─── ELIMINAR ─────────────────────────────────────────────────────────
 function openDelete(type,id){
-  pendingDelete={type,id};const obj=type==='activo'?activos.find(a=>a.codigo===id):tickets.find(t=>t.codigo===id);
-  document.getElementById('del-code').textContent=obj?obj.codigo:'';document.getElementById('del-motivo').value='';
+  pendingDelete={type,id};
+  const obj=type==='activo'?activos.find(a=>a.codigo===id):tickets.find(t=>t.codigo===id);
+  document.getElementById('del-code').textContent=obj?obj.codigo:'';
+  document.getElementById('del-motivo').value='';
   document.getElementById('mod-delete').classList.add('open');
 }
 
@@ -708,27 +989,32 @@ async function confirmDelete(){
   const{type,id}=pendingDelete;
   if(type==='activo'){
     const a=activos.find(x=>x.codigo===id);if(!a)return;
-    a.estado='eliminado';a.historial=a.historial||[];a.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
+    a.estado='eliminado';a.historial=a.historial||[];
+    a.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
     await apiPost('activos','update',a);audit('ELIMINAR','Activo',a.codigo,`Por ${session.nombre}. Motivo: ${motivo}`);
   }else{
     const t=tickets.find(x=>x.codigo===id);if(!t)return;
-    t.estado='eliminado';t.historial=t.historial||[];t.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
+    t.estado='eliminado';t.historial=t.historial||[];
+    t.historial.push({tipo:'Eliminación lógica',desc:`Eliminado por ${session.nombre}. Motivo: ${motivo}`,fecha:ts(),usuario:session.nombre,color:'red'});
     await apiPost('tickets','update',t);audit('ELIMINAR','Ticket',t.codigo,`Por ${session.nombre}. Motivo: ${motivo}`);
   }
   closeModals();renderAll();if(type==='activo')go('activos',document.getElementById('nav-activos'));
 }
 
+// ─── MANTENIMIENTO ────────────────────────────────────────────────────
 function openMant(){document.getElementById('mod-mant').classList.add('open');}
 async function saveMant(){
   if(!activoActual)return;const desc=document.getElementById('mm-desc').value.trim();if(!desc){alert('La descripción es obligatoria.');return;}
   const e={tipo:document.getElementById('mm-tipo').value,desc,fecha:document.getElementById('mm-fecha').value||ts(),tec:document.getElementById('mm-tec').value.trim()||session.nombre,costo:parseFloat(document.getElementById('mm-costo').value)||0,usuario:session.nombre,color:'amber'};
   activoActual.historial=activoActual.historial||[];activoActual.historial.push(e);
-  await apiPost('activos','update',activoActual);audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
+  await apiPost('activos','update',activoActual);
+  audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
   ['mm-desc','mm-tec','mm-costo','mm-fecha'].forEach(i=>document.getElementById(i).value='');closeModals();showDetalle(activoActual.codigo);
 }
 
 function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}
 
+// ─── RENDERS ──────────────────────────────────────────────────────────
 function calcDepre(a){if(!a.valor||!a.compra||a.compra==='—')return a.valor||0;const y=(new Date()-new Date(a.compra))/(365.25*24*3600*1000);return Math.max(0,Math.round(a.valor-(a.valor*(y/(a.vida||3)))));}
 
 function showDetalle(id){
@@ -819,7 +1105,7 @@ function renderAudit(){
   tb.innerHTML=list.map(a=>`<tr>
     <td style="font-size:10px;white-space:nowrap;color:var(--text3)">${a.ts}</td>
     <td><div style="font-size:12px;font-weight:600">${a.nombre||a.usuario}</div><div style="font-size:10px;color:var(--text3)">${a.username||a.usuario}</div></td>
-    <td><span class="badge ${ROL_CLASS[a.rol]||''}">${ROL_LABELS[a.rol]||a.rol}</span></td>
+    <td><span class="badge ${ROL_CLASS[a.rol]||''}">${ROL_LABELS[a.rol]||a.rol||'—'}</span></td>
     <td><span class="badge s-${a.accion}">${a.accion}</span></td>
     <td style="font-size:11px">${a.tipo}</td><td class="code-cell">${a.codigo}</td>
     <td style="font-size:11px;max-width:200px;color:var(--text2)">${a.detalle}</td></tr>`).join('');
@@ -852,3 +1138,4 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
