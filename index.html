@@ -483,10 +483,12 @@ async function doLogin(){
   if(!u||!p){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
   ll.style.display='block';
   const usuario=usuarios.find(x=>x.username===u&&x.estado!=='inactivo');
-  if(usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p)){
-    session={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
-    usuario.ultimoAcceso=ts();await apiPost('usuarios','update',usuario);
+  const passOk=usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p);
+  if(passOk){
     ll.style.display='none';
+    usuario.ultimoAcceso=ts();
+    apiPost('usuarios','update',usuario);
+    session={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-screen').classList.add('visible');
     document.getElementById('sb-username').textContent=u;
@@ -496,8 +498,10 @@ async function doLogin(){
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
   }else{
-    ll.style.display='none';err.textContent=usuario?'Contraseña incorrecta.':'Usuario no encontrado o inactivo.';err.style.display='block';
-    audit('LOGIN_FAIL','Sistema','—','Intento fallido: '+u);
+    ll.style.display='none';
+    err.textContent=usuario?'Contraseña incorrecta.':'Usuario no encontrado o inactivo.';
+    err.style.display='block';
+    apiPost('auditoria','insert',{ts:ts(),usuario:u,nombre:u,rol:'—',accion:'LOGIN_FAIL',tipo:'Sistema',codigo:'—',detalle:'Intento fallido de acceso'});
   }
 }
 
@@ -1363,3 +1367,5 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
+
