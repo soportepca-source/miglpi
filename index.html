@@ -450,7 +450,7 @@ const API="https://script.google.com/macros/s/AKfycbxl0l0Y45cy0bbyi7xCVb5e-i4gh2
 const ROL_LABELS={admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
 const ROL_CLASS={admin:'s-admin',tecnico:'s-tecnico',consultor:'s-consultor',inventario:'s-inventario'};
 const TIPO_ICON={Computadora:'🖥️',Laptop:'💻',Impresora:'🖨️',Servidor:'🗄️','Red / Switch':'🔌',Móvil:'📱',Tablet:'📱',Monitor:'🖥️',Software:'💿',Vehículo:'🚗',Otro:'📦'};
-const PERMS={admin:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},tecnico:{activos:false,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},consultor:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},inventario:{activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
+const PERMS={admin:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},tecnico:{activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},consultor:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},inventario:{activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
 let session=null,activos=[],tickets=[],auditLog=[],usuarios=[],activoActual=null;
 let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos';
 let pendingDelete={type:null,id:null};
@@ -544,7 +544,7 @@ function applyPerms(){
   const p=PERMS[session.rol]||{};
   ['activos','tickets','kanban','auditoria','usuarios'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
   const repEl=document.getElementById('nav-reportes');
-  if(repEl) repEl.classList.toggle('locked', session.rol==='tecnico'||session.rol==='inventario');
+  if(repEl) repEl.classList.toggle('locked', session.rol==='inventario');
   document.getElementById('nav-miperfil').style.display='flex';
 }
 
@@ -1536,4 +1536,5 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
 
