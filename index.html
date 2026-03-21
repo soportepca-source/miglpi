@@ -168,6 +168,23 @@ tbody tr.clickable{cursor:pointer;}
 .vida-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:3px;}
 .vida-dot.green{background:#1D9E75;}.vida-dot.amber{background:#BA7517;}.vida-dot.red{background:#D85A30;}.vida-dot.blue{background:#185FA5;}.vida-dot.purple{background:#1B3A6B;}
 .dano-badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;background:var(--red-l);color:var(--red);}
+
+.global-search-wrap{position:relative;flex:1;max-width:320px;}
+.global-search{width:100%;padding:6px 12px 6px 32px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg2);font-size:12px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;}
+.global-search:focus{border-color:#1B3A6B;}
+.global-search::placeholder{color:var(--text3);}
+.global-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--text3);pointer-events:none;}
+.search-results{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r-lg);box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:200;max-height:360px;overflow-y:auto;}
+.search-results.open{display:block;}
+.sr-group{padding:6px 12px 3px;font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border);}
+.sr-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:background .1s;border-bottom:1px solid var(--border);}
+.sr-item:hover{background:var(--bg2);}
+.sr-item:last-child{border-bottom:none;}
+.sr-code{font-family:monospace;font-size:10px;color:var(--text3);flex-shrink:0;width:70px;}
+.sr-name{font-size:12px;font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sr-badge{font-size:10px;padding:1px 7px;border-radius:20px;flex-shrink:0;}
+.sr-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--text3);}
+
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
 </style>
 </head>
@@ -229,7 +246,16 @@ tbody tr.clickable{cursor:pointer;}
   </div>
   <div class="main">
     <div class="sync-bar" id="sync-bar"><div class="sync-dot" id="sync-dot"></div><span id="sync-msg">Conectado</span></div>
-    <div class="topbar"><div class="topbar-title" id="tb-title">Dashboard</div><div id="tb-buttons"></div></div>
+    <div class="topbar">
+      <div class="topbar-title" id="tb-title">Dashboard</div>
+      <div class="global-search-wrap" id="search-wrap">
+        <span class="global-search-icon">🔍</span>
+        <input class="global-search" id="global-search" placeholder="Buscar ticket, activo, código..." 
+          oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeSearch(),200)" onkeydown="searchKeyNav(event)">
+        <div class="search-results" id="search-results"></div>
+      </div>
+      <div id="tb-buttons"></div>
+    </div>
     <div class="content">
       <div class="pnl on" id="pnl-dashboard">
         <div class="metrics">
@@ -345,7 +371,7 @@ tbody tr.clickable{cursor:pointer;}
   <div class="f-row"><div class="f-lbl">Título *</div><input class="f-inp" id="et-titulo" placeholder="Describe el problema o tarea..."></div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Activo vinculado</div><select class="f-inp f-sel" id="et-activo"><option value="">— Sin activo —</option></select></div>
-    <div class="f-row"><div class="f-lbl">Responsable</div><input class="f-inp" id="et-resp" placeholder="Nombre completo"></div>
+    <div class="f-row"><div class="f-lbl">Responsable</div><select class="f-inp f-sel" id="et-resp"><option value="">— Selecciona responsable —</option></select></div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Tipo</div><select class="f-inp f-sel" id="et-tipo"><option value="incidencia">Incidencia</option><option value="mantenimiento">Mantenimiento</option><option value="solicitud">Solicitud</option><option value="tarea">Tarea</option></select></div>
@@ -708,15 +734,19 @@ function openTicket(id){
   document.getElementById('et-motivo').value='';document.getElementById('et-id').value=id||'';
   const sel=document.getElementById('et-activo');
   sel.innerHTML='<option value="">— Sin activo —</option>'+activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${a.nombre}</option>`).join('');
+  // Poblar select de responsables con usuarios activos
+  const respSel=document.getElementById('et-resp');
+  const usuariosActivos=usuarios.filter(u=>u.estado==='activo'||u.estado!=='inactivo');
+  respSel.innerHTML='<option value="">— Selecciona responsable —</option>'+usuariosActivos.map(u=>`<option value="${u.nombre}">${u.nombre} (${u.rol==='admin'?'Admin':u.rol==='tecnico'?'Técnico':u.rol==='consultor'?'Consultor':'Inventario'})</option>`).join('');
   if(isEdit){
     const t=tickets.find(x=>x.codigo===id);if(!t)return;
     document.getElementById('et-titulo').value=t.titulo||'';document.getElementById('et-activo').value=t.activoId||'';
-    document.getElementById('et-resp').value=t.resp||'';document.getElementById('et-tipo').value=t.tipo||'incidencia';
+    document.getElementById('et-resp').value=t.resp||''; // selectdocument.getElementById('et-tipo').value=t.tipo||'incidencia';
     document.getElementById('et-prior').value=t.prior||'importante';document.getElementById('et-estado').value=t.estado||'abierto';
     document.getElementById('et-avance').value=t.avance||0;document.getElementById('et-dead').value=t.dead!=='—'?t.dead:'';
     document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';document.getElementById('et-desc').value=t.desc||'';
   }else{
-    ['et-titulo','et-resp','et-proy','et-desc'].forEach(i=>document.getElementById(i).value='');
+    ['et-titulo','et-proy','et-desc'].forEach(i=>document.getElementById(i).value=''); document.getElementById('et-resp').value='';
     document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';
   }
   document.getElementById('mod-ticket').classList.add('open');
@@ -728,7 +758,7 @@ async function saveTicket(){
   if(isEdit){
     const motivo=document.getElementById('et-motivo').value.trim();if(!motivo){alert('El motivo es obligatorio.');return;}
     const t=tickets.find(x=>x.codigo===editId);if(!t)return;
-    const cambios=[];const nResp=document.getElementById('et-resp').value.trim();
+    const cambios=[];const nResp=document.getElementById('et-resp').value||'—';
     if(t.titulo!==titulo)cambios.push(`Título:"${t.titulo}"→"${titulo}"`);if(t.resp!==nResp)cambios.push(`Responsable:"${t.resp}"→"${nResp}"`);
     t.titulo=titulo;t.resp=nResp;t.tipo=document.getElementById('et-tipo').value;t.prior=document.getElementById('et-prior').value;
     t.estado=document.getElementById('et-estado').value;t.avance=Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0));
@@ -739,7 +769,7 @@ async function saveTicket(){
   }else{
     const code=genCode('TKT',cntTickets++);const aId=document.getElementById('et-activo').value;
     const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
-    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value.trim()||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
+    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     tickets.push(t);
     if(aId){const act=activos.find(a=>a.codigo===aId);if(act){act.historial=act.historial||[];act.historial.push({tipo:'Ticket vinculado',desc:code+': '+titulo,fecha:ts(),usuario:session.nombre,color:'blue'});await apiPost('activos','update',act);if(t.tipo==='mantenimiento')act.estado='mantenimiento';}}
     await apiPost('tickets','insert',t);audit('CREAR','Ticket',code,'Creado: '+titulo);
@@ -1360,6 +1390,145 @@ function exportPDF(){
   document.title=orig;
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// BUSCADOR GLOBAL
+// ══════════════════════════════════════════════════════════════════
+let searchIdx = -1;
+
+function globalSearch(q) {
+  const res = document.getElementById('search-results');
+  q = q.trim();
+  if (!q || q.length < 2) { res.classList.remove('open'); return; }
+  
+  // Buscar en activos
+  const matchActivos = activos.filter(a =>
+    a.codigo?.toLowerCase().includes(q.toLowerCase()) ||
+    a.nombre?.toLowerCase().includes(q.toLowerCase()) ||
+    a.serial?.toLowerCase().includes(q.toLowerCase()) ||
+    a.asignado?.toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 5);
+
+  // Buscar en tickets
+  const matchTickets = tickets.filter(t =>
+    t.codigo?.toLowerCase().includes(q.toLowerCase()) ||
+    t.titulo?.toLowerCase().includes(q.toLowerCase()) ||
+    t.resp?.toLowerCase().includes(q.toLowerCase()) ||
+    t.activoNombre?.toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 5);
+
+  // Buscar en auditoría
+  const matchAudit = auditLog.filter(a =>
+    a.codigo?.toLowerCase().includes(q.toLowerCase()) ||
+    a.detalle?.toLowerCase().includes(q.toLowerCase()) ||
+    a.usuario?.toLowerCase().includes(q.toLowerCase())
+  ).slice(0, 3);
+
+  if (!matchActivos.length && !matchTickets.length && !matchAudit.length) {
+    res.innerHTML = '<div class="sr-empty">Sin resultados para "' + q + '"</div>';
+    res.classList.add('open');
+    return;
+  }
+
+  let html = '';
+  
+  if (matchTickets.length) {
+    html += '<div class="sr-group">🎫 Tickets</div>';
+    html += matchTickets.map(t => `
+      <div class="sr-item" onclick="searchGoTicket('${t.codigo}')">
+        <span class="sr-code">${t.codigo}</span>
+        <span class="sr-name">${t.titulo}</span>
+        <span class="sr-badge s-${t.estado}">${t.estado}</span>
+        <span class="sr-badge s-${t.prior}" style="margin-left:3px">${t.prior}</span>
+      </div>`).join('');
+  }
+
+  if (matchActivos.length) {
+    html += '<div class="sr-group">📦 Activos</div>';
+    html += matchActivos.map(a => `
+      <div class="sr-item" onclick="searchGoActivo('${a.codigo}')">
+        <span class="sr-code">${a.codigo}</span>
+        <span class="sr-name">${a.nombre}</span>
+        <span class="sr-badge s-${a.estado}">${a.estado}</span>
+      </div>`).join('');
+  }
+
+  if (matchAudit.length) {
+    html += '<div class="sr-group">📋 Auditoría</div>';
+    html += matchAudit.map(a => `
+      <div class="sr-item" onclick="searchGoAudit('${a.codigo}')">
+        <span class="sr-code">${a.codigo}</span>
+        <span class="sr-name">${a.detalle}</span>
+        <span style="font-size:10px;color:var(--text3);flex-shrink:0">${a.ts}</span>
+      </div>`).join('');
+  }
+
+  res.innerHTML = html;
+  res.classList.add('open');
+  searchIdx = -1;
+}
+
+function searchKeyNav(e) {
+  const items = document.querySelectorAll('.sr-item');
+  if (e.key === 'ArrowDown') { searchIdx = Math.min(searchIdx+1, items.length-1); items[searchIdx]?.focus(); e.preventDefault(); }
+  if (e.key === 'ArrowUp')   { searchIdx = Math.max(searchIdx-1, 0); items[searchIdx]?.focus(); e.preventDefault(); }
+  if (e.key === 'Escape')    { closeSearch(); document.getElementById('global-search').blur(); }
+}
+
+function closeSearch() {
+  document.getElementById('search-results').classList.remove('open');
+  document.getElementById('global-search').value = '';
+}
+
+function searchGoTicket(codigo) {
+  closeSearch();
+  const t = tickets.find(x => x.codigo === codigo);
+  if (!t) return;
+  go('tickets', document.getElementById('nav-tickets'));
+  filtroT = 'todos';
+  document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b => b.classList.remove('on'));
+  document.querySelector('#pnl-tickets .tab-btn')?.classList.add('on');
+  renderTickets();
+  // Highlight the row
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#tb-tickets tr');
+    rows.forEach(row => {
+      if (row.textContent.includes(codigo)) {
+        row.style.background = '#FDF8E1';
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => row.style.background = '', 2500);
+      }
+    });
+  }, 200);
+}
+
+function searchGoActivo(codigo) {
+  closeSearch();
+  showDetalle(codigo);
+}
+
+function searchGoAudit(codigo) {
+  closeSearch();
+  go('auditoria', document.getElementById('nav-auditoria'));
+  filtroAud = 'todos';
+  renderAudit();
+  setTimeout(() => {
+    const rows = document.querySelectorAll('#tb-audit tr');
+    rows.forEach(row => {
+      if (row.textContent.includes(codigo)) {
+        row.style.background = '#FDF8E1';
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => row.style.background = '', 2500);
+      }
+    });
+  }, 200);
+}
+
+// Cerrar búsqueda al hacer clic fuera
+document.addEventListener('click', e => {
+  if (!document.getElementById('search-wrap')?.contains(e.target)) closeSearch();
+});
+
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals();});
 document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals();}));
 loadFromSheets();
@@ -1367,3 +1536,4 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
