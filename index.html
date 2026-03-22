@@ -333,6 +333,7 @@ tbody tr.clickable{cursor:pointer;}
             <option value="tickets">Tickets por período / responsable</option>
             <option value="mantenimientos">Mantenimientos y costos</option>
             <option value="danos">Reporte de daños / bajas</option>
+            <option value="trazabilidad">Trazabilidad por persona asignada</option>
           </select>
           <div id="rep-filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
           <div style="margin-left:auto;display:flex;gap:7px;">
@@ -798,12 +799,31 @@ async function saveActivo(){
     const motivo=document.getElementById('ea-motivo').value.trim();if(!motivo){alert('El motivo es obligatorio.');return;}
     const a=activos.find(x=>x.codigo===editId);if(!a)return;
     const cambios=[];
+    // Guardar asignado y depto ANTES de aplicar cambios para detectar reasignación
+    const _asignadoAntes = a.asignado||'—';
+    const _deptoAntes = a.depto||'—';
     const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
     Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
     a.compra=document.getElementById('ea-compra').value||'—';a.garantia=document.getElementById('ea-garantia').value||'—';
     a.valor=parseFloat(document.getElementById('ea-valor').value)||0;a.vida=parseInt(document.getElementById('ea-vida').value)||3;
     const det=`Motivo: ${motivo}. Cambios: ${cambios.length?cambios.join('; '):'Sin cambios'}`;
-    a.historial=a.historial||[];a.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
+    a.historial=a.historial||[];
+    // Si cambió el asignado registrar evento específico de REASIGNACIÓN
+    const _asignadoNuevo = a.asignado||'—';
+    if(_asignadoAntes !== _asignadoNuevo){
+      a.historial.push({
+        tipo:'Reasignación',
+        desc:`Equipo reasignado de "${_asignadoAntes}" → "${_asignadoNuevo}". Dpto anterior: ${_deptoAntes}. Dpto nuevo: ${a.depto||'—'}. Motivo: ${motivo}.`,
+        asignadoAntes:_asignadoAntes,
+        asignadoNuevo:_asignadoNuevo,
+        deptoAntes:_deptoAntes,
+        deptoNuevo:a.depto||'—',
+        fecha:ts(),
+        usuario:session.nombre,
+        color:'blue'
+      });
+    }
+    a.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
     await apiPost('activos','update',a);audit('EDITAR','Activo',a.codigo,det);
   }else{
     const code=genCode('ACT',cntActivos++);
@@ -932,8 +952,8 @@ function showDetalle(id){
       <div class="det-field"><div class="det-fl">Asignado a</div><div class="det-fv">${activoActual.asignado||'—'}</div></div>
       <div class="det-field"><div class="det-fl">Departamento</div><div class="det-fv">${activoActual.depto||'—'}</div></div>
       <div class="det-field"><div class="det-fl">Ubicación</div><div class="det-fv">${activoActual.ubicacion||'—'}</div></div>
-      <div class="det-field"><div class="det-fl">Fecha de compra</div><div class="det-fv">${activoActual.compra||'—'}</div></div>
-      <div class="det-field"><div class="det-fl">Garantía hasta</div><div class="det-fv">${activoActual.garantia||'—'}</div></div>
+      <div class="det-field"><div class="det-fl">Fecha de compra</div><div class="det-fv">${fmtFecha(activoActual.compra)}</div></div>
+      <div class="det-field"><div class="det-fl">Garantía hasta</div><div class="det-fv">${fmtFecha(activoActual.garantia)}</div></div>
       <div class="det-field"><div class="det-fl">Valor de compra</div><div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div></div>
       <div class="det-field"><div class="det-fl">Valor depreciado</div><div class="det-fv" style="color:#3B6D11;font-weight:700">$${vd.toLocaleString()}</div></div>
       <div class="det-field"><div class="det-fl">Vida útil</div><div class="det-fv">${activoActual.vida||3} años</div></div>
@@ -946,10 +966,29 @@ function showDetalle(id){
       </div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">Sin tickets vinculados.</div>'}
     </div>
     <div><div class="sec-title">Historial completo (${(activoActual.historial||[]).length} eventos)</div>
-      ${(activoActual.historial||[]).map(h=>`<div class="hist-item"><div class="hist-dot ${h.color||''}"></div>
-        <div><div style="font-size:12px;color:var(--text)"><strong>${h.tipo}</strong> — ${h.desc}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${h.fecha||''} · ${h.usuario||'—'}${h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:''}${h.costo?' · $'+h.costo:''}</div></div>
-      </div>`).join('')}
+      ${(activoActual.historial||[]).map(h=>{
+        if(h.tipo==='Reasignación'){
+          return '<div class="hist-item">' +
+            '<div class="hist-dot blue"></div>' +
+            '<div style="flex:1">' +
+              '<div style="font-size:12px;font-weight:700;color:#0C447C;margin-bottom:4px">🔄 Reasignación de equipo</div>' +
+              '<div style="display:flex;align-items:center;gap:8px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 10px;font-size:12px;flex-wrap:wrap;">' +
+                '<span style="color:#64748B">De:</span>' +
+                '<strong style="color:#1A1A1A">'+(h.asignadoAntes||'—')+'</strong>' +
+                '<span style="color:#0C447C;font-size:16px">→</span>' +
+                '<span style="color:#64748B">A:</span>' +
+                '<strong style="color:#1D9E75">'+(h.asignadoNuevo||'—')+'</strong>' +
+              '</div>' +
+              (h.deptoAntes!==h.deptoNuevo?'<div style="font-size:11px;color:#64748B;margin-top:3px">Departamento: '+(h.deptoAntes||'—')+' → '+(h.deptoNuevo||'—')+'</div>':'') +
+              '<div style="font-size:10px;color:var(--text3);margin-top:3px">'+(h.fecha||'')+' · Registrado por: '+(h.usuario||'—')+'</div>' +
+            '</div>' +
+          '</div>';
+        }
+        return '<div class="hist-item"><div class="hist-dot '+(h.color||'')+'"></div>' +
+          '<div><div style="font-size:12px;color:var(--text)"><strong>'+h.tipo+'</strong> — '+h.desc+'</div>' +
+          '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+(h.fecha||'')+' · '+(h.usuario||'—')+(h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:'')+(h.costo?' · $'+h.costo:'')+'</div></div>' +
+          '</div>';
+      }).join('')}
     </div>`;
   go('detalle',document.getElementById('nav-detalle'));
 }
@@ -1090,12 +1129,36 @@ function cambiarReporte(tipo){
     filtros.innerHTML=`<select class="f-sel" id="fil-activo" onchange="generarReporte()" style="max-width:280px"><option value="">— Selecciona un activo —</option>${opts}</select>`;
   }
   if(tipo==='tickets'){
+    // Áreas únicas desde activos (para trazabilidad área → tickets)
+    const areasUnicas=[...new Set(activos.map(a=>a.depto||'Sin departamento'))].sort();
     filtros.innerHTML=`
       <input class="f-inp" type="date" id="fil-desde" onchange="generarReporte()" style="max-width:150px" placeholder="Desde">
       <input class="f-inp" type="date" id="fil-hasta" onchange="generarReporte()" style="max-width:150px" placeholder="Hasta">
       <select class="f-sel" id="fil-resp" onchange="generarReporte()" style="max-width:180px">
         <option value="">Todos los responsables</option>
         ${[...new Set(tickets.map(t=>t.resp||'—'))].sort().map(r=>`<option>${r}</option>`).join('')}
+      </select>
+      <select class="f-sel" id="fil-area" onchange="generarReporte()" style="max-width:180px">
+        <option value="">Todas las áreas</option>
+        ${areasUnicas.map(a=>`<option>${a}</option>`).join('')}
+      </select>
+      <select class="f-sel" id="fil-tipo-tkt" onchange="generarReporte()" style="max-width:160px">
+        <option value="">Todos los tipos</option>
+        <option value="incidencia">Incidencia</option>
+        <option value="mantenimiento">Mantenimiento</option>
+        <option value="solicitud">Solicitud</option>
+        <option value="tarea">Tarea</option>
+      </select>`;
+  }
+  if(tipo==='trazabilidad'){
+    const personasUnicas=[...new Set([
+      ...activos.map(a=>a.asignado||'Sin asignar'),
+      ...activos.flatMap(a=>(a.historial||[]).filter(h=>h.tipo==='Reasignación').flatMap(h=>[h.asignadoAntes,h.asignadoNuevo]))
+    ].filter(Boolean))].sort();
+    filtros.innerHTML=`
+      <select class="f-sel" id="fil-persona" onchange="generarReporte()" style="max-width:220px">
+        <option value="">— Selecciona una persona —</option>
+        ${personasUnicas.map(p=>`<option value="${p}">${p}</option>`).join('')}
       </select>`;
   }
   if(tipo==='mantenimientos'){
@@ -1120,6 +1183,7 @@ function generarReporte(){
   else if(tipo==='hojavida') repHojaVida(content, ahora);
   else if(tipo==='tickets') repTickets(content, ahora);
   else if(tipo==='mantenimientos') repMantenimientos(content, ahora);
+  else if(tipo==='trazabilidad') repTrazabilidad(content, ahora);
   else if(tipo==='danos') repDanos(content, ahora);
 }
 
@@ -1317,10 +1381,24 @@ function repTickets(el, ts){
   const desde=document.getElementById('fil-desde')?.value||'';
   const hasta=document.getElementById('fil-hasta')?.value||'';
   const resp=document.getElementById('fil-resp')?.value||'';
+  const area=document.getElementById('fil-area')?.value||'';
+  const tipoTkt=document.getElementById('fil-tipo-tkt')?.value||'';
   let lista=tickets.filter(t=>t.estado!=='eliminado');
   if(desde) lista=lista.filter(t=>t.fechaCreacion&&t.fechaCreacion>=desde);
   if(hasta) lista=lista.filter(t=>t.fechaCreacion&&t.fechaCreacion<=hasta);
   if(resp) lista=lista.filter(t=>t.resp===resp);
+  if(tipoTkt) lista=lista.filter(t=>t.tipo===tipoTkt);
+  // Filtrar por área — busca activos del área y filtra tickets vinculados a esos activos
+  if(area){
+    const activosDeArea=new Set(activos.filter(a=>(a.depto||'Sin departamento')===area).map(a=>a.codigo));
+    // Incluir tickets vinculados a activos del área O cuyo activo asignado esté en el área
+    lista=lista.filter(t=>{
+      if(t.activoId && activosDeArea.has(t.activoId)) return true;
+      // También buscar por nombre de activo vinculado
+      const act=activos.find(a=>a.codigo===t.activoId);
+      return act && (act.depto||'Sin departamento')===area;
+    });
+  }
   const cerrados=lista.filter(t=>t.estado==='cerrado').length;
   const abiertos=lista.filter(t=>t.estado!=='cerrado').length;
   const porResp={};lista.forEach(t=>{const r=t.resp||'—';if(!porResp[r])porResp[r]={total:0,cerrado:0,avance:0};porResp[r].total++;if(t.estado==='cerrado')porResp[r].cerrado++;porResp[r].avance+=t.avance||0;});
@@ -1368,14 +1446,129 @@ function repTickets(el, ts){
 }
 
 // ── REPORTE 6: MANTENIMIENTOS ──────────────────────────────────────
+
+// ════════════════════════════════════════════════════════════════════
+// REPORTE DE TRAZABILIDAD POR PERSONA ASIGNADA
+// ════════════════════════════════════════════════════════════════════
+function repTrazabilidad(el, ts){
+  const persona = document.getElementById('fil-persona')?.value||'';
+  if(!persona){
+    el.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--text3);">
+      <div style="font-size:40px;margin-bottom:12px">👤</div>
+      <div style="font-size:14px;font-weight:600;color:var(--text2);margin-bottom:6px">Selecciona una persona</div>
+      <div style="font-size:12px">Ver todos los activos asignados y sus incidencias</div>
+    </div>`;
+    return;
+  }
+  repDatosActuales=[];
+
+  // Activos ACTUALMENTE asignados a esta persona
+  const activosActuales = activos.filter(a=>
+    (a.asignado||'Sin asignar')===persona && a.estado!=='eliminado'
+  );
+
+  // Activos que ALGUNA VEZ estuvieron asignados a esta persona (historial de reasignaciones)
+  const activosHistoricos = activos.filter(a=>
+    a.estado!=='eliminado' &&
+    (a.historial||[]).some(h=>h.tipo==='Reasignación' &&
+      (h.asignadoAntes===persona || h.asignadoNuevo===persona))
+  ).filter(a=>(a.asignado||'Sin asignar')!==persona); // excluir los que ya están en actuales
+
+  const totalActivos = activosActuales.length + activosHistoricos.length;
+
+  // Para cada activo — buscar tickets vinculados
+  const getTicketsActivo = (cod) => tickets.filter(t=>t.activoId===cod && t.estado!=='eliminado');
+
+  // Construir HTML de tarjeta por activo
+  const renderActivoCard = (a, esActual) => {
+    const tksVinculados = getTicketsActivo(a.codigo);
+    const incidencias = tksVinculados.filter(t=>t.tipo==='incidencia');
+    const cerrados = tksVinculados.filter(t=>t.estado==='cerrado');
+    // Historial de reasignaciones de este activo
+    const reasig = (a.historial||[]).filter(h=>h.tipo==='Reasignación');
+    // Período en que estuvo con esta persona
+    const reasigPersona = reasig.filter(h=>h.asignadoAntes===persona||h.asignadoNuevo===persona);
+    const periodoHTML = reasigPersona.length > 0
+      ? reasigPersona.map(r=>`<span style="font-size:10px;color:var(--text3)">${r.fecha||''}: ${r.asignadoAntes}→${r.asignadoNuevo}</span>`).join('<br>')
+      : (esActual?'<span style="font-size:10px;color:#1D9E75">Actualmente asignado</span>':'<span style="font-size:10px;color:var(--text3)">Sin datos de período</span>');
+
+    return `<tr style="${esActual?'background:#F0FDF4':''}">
+      <td class="code-cell">${a.codigo}</td>
+      <td style="font-weight:600">${a.nombre}<div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
+      <td>${TIPO_ICON[a.tipo]||'📦'} ${a.tipo}</td>
+      <td>${a.depto||'—'}</td>
+      <td style="text-align:center">
+        <span class="badge s-${a.estado}">${a.estado}</span>
+        ${esActual?'<div style="font-size:9px;color:#1D9E75;margin-top:2px">✓ Actual</div>':'<div style="font-size:9px;color:var(--text3);margin-top:2px">Histórico</div>'}
+      </td>
+      <td style="text-align:center">
+        <span style="font-weight:700;font-size:14px;color:${tksVinculados.length>0?'#D85A30':'#64748B'}">${tksVinculados.length}</span>
+        <div style="font-size:10px;color:var(--text3)">${incidencias.length} incid.</div>
+      </td>
+      <td style="text-align:center">
+        <span style="font-weight:700;font-size:14px;color:#1D9E75">${cerrados.length}</span>
+        <div style="font-size:10px;color:var(--text3)">${tksVinculados.length>0?Math.round(cerrados.length/tksVinculados.length*100)+'%':'—'}</div>
+      </td>
+      <td style="font-size:10px">${periodoHTML}</td>
+    </tr>
+    ${tksVinculados.length>0?`<tr style="background:#FAFBFD"><td colspan="8" style="padding:4px 16px 12px">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">Tickets vinculados a este activo:</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px">
+        ${tksVinculados.map(t=>`<span style="background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;color:var(--text2)">
+          ${t.codigo} · ${t.titulo.substring(0,40)}${t.titulo.length>40?'...':''} · <span class="badge s-${t.estado}" style="font-size:9px">${t.estado}</span>
+        </span>`).join('')}
+      </div>
+    </td></tr>`:''}`;
+  };
+
+  el.innerHTML=`
+    <div class="rep-header">
+      <div>
+        <div class="rep-title">👤 Trazabilidad — ${persona}</div>
+        <div class="rep-meta">Generado: ${ts} · ${activosActuales.length} activos actuales · ${activosHistoricos.length} activos históricos</div>
+      </div>
+    </div>
+    <div class="rep-kpi">
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${activosActuales.length}</div><div class="rep-kpi-l">Activos actuales</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#64748B">${activosHistoricos.length}</div><div class="rep-kpi-l">Activos históricos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#D85A30">${[...activosActuales,...activosHistoricos].reduce((s,a)=>s+getTicketsActivo(a.codigo).length,0)}</div><div class="rep-kpi-l">Total incidencias</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${[...activosActuales,...activosHistoricos].reduce((s,a)=>s+getTicketsActivo(a.codigo).filter(t=>t.estado==='cerrado').length,0)}</div><div class="rep-kpi-l">Resueltas</div></div>
+    </div>
+    ${activosActuales.length>0?`
+    <div class="rep-section">
+      <div class="rep-sec-title">✅ Activos actualmente asignados a ${persona}</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Departamento</th><th>Estado</th><th>Tickets</th><th>Resueltos</th><th>Período</th></tr></thead>
+        <tbody>${activosActuales.map(a=>renderActivoCard(a,true)).join('')}</tbody>
+      </table></div>
+    </div>`:''}
+    ${activosHistoricos.length>0?`
+    <div class="rep-section">
+      <div class="rep-sec-title">📋 Activos que estuvieron asignados a ${persona} (historial)</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Departamento</th><th>Estado</th><th>Tickets</th><th>Resueltos</th><th>Período</th></tr></thead>
+        <tbody>${activosHistoricos.map(a=>renderActivoCard(a,false)).join('')}</tbody>
+      </table></div>
+    </div>`:''}
+    ${totalActivos===0?`<div style="text-align:center;padding:40px;color:var(--text3)">
+      <div style="font-size:30px;margin-bottom:8px">🔍</div>
+      <div>No se encontraron activos asignados a <strong>${persona}</strong></div>
+    </div>`:''}`;
+}
+
 function repMantenimientos(el, ts){
   const desde=document.getElementById('fil-desde')?.value||'';
   const hasta=document.getElementById('fil-hasta')?.value||'';
+  const areaMant=document.getElementById('fil-area-mant')?.value||'';
+  const tipoMant=document.getElementById('fil-tipo-mant')?.value||'';
   const todos=[];
   activos.forEach(a=>{
+    // Filtrar por área si está seleccionada
+    if(areaMant && (a.depto||'Sin departamento')!==areaMant) return;
     (a.historial||[]).filter(h=>['Preventivo','Correctivo','Actualización','Limpieza','Reparación','Inspección'].includes(h.tipo)).forEach(h=>{
       if(desde&&h.fecha&&h.fecha<desde)return;
       if(hasta&&h.fecha&&h.fecha>hasta)return;
+      if(tipoMant&&h.tipo!==tipoMant)return;
       todos.push({...h,activoCodigo:a.codigo,activoNombre:a.nombre,activoTipo:a.tipo,activoDepto:a.depto||'—'});
     });
   });
@@ -1664,5 +1857,6 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
 
 
