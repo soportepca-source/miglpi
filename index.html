@@ -271,7 +271,40 @@ tbody tr.clickable{cursor:pointer;}
         <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Sin actividad</div></div></div>
       </div>
       <div class="pnl" id="pnl-activos">
-        <div class="tab-row"><button class="tab-btn on" onclick="filterA('todos',this)">Todos</button><button class="tab-btn" onclick="filterA('activo',this)">Activos</button><button class="tab-btn" onclick="filterA('asignado',this)">Asignados</button><button class="tab-btn" onclick="filterA('mantenimiento',this)">Mantenimiento</button><button class="tab-btn" onclick="filterA('baja',this)">Baja</button><button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button></div>
+        <div class="tab-row" style="flex-wrap:wrap;gap:4px;">
+  <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 8px;align-self:center;">Estado:</span>
+  <button class="tab-btn on" onclick="filterA('todos',this)">Todos</button>
+  <button class="tab-btn" onclick="filterA('activo',this)">Activos</button>
+  <button class="tab-btn" onclick="filterA('asignado',this)">Asignados</button>
+  <button class="tab-btn" onclick="filterA('mantenimiento',this)">Mantenimiento</button>
+  <button class="tab-btn" onclick="filterA('baja',this)">Baja</button>
+  <button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button>
+</div>
+<div class="tab-row" style="flex-wrap:wrap;gap:4px;border-top:1px solid var(--border);padding-top:6px;">
+  <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 8px;align-self:center;">Tipo:</span>
+  <button class="tab-btn on" id="tipo-btn-todos" onclick="filterTipo('todos',this)">Todos</button>
+  <button class="tab-btn" onclick="filterTipo('Computadora',this)">🖥️ Computadora</button>
+  <button class="tab-btn" onclick="filterTipo('Laptop',this)">💻 Laptop</button>
+  <button class="tab-btn" onclick="filterTipo('Proyector',this)">📽️ Proyector</button>
+  <button class="tab-btn" onclick="filterTipo('Impresora',this)">🖨️ Impresora</button>
+  <button class="tab-btn" onclick="filterTipo('Servidor',this)">🗄️ Servidor</button>
+  <button class="tab-btn" onclick="filterTipo('Router',this)">🔀 Router</button>
+  <button class="tab-btn" onclick="filterTipo('Cámara',this)">📹 Cámara</button>
+  <button class="tab-btn" onclick="filterTipo('NVR',this)">📼 NVR</button>
+  <button class="tab-btn" onclick="filterTipo('UPS',this)">🔋 UPS</button>
+  <button class="tab-btn" onclick="filterTipo('Antena WiFi',this)">📡 Antena WiFi</button>
+  <button class="tab-btn" onclick="filterTipo('Access Point',this)">📡 Access Point</button>
+  <button class="tab-btn" onclick="filterTipo('Switch / Hub',this)">🔌 Switch</button>
+  <button class="tab-btn" onclick="filterTipo('Firewall',this)">🛡️ Firewall</button>
+  <button class="tab-btn" onclick="filterTipo('Monitor',this)">🖥️ Monitor</button>
+  <button class="tab-btn" onclick="filterTipo('Tablet',this)">📱 Tablet</button>
+  <button class="tab-btn" onclick="filterTipo('Televisor',this)">📺 Televisor</button>
+  <button class="tab-btn" onclick="filterTipo('Teléfono IP',this)">☎️ Teléfono IP</button>
+  <button class="tab-btn" onclick="filterTipo('Escáner',this)">🖨️ Escáner</button>
+  <button class="tab-btn" onclick="filterTipo('Bocina / Audio',this)">🔊 Audio</button>
+  <button class="tab-btn" onclick="filterTipo('Regulador',this)">⚡ Regulador</button>
+  <button class="tab-btn" onclick="filterTipo('Otro',this)">📦 Otro</button>
+</div>
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
       </div>
       <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
@@ -332,7 +365,51 @@ tbody tr.clickable{cursor:pointer;}
   <input type="hidden" id="ea-id">
   <div class="f-row"><div class="f-lbl">Nombre *</div><input class="f-inp" id="ea-nombre" placeholder="Ej: Laptop Dell Inspiron 15"></div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Tipo *</div><select class="f-inp f-sel" id="ea-tipo"><option>Computadora</option><option>Laptop</option><option>Impresora</option><option>Servidor</option><option>Red / Switch</option><option>Móvil</option><option>Tablet</option><option>Monitor</option><option>Software</option><option>Vehículo</option><option>Otro</option></select></div>
+    <div class="f-row"><div class="f-lbl">Tipo *</div><select class="f-inp f-sel" id="ea-tipo">
+  <optgroup label="Equipos de usuario">
+    <option>Computadora</option>
+    <option>Laptop</option>
+    <option>Tablet</option>
+    <option>Móvil</option>
+    <option>Monitor</option>
+  </optgroup>
+  <optgroup label="Impresión y escaneo">
+    <option>Impresora</option>
+    <option>Escáner</option>
+    <option>Lector de Código de Barras</option>
+  </optgroup>
+  <optgroup label="Infraestructura de red">
+    <option>Servidor</option>
+    <option>Router</option>
+    <option>Switch / Hub</option>
+    <option>Access Point</option>
+    <option>Antena WiFi</option>
+    <option>Firewall</option>
+    <option>Cableado / Patch Panel</option>
+  </optgroup>
+  <optgroup label="Seguridad y vigilancia">
+    <option>Cámara</option>
+    <option>NVR</option>
+  </optgroup>
+  <optgroup label="Audio y video">
+    <option>Proyector</option>
+    <option>Televisor</option>
+    <option>Bocina / Audio</option>
+  </optgroup>
+  <optgroup label="Energía y protección">
+    <option>UPS</option>
+    <option>Regulador</option>
+  </optgroup>
+  <optgroup label="Comunicaciones">
+    <option>Teléfono IP</option>
+  </optgroup>
+  <optgroup label="Otros">
+    <option>Red / Switch</option>
+    <option>Software</option>
+    <option>Vehículo</option>
+    <option>Otro</option>
+  </optgroup>
+</select></div>
     <div class="f-row"><div class="f-lbl">Estado *</div><select class="f-inp f-sel" id="ea-estado"><option value="activo">Activo</option><option value="asignado">Asignado</option><option value="disponible">Disponible</option><option value="mantenimiento">Mantenimiento</option><option value="baja">Baja</option></select></div>
   </div>
   <div class="f-2">
@@ -449,10 +526,20 @@ tbody tr.clickable{cursor:pointer;}
 const API="https://script.google.com/macros/s/AKfycbxl0l0Y45cy0bbyi7xCVb5e-i4gh2aZfJQLnmFwCiLru002-hTAJ9ljWvmDh5WfiZShxQ/exec";
 const ROL_LABELS={admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
 const ROL_CLASS={admin:'s-admin',tecnico:'s-tecnico',consultor:'s-consultor',inventario:'s-inventario'};
-const TIPO_ICON={Computadora:'🖥️',Laptop:'💻',Impresora:'🖨️',Servidor:'🗄️','Red / Switch':'🔌',Móvil:'📱',Tablet:'📱',Monitor:'🖥️',Software:'💿',Vehículo:'🚗',Otro:'📦'};
+const TIPO_ICON={
+  Computadora:'🖥️',Laptop:'💻',Tablet:'📱',Móvil:'📱',Monitor:'🖥️',
+  Impresora:'🖨️',Escáner:'🖨️','Lector de Código de Barras':'📷',
+  Servidor:'🗄️',Router:'🔀','Switch / Hub':'🔌','Access Point':'📡',
+  'Antena WiFi':'📡',Firewall:'🛡️','Cableado / Patch Panel':'🔌',
+  Cámara:'📹',NVR:'📼',
+  Proyector:'📽️',Televisor:'📺','Bocina / Audio':'🔊',
+  UPS:'🔋',Regulador:'⚡',
+  'Teléfono IP':'☎️',
+  'Red / Switch':'🔌',Software:'💿',Vehículo:'🚗',Otro:'📦'
+};
 const PERMS={admin:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},tecnico:{activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},consultor:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},inventario:{activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
 let session=null,activos=[],tickets=[],auditLog=[],usuarios=[],activoActual=null;
-let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos';
+let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos',filtroTipo='todos';
 let pendingDelete={type:null,id:null};
 
 function ts(){return new Date().toLocaleString('es-PA',{dateStyle:'short',timeStyle:'short'});}
@@ -850,7 +937,11 @@ function showDetalle(id){
 }
 
 function renderActivos(){
-  const tb=document.getElementById('tb-activos'),list=filtroA==='todos'?activos:activos.filter(a=>a.estado===filtroA),per=PERMS[session.rol]||{};
+  const tb=document.getElementById('tb-activos'),per=PERMS[session.rol]||{};
+  // Filtrar por estado
+  let list = filtroA==='todos' ? activos : activos.filter(a=>a.estado===filtroA);
+  // Filtrar por tipo (combinado con estado)
+  if(filtroTipo!=='todos') list = list.filter(a=>a.tipo===filtroTipo);
   if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin activos${filtroA!=='todos'?' en este estado':'. Usa "+ Nuevo activo"'}.</td></tr>`;return;}
   tb.innerHTML=list.map(a=>`<tr class="clickable ${a.estado==='eliminado'?'del-row':''}" onclick="showDetalle('${a.codigo}')">
     <td class="code-cell">${a.codigo}</td>
@@ -921,7 +1012,8 @@ function renderDash(){
   document.getElementById('ch-rec').innerHTML=rec.length?rec.map(r=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:7px;height:7px;border-radius:50%;background:#1B3A6B;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:500">${r.txt}</div><div style="font-size:10px;color:var(--text3)">${r.sub}</div></div></div>`).join(''):'<div class="empty-c">Sin actividad</div>';
 }
 
-function filterA(f,el){filtroA=f;document.querySelectorAll('#pnl-activos .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterA(f,el){filtroA=f;document.querySelectorAll('#pnl-activos .tab-row:first-child .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#pnl-activos .tab-row:last-child .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
 function filterT(f,el){filtroT=f;document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTickets();}
 function filterAud(f,el){filtroAud=f;document.querySelectorAll('#pnl-auditoria .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAudit();}
 function renderAll(){renderDash();renderActivos();renderTickets();renderKanban();renderAudit();}
@@ -955,6 +1047,19 @@ function cambiarReporte(tipo){
   if(!tipo){initReportes();return;}
 
   // Filtros dinámicos por tipo de reporte
+  if(tipo==='inventario'){
+    // Generar opciones de tipo dinámicamente desde los datos
+    const tiposEnUso=[...new Set(activos.filter(a=>a.estado!=='eliminado').map(a=>a.tipo||'Otro'))].sort();
+    filtros.innerHTML=`
+      <select class="f-sel" id="fil-tipo-inv" onchange="generarReporte()" style="max-width:200px">
+        <option value="">Todos los tipos</option>
+        ${tiposEnUso.map(t=>`<option value="${t}">${TIPO_ICON[t]||'📦'} ${t}</option>`).join('')}
+      </select>
+      <select class="f-sel" id="fil-depto-inv" onchange="generarReporte()" style="max-width:200px">
+        <option value="">Todos los departamentos</option>
+        ${[...new Set(activos.map(a=>a.depto||'Sin departamento'))].sort().map(d=>`<option>${d}</option>`).join('')}
+      </select>`;
+  }
   if(tipo==='garantia'){
     filtros.innerHTML=`<select class="f-sel" id="fil-dias" onchange="generarReporte()" style="max-width:200px"><option value="30">Vence en 30 días</option><option value="60">Vence en 60 días</option><option value="90" selected>Vence en 90 días</option><option value="180">Vence en 180 días</option><option value="365">Vence en 1 año</option></select>`;
   }
@@ -1002,7 +1107,12 @@ function generarReporte(){
 
 // ── REPORTE 1: INVENTARIO GENERAL ──────────────────────────────────
 function repInventarioGeneral(el, ts){
-  const lista=activos.filter(a=>a.estado!=='eliminado');
+  // Aplicar filtros de tipo y departamento si están activos
+  const filTipo = document.getElementById('fil-tipo-inv')?.value || '';
+  const filDepto = document.getElementById('fil-depto-inv')?.value || '';
+  let lista = activos.filter(a=>a.estado!=='eliminado');
+  if(filTipo) lista = lista.filter(a=>a.tipo===filTipo);
+  if(filDepto) lista = lista.filter(a=>(a.depto||'Sin departamento')===filDepto);
   const valTotal=lista.reduce((s,a)=>s+calcDepre(a),0);
   const porEstado=s=>lista.filter(a=>a.estado===s).length;
   repDatosActuales=lista;
