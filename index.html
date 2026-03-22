@@ -896,6 +896,24 @@ async function saveMant(){
 
 function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}
 
+
+// ── FORMATO DE FECHAS ────────────────────────────────────────────────
+function fmtFecha(v){
+  if(!v||v==='—'||v===''||v===null)return '—';
+  try{
+    const s=String(v).trim();
+    // Si ya es dd/mm/aaaa devolverlo igual
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(s))return s;
+    // Parsear ISO o yyyy-mm-dd
+    const d=new Date(s);
+    if(isNaN(d.getTime()))return s;
+    const dd=String(d.getDate()).padStart(2,'0');
+    const mm=String(d.getMonth()+1).padStart(2,'0');
+    const aaaa=d.getFullYear();
+    return `${dd}/${mm}/${aaaa}`;
+  }catch(e){return String(v);}
+}
+
 function calcDepre(a){if(!a.valor||!a.compra||a.compra==='—')return a.valor||0;const y=(new Date()-new Date(a.compra))/(365.25*24*3600*1000);return Math.max(0,Math.round(a.valor-(a.valor*(y/(a.vida||3)))));}
 
 function showDetalle(id){
@@ -948,7 +966,7 @@ function renderActivos(){
     <td><div style="font-weight:600;font-size:12px">${a.nombre}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
     <td>${a.tipo}</td><td><div>${a.asignado||'—'}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
     <td style="font-size:11px">${a.ubicacion||'—'}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
-    <td style="font-size:11px;color:var(--text3)">${a.garantia||'—'}</td><td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+    <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
     <td onclick="event.stopPropagation()">
       ${per.edit&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openActivo('${a.codigo}')">✎</button>`:''}
       ${per.delete&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('activo','${a.codigo}')" style="color:var(--red)">×</button>`:''}
@@ -1140,8 +1158,8 @@ function repInventarioGeneral(el, ts){
           <td>${a.depto||'—'}</td>
           <td>${a.ubicacion||'—'}</td>
           <td><span class="badge s-${a.estado}">${a.estado}</span></td>
-          <td style="font-size:10px">${a.compra||'—'}</td>
-          <td style="font-size:10px;color:${garantiaColor(a.garantia)}">${a.garantia||'—'}</td>
+          <td style="font-size:10px">${fmtFecha(a.compra)}</td>
+          <td style="font-size:10px;color:${garantiaColor(a.garantia)}">${fmtFecha(a.garantia)}</td>
           <td>$${(a.valor||0).toLocaleString()}</td>
           <td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
         </tr>`).join('')}</tbody>
@@ -1178,7 +1196,7 @@ function repPorDepartamento(el, ts){
             <td>${a.tipo}</td>
             <td>${a.asignado||'—'}</td>
             <td><span class="badge s-${a.estado}">${a.estado}</span></td>
-            <td style="color:${garantiaColor(a.garantia)};font-size:10px">${a.garantia||'—'}</td>
+            <td style="color:${garantiaColor(a.garantia)};font-size:10px">${fmtFecha(a.garantia)}</td>
             <td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
           </tr>`).join('')}</tbody>
         </table></div>
@@ -1217,7 +1235,7 @@ function repGarantias(el, ts){
         <tbody>${vencidas.map(a=>{const dias=Math.floor((hoy-new Date(a.garantia))/(24*3600*1000));return`<tr>
           <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${a.nombre}</td><td>${a.tipo}</td>
           <td>${a.asignado||'—'}</td><td>${a.depto||'—'}</td>
-          <td style="color:#791F1F;font-weight:600">${a.garantia}</td>
+          <td style="color:#791F1F;font-weight:600">${fmtFecha(a.garantia)}</td>
           <td style="color:#791F1F">Hace ${dias} días</td>
         </tr>`;}).join('')}</tbody>
       </table></div>
@@ -1229,7 +1247,7 @@ function repGarantias(el, ts){
         <tbody>${lista.map(a=>{const dr=Math.floor((new Date(a.garantia)-hoy)/(24*3600*1000));return`<tr>
           <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${a.nombre}</td><td>${a.tipo}</td>
           <td>${a.asignado||'—'}</td><td>${a.depto||'—'}</td>
-          <td style="color:#BA7517;font-weight:600">${a.garantia}</td>
+          <td style="color:#BA7517;font-weight:600">${fmtFecha(a.garantia)}</td>
           <td style="color:${dr<=30?'#791F1F':'#BA7517'};font-weight:600">${dr} días</td>
         </tr>`;}).join('')}</tbody>
       </table></div>`:'<div class="empty-c">No hay garantías próximas a vencer en este período.</div>'}
@@ -1260,7 +1278,7 @@ function repHojaVida(el, ts){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="rep-section">
         <div class="rep-sec-title">Información del activo</div>
-        ${[['Código',a.codigo],['Tipo',a.tipo],['Marca / Modelo',(a.marca||'—')+' '+(a.modelo||'')],['Número de serie',a.serial||'—'],['Ubicación física',a.ubicacion||'—'],['Asignado a',a.asignado||'—'],['Departamento',a.depto||'—'],['Fecha de compra',a.compra||'—'],['Garantía hasta',a.garantia||'—'],['Vida útil',(a.vida||3)+' años'],['Observaciones',a.obs||'—']].map(([k,v])=>`
+        ${[['Código',a.codigo],['Tipo',a.tipo],['Marca / Modelo',(a.marca||'—')+' '+(a.modelo||'')],['Número de serie',a.serial||'—'],['Ubicación física',a.ubicacion||'—'],['Asignado a',a.asignado||'—'],['Departamento',a.depto||'—'],['Fecha de compra',a.compra||'—'],['Garantía hasta',fmtFecha(a.garantia)],['Vida útil',(a.vida||3)+' años'],['Observaciones',a.obs||'—']].map(([k,v])=>`
           <div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
             <span style="color:var(--text3);width:140px;flex-shrink:0">${k}</span>
             <span style="font-weight:500;color:var(--text)">${v}</span>
