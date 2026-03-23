@@ -186,6 +186,16 @@ tbody tr.clickable{cursor:pointer;}
 .sr-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--text3);}
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
+
+/* ── VALIDACIONES DE FORMULARIO ──────────────────────────────────── */
+.f-inp.error{border-color:#D85A30!important;background:#FFF5F5!important;}
+.f-inp.valid{border-color:#1D9E75!important;}
+.f-err{display:none;font-size:11px;color:#D85A30;margin-top:3px;padding:3px 8px;background:#FFF5F5;border-radius:4px;border-left:3px solid #D85A30;}
+.f-err.show{display:flex;align-items:center;gap:5px;}
+.f-hint{font-size:10px;color:var(--text3);margin-top:2px;padding:0 2px;}
+/* Autocomplete datalist */
+.f-inp[list]::-webkit-calendar-picker-indicator{opacity:0.5;}
+
 </style>
 </head>
 <body>
@@ -367,7 +377,13 @@ tbody tr.clickable{cursor:pointer;}
 <div class="modal-bg" id="mod-activo"><div class="modal">
   <div class="modal-title"><span id="mod-activo-title">Nuevo activo</span><button class="modal-close" onclick="closeModals()">✕</button></div>
   <input type="hidden" id="ea-id">
-  <div class="f-row"><div class="f-lbl">Nombre *</div><input class="f-inp" id="ea-nombre" placeholder="Ej: Laptop Dell Inspiron 15"></div>
+  <div class="f-row">
+  <div class="f-lbl">Nombre *</div>
+  <input class="f-inp" id="ea-nombre" placeholder="Ej: Laptop Dell Inspiron 15"
+    oninput="validateField(this,'text','Ingresa el nombre descriptivo del equipo')"
+    onblur="validateField(this,'text','Ingresa el nombre descriptivo del equipo')">
+  <div class="f-err" id="err-ea-nombre">⚠ Ingresa el nombre descriptivo del equipo</div>
+</div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Tipo *</div><select class="f-inp f-sel" id="ea-tipo">
   <optgroup label="Equipos de usuario">
@@ -417,24 +433,52 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row"><div class="f-lbl">Estado *</div><select class="f-inp f-sel" id="ea-estado"><option value="activo">Activo</option><option value="asignado">Asignado</option><option value="disponible">Disponible</option><option value="mantenimiento">Mantenimiento</option><option value="baja">Baja</option></select></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Marca</div><input class="f-inp" id="ea-marca" placeholder="Dell, HP..."></div>
+    <div class="f-row"><div class="f-lbl">Marca</div><input class="f-inp" id="ea-marca" list="dl-marcas" autocomplete="off" placeholder="Dell, HP..."></div>
     <div class="f-row"><div class="f-lbl">Modelo</div><input class="f-inp" id="ea-modelo" placeholder="Inspiron 15..."></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Número de serie</div><input class="f-inp" id="ea-serial" placeholder="SN-XXXX"></div>
-    <div class="f-row"><div class="f-lbl">Ubicación física</div><input class="f-inp" id="ea-ubicacion" placeholder="Oficina 3..."></div>
+    <div class="f-row">
+  <div class="f-lbl">Número de serie</div>
+  <input class="f-inp" id="ea-serial" placeholder="SN-XXXX"
+    style="text-transform:uppercase;letter-spacing:1px"
+    oninput="this.value=this.value.toUpperCase()">
+  <div class="f-hint">💡 Se convierte a mayúsculas automáticamente. Búscalo en la etiqueta del equipo.</div>
+</div>
+    <div class="f-row"><div class="f-lbl">Ubicación física</div><input class="f-inp" id="ea-ubicacion" list="dl-ubicaciones" autocomplete="off" placeholder="Oficina 3..."></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Asignado a</div><input class="f-inp" id="ea-asignado" placeholder="Nombre completo"></div>
-    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="ea-depto" placeholder="TI, Finanzas..."></div>
+    <div class="f-row"><div class="f-lbl">Asignado a</div><input class="f-inp" id="ea-asignado" list="dl-asignados" autocomplete="off" placeholder="Nombre completo"></div>
+    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="ea-depto" list="dl-deptos" autocomplete="off" placeholder="TI, Finanzas..."></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Fecha de compra</div><input class="f-inp" type="date" id="ea-compra"></div>
-    <div class="f-row"><div class="f-lbl">Garantía hasta</div><input class="f-inp" type="date" id="ea-garantia"></div>
+    <div class="f-row">
+  <div class="f-lbl">Fecha de compra</div>
+  <input class="f-inp" type="date" id="ea-compra"
+    onchange="validateFechas()">
+  <div class="f-err" id="err-ea-compra">⚠ Selecciona una fecha válida de compra</div>
+</div>
+<div class="f-row">
+  <div class="f-lbl">Garantía hasta</div>
+  <input class="f-inp" type="date" id="ea-garantia"
+    onchange="validateFechas()">
+  <div class="f-err" id="err-ea-garantia">⚠ La garantía debe ser posterior a la fecha de compra</div>
+</div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Valor ($)</div><input class="f-inp" type="number" id="ea-valor" placeholder="0.00"></div>
-    <div class="f-row"><div class="f-lbl">Vida útil (años)</div><input class="f-inp" type="number" id="ea-vida" value="3"></div>
+    <div class="f-row"><div class="f-lbl">Valor ($)</div>
+  <input class="f-inp" type="number" min="0" step="0.01" id="ea-valor" placeholder="0.00"
+    oninput="validateField(this,'number','Solo números. Ej: 350.00')"
+    onblur="validateField(this,'number','Solo números. Ej: 350.00')">
+  <div class="f-err" id="err-ea-valor">⚠ Ingresa solo el número sin símbolos. Ej: 350.00</div>
+  <div class="f-hint">💡 Precio de compra en dólares</div>
+</div>
+    <div class="f-row"><div class="f-lbl">Vida útil (años)</div>
+  <input class="f-inp" type="number" min="1" max="30" id="ea-vida" value="3"
+    oninput="validateField(this,'integer','Número entero del 1 al 30')"
+    onblur="validateField(this,'integer','Número entero del 1 al 30')">
+  <div class="f-err" id="err-ea-vida">⚠ Ingresa un número entre 1 y 30 años</div>
+  <div class="f-hint">💡 Laptops/PC: 3-5 · Cámaras/NVR: 5-10 · Servidores: 5-7 · UPS: 3-5</div>
+</div>
   </div>
   <div class="f-row"><div class="f-lbl">Observaciones</div><input class="f-inp" id="ea-obs" placeholder="Notas adicionales..."></div>
   <div class="f-row" id="ea-motivo-wrap" style="display:none;">
@@ -490,11 +534,11 @@ tbody tr.clickable{cursor:pointer;}
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Nombre completo *</div><input class="f-inp" id="eu-nombre" placeholder="Juan Pérez"></div>
-    <div class="f-row"><div class="f-lbl">Correo electrónico</div><input class="f-inp" type="email" id="eu-email" placeholder="juan@empresa.com"></div>
+    <div class="f-row"><div class="f-lbl">Correo electrónico</div><input class="f-inp" type="email" id="eu-email" type="email" oninput="validateField(this,'email','Ej: nombre@pca.edu.pa')" onblur="validateField(this,'email','Ej: nombre@pca.edu.pa')" placeholder="juan@empresa.com"></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Teléfono</div><input class="f-inp" id="eu-tel" placeholder="+507 6000-0000"></div>
-    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="eu-depto" placeholder="TI, Finanzas..."></div>
+    <div class="f-row"><div class="f-lbl">Teléfono</div><input class="f-inp" id="eu-tel" oninput="validateField(this,'phone','Ej: 6000-0000')" onblur="validateField(this,'phone','Ej: 6000-0000')" placeholder="+507 6000-0000"></div>
+    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="eu-depto" list="dl-deptos" autocomplete="off" placeholder="TI, Finanzas..."></div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Cargo / Puesto</div><input class="f-inp" id="eu-cargo" placeholder="Técnico de soporte..."></div>
@@ -796,7 +840,43 @@ function openActivo(id){
 }
 
 async function saveActivo(){
-  const nombre=document.getElementById('ea-nombre').value.trim();if(!nombre){alert('El nombre es obligatorio.');return;}
+  // ── VALIDACIÓN COMPLETA ANTES DE GUARDAR ──────────────────────
+  let formOk = true;
+  const nombre = document.getElementById('ea-nombre').value.trim();
+  const valor = document.getElementById('ea-valor').value;
+  const vida = document.getElementById('ea-vida').value;
+
+  // Nombre obligatorio
+  if(!nombre){
+    const el=document.getElementById('ea-nombre');
+    el.classList.add('error');
+    const err=document.getElementById('err-ea-nombre');
+    if(err){err.textContent='⚠ El nombre del activo es obligatorio';err.classList.add('show');}
+    el.focus(); formOk=false;
+  }
+  // Valor — solo números
+  if(valor && isNaN(parseFloat(valor))){
+    const el=document.getElementById('ea-valor');
+    el.classList.add('error');
+    const err=document.getElementById('err-ea-valor');
+    if(err){err.textContent='⚠ El valor debe ser un número. Ej: 350.00';err.classList.add('show');}
+    formOk=false;
+  }
+  // Vida útil — número entero
+  if(vida && (isNaN(parseInt(vida)) || parseInt(vida)<1 || parseInt(vida)>30)){
+    const el=document.getElementById('ea-vida');
+    el.classList.add('error');
+    const err=document.getElementById('err-ea-vida');
+    if(err){err.textContent='⚠ Vida útil debe ser un número entre 1 y 30 años';err.classList.add('show');}
+    formOk=false;
+  }
+  // Fechas — garantía posterior a compra
+  if(!validateFechas()) formOk=false;
+
+  if(!formOk){
+    showToast('Corrige los errores marcados en rojo antes de guardar','error');
+    return;
+  }
   const editId=document.getElementById('ea-id').value,isEdit=editId!=='';
   if(isEdit){
     const motivo=document.getElementById('ea-motivo').value.trim();if(!motivo){alert('El motivo es obligatorio.');return;}
@@ -919,6 +999,95 @@ async function saveMant(){
 
 function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}
 
+
+
+// ════════════════════════════════════════════════════════════════════
+// VALIDACIONES DE FORMULARIO
+// ════════════════════════════════════════════════════════════════════
+
+function validateField(input, tipo, hint){
+  const errId = 'err-' + input.id;
+  const errEl = document.getElementById(errId);
+  let isValid = true;
+  let msg = '';
+  const val = input.value.trim();
+
+  if(tipo === 'text'){
+    // Campo texto — no puede estar vacío si es requerido
+    isValid = val.length >= 2;
+    msg = val.length === 0 ? '⚠ Este campo es obligatorio' : '⚠ Mínimo 2 caracteres. ' + hint;
+  }
+  else if(tipo === 'number'){
+    // Solo números — no texto
+    const n = parseFloat(val);
+    isValid = val === '' || (!isNaN(n) && n >= 0);
+    msg = '⚠ Solo se permiten números. ' + hint;
+  }
+  else if(tipo === 'integer'){
+    // Número entero en rango
+    const n = parseInt(val);
+    isValid = val === '' || (!isNaN(n) && n >= 1 && n <= 30 && String(n) === String(Math.round(n)));
+    msg = '⚠ ' + hint;
+  }
+  else if(tipo === 'email'){
+    isValid = val === '' || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val);
+    msg = '⚠ Ingresa un correo válido. Ej: nombre@dominio.com';
+  }
+  else if(tipo === 'phone'){
+    isValid = val === '' || /^[0-9\-\+\s\(\)]{7,15}$/.test(val);
+    msg = '⚠ Solo números, guiones y paréntesis. Ej: 6000-0000';
+  }
+  else if(tipo === 'serial'){
+    isValid = true; // No obligatorio pero uppercase
+  }
+
+  if(errEl){
+    errEl.textContent = msg;
+    errEl.classList.toggle('show', !isValid && val !== '');
+  }
+  input.classList.toggle('error', !isValid && val !== '');
+  input.classList.toggle('valid', isValid && val !== '');
+  return isValid;
+}
+
+function validateFechas(){
+  const compra = document.getElementById('ea-compra')?.value;
+  const garantia = document.getElementById('ea-garantia')?.value;
+  const errG = document.getElementById('err-ea-garantia');
+  const inpG = document.getElementById('ea-garantia');
+  if(compra && garantia && garantia <= compra){
+    if(errG){ errG.textContent='⚠ La fecha de garantía debe ser posterior a la fecha de compra'; errG.classList.add('show'); }
+    if(inpG){ inpG.classList.add('error'); inpG.classList.remove('valid'); }
+    return false;
+  } else {
+    if(errG) errG.classList.remove('show');
+    if(inpG){ inpG.classList.remove('error'); if(garantia) inpG.classList.add('valid'); }
+    return true;
+  }
+}
+
+function populateSuggestions(){
+  // Llenar datalists dinámicamente desde los datos del sistema
+  if(!activos || !activos.length) return;
+  // Departamentos únicos
+  const deptos=[...new Set([
+    ...activos.map(a=>a.depto).filter(Boolean),
+    ...usuarios.map(u=>u.depto).filter(Boolean)
+  ])].sort();
+  const dlDeptos=document.getElementById('dl-deptos');
+  if(dlDeptos) dlDeptos.innerHTML=deptos.map(d=>`<option value="${d}">`).join('');
+  // Ubicaciones únicas
+  const ubics=[...new Set(activos.map(a=>a.ubicacion).filter(Boolean))].sort();
+  const dlUbics=document.getElementById('dl-ubicaciones');
+  if(dlUbics) dlUbics.innerHTML=ubics.map(u=>`<option value="${u}">`).join('');
+  // Personas asignadas únicas (activos + usuarios)
+  const asignados=[...new Set([
+    ...activos.map(a=>a.asignado).filter(Boolean),
+    ...usuarios.filter(u=>u.estado==='activo').map(u=>u.nombre).filter(Boolean)
+  ])].sort();
+  const dlAsig=document.getElementById('dl-asignados');
+  if(dlAsig) dlAsig.innerHTML=asignados.map(a=>`<option value="${a}">`).join('');
+}
 
 // ── FORMATO DE FECHAS ────────────────────────────────────────────────
 function fmtFecha(v){
@@ -1091,7 +1260,7 @@ function filterA(f,el){filtroA=f;document.querySelectorAll('#pnl-activos .tab-ro
 function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#pnl-activos .tab-row:last-child .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
 function filterT(f,el){filtroT=f;document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTickets();}
 function filterAud(f,el){filtroAud=f;document.querySelectorAll('#pnl-auditoria .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAudit();}
-function renderAll(){renderDash();renderActivos();renderTickets();renderKanban();renderAudit();}
+function renderAll(){renderDash();renderActivos();renderTickets();populateSuggestions();renderKanban();renderAudit();}
 
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1881,8 +2050,26 @@ document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>
 loadFromSheets();
 
 </script>
+
+<!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
+<datalist id="dl-deptos"></datalist>
+<datalist id="dl-ubicaciones"></datalist>
+<datalist id="dl-asignados"></datalist>
+<datalist id="dl-marcas">
+  <option>Dell</option><option>HP</option><option>Lenovo</option>
+  <option>Apple</option><option>Asus</option><option>Acer</option>
+  <option>Samsung</option><option>LG</option><option>Sony</option>
+  <option>Cisco</option><option>TP-Link</option><option>Hikvision</option>
+  <option>Dahua</option><option>Epson</option><option>Canon</option>
+  <option>Brother</option><option>Logitech</option><option>APC</option>
+  <option>Ubiquiti</option><option>Mikrotik</option><option>D-Link</option>
+  <option>Netgear</option><option>Fortinet</option><option>SonicWall</option>
+</datalist>
+<datalist id="dl-seriales"></datalist>
+
 </body>
 </html>
+
 
 
 
