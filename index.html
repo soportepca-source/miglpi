@@ -271,7 +271,10 @@ tbody tr.clickable{cursor:pointer;}
         <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Sin actividad</div></div></div>
       </div>
       <div class="pnl" id="pnl-activos">
-        <div class="tab-row" style="flex-wrap:wrap;gap:4px;">
+        <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:6px;">
+  ℹ️ <strong>Valor depreciado:</strong> calculado automáticamente según precio de compra, fecha y vida útil del equipo. El valor original nunca cambia.
+</div>
+<div class="tab-row" style="flex-wrap:wrap;gap:4px;">
   <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 8px;align-self:center;">Estado:</span>
   <button class="tab-btn on" onclick="filterA('todos',this)">Todos</button>
   <button class="tab-btn" onclick="filterA('activo',this)">Activos</button>
@@ -955,7 +958,18 @@ function showDetalle(id){
       <div class="det-field"><div class="det-fl">Fecha de compra</div><div class="det-fv">${fmtFecha(activoActual.compra)}</div></div>
       <div class="det-field"><div class="det-fl">Garantía hasta</div><div class="det-fv">${fmtFecha(activoActual.garantia)}</div></div>
       <div class="det-field"><div class="det-fl">Valor de compra</div><div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div></div>
-      <div class="det-field"><div class="det-fl">Valor depreciado</div><div class="det-fv" style="color:#3B6D11;font-weight:700">$${vd.toLocaleString()}</div></div>
+      <div class="det-field">
+        <div class="det-fl">Valor de compra</div>
+        <div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div>
+      </div>
+      <div class="det-field">
+        <div class="det-fl">Valor depreciado</div>
+        <div class="det-fv" style="color:#3B6D11;font-weight:700">
+          $${vd.toLocaleString()}
+          <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">al ${new Date().toLocaleDateString('es-PA')}</span>
+          ${activoActual.valor&&vd<activoActual.valor?`<div style="font-size:10px;color:var(--text3);margin-top:2px">Deprecia $${((activoActual.valor-vd)).toLocaleString()} desde la compra · Lineal ${activoActual.vida||3} años</div>`:''}
+        </div>
+      </div>
       <div class="det-field"><div class="det-fl">Vida útil</div><div class="det-fv">${activoActual.vida||3} años</div></div>
     </div>
     ${activoActual.obs?`<div style="background:var(--bg2);border-radius:var(--r-md);padding:9px 12px;font-size:12px;color:var(--text2);margin-bottom:14px;border:1px solid var(--border)">${activoActual.obs}</div>`:''}
@@ -1005,7 +1019,11 @@ function renderActivos(){
     <td><div style="font-weight:600;font-size:12px">${a.nombre}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
     <td>${a.tipo}</td><td><div>${a.asignado||'—'}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
     <td style="font-size:11px">${a.ubicacion||'—'}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
-    <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+    <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td>
+      <div style="font-size:10px;color:var(--text3)">Original: $${(a.valor||0).toLocaleString()}</div>
+      <div style="font-weight:700;color:#3B6D11;font-size:13px">$${calcDepre(a).toLocaleString()}</div>
+      <div style="font-size:9px;color:var(--text3)">depreciado</div>
+    </td>
     <td onclick="event.stopPropagation()">
       ${per.edit&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openActivo('${a.codigo}')">✎</button>`:''}
       ${per.delete&&a.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('activo','${a.codigo}')" style="color:var(--red)">×</button>`:''}
@@ -1224,8 +1242,11 @@ function repInventarioGeneral(el, ts){
           <td><span class="badge s-${a.estado}">${a.estado}</span></td>
           <td style="font-size:10px">${fmtFecha(a.compra)}</td>
           <td style="font-size:10px;color:${garantiaColor(a.garantia)}">${fmtFecha(a.garantia)}</td>
-          <td>$${(a.valor||0).toLocaleString()}</td>
-          <td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+          <td style="color:var(--text2)">$${(a.valor||0).toLocaleString()}</td>
+          <td>
+            <span style="font-weight:700;color:#3B6D11">$${calcDepre(a).toLocaleString()}</span>
+            ${a.valor&&calcDepre(a)<a.valor?`<div style="font-size:9px;color:var(--text3)">-$${((a.valor||0)-calcDepre(a)).toLocaleString()} deprec.</div>`:''}
+          </td>
         </tr>`).join('')}</tbody>
       </table></div>
     </div>`;
@@ -1261,7 +1282,10 @@ function repPorDepartamento(el, ts){
             <td>${a.asignado||'—'}</td>
             <td><span class="badge s-${a.estado}">${a.estado}</span></td>
             <td style="color:${garantiaColor(a.garantia)};font-size:10px">${fmtFecha(a.garantia)}</td>
-            <td style="font-weight:600;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+            <td>
+              <span style="font-weight:700;color:#3B6D11">$${calcDepre(a).toLocaleString()}</span>
+              <div style="font-size:9px;color:var(--text3)">orig: $${(a.valor||0).toLocaleString()}</div>
+            </td>
           </tr>`).join('')}</tbody>
         </table></div>
       </div>`).join('')}`;
@@ -1335,7 +1359,9 @@ function repHojaVida(el, ts){
     </div>
     <div class="rep-kpi">
       <div class="rep-kpi-card"><div class="rep-kpi-v">$${(a.valor||0).toLocaleString()}</div><div class="rep-kpi-l">Valor de compra</div></div>
-      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#3B6D11">$${calcDepre(a).toLocaleString()}</div><div class="rep-kpi-l">Valor actual</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#3B6D11">$${calcDepre(a).toLocaleString()}</div>
+          <div class="rep-kpi-l">Valor actual</div>
+          <div style="font-size:9px;color:var(--text3);margin-top:2px">Dep. lineal · ${a.vida||3} años</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#BA7517">$${costTotal.toLocaleString()}</div><div class="rep-kpi-l">Costo mantenimientos</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v">${tks.length}</div><div class="rep-kpi-l">Tickets generados</div></div>
     </div>
@@ -1680,8 +1706,8 @@ function exportCSV(){
   let rows=[], headers=[];
 
   if(tipo==='inventario'||tipo==='depto'||tipo==='garantia'||tipo==='danos'){
-    headers=['Código','Nombre','Tipo','Marca','Modelo','Serial','Asignado a','Departamento','Ubicación','Estado','Fecha compra','Garantía hasta','Valor original','Valor actual'];
-    rows=repDatosActuales.map(a=>[a.codigo,a.nombre,a.tipo,a.marca||'',a.modelo||'',a.serial||'',a.asignado||'',a.depto||'',a.ubicacion||'',a.estado,a.compra||'',a.garantia||'',a.valor||0,calcDepre(a)]);
+    headers=['Código','Nombre','Tipo','Marca','Modelo','Serial','Asignado a','Departamento','Ubicación','Estado','Fecha compra','Garantía hasta','Valor original','Valor actual','Depreciación'];
+    rows=repDatosActuales.map(a=>[a.codigo,a.nombre,a.tipo,a.marca||'',a.modelo||'',a.serial||'',a.asignado||'',a.depto||'',a.ubicacion||'',a.estado,a.compra||'',a.garantia||'',a.valor||0,calcDepre(a),(a.valor||0)-calcDepre(a)]);
   } else if(tipo==='hojavida'){
     const a=repDatosActuales[0];
     headers=['Evento','Descripción','Fecha','Usuario','Técnico','Costo'];
@@ -1857,6 +1883,7 @@ loadFromSheets();
 </script>
 </body>
 </html>
+
 
 
 
