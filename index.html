@@ -454,14 +454,14 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row">
   <div class="f-lbl">Fecha de compra</div>
   <input class="f-inp" type="date" id="ea-compra"
-    min="2000-01-01" max="2099-12-31"
+    min="1990-01-01" max="2046-12-31"
     onchange="validateFechas();validateDateField(this)">
   <div class="f-err" id="err-ea-compra">⚠ Selecciona una fecha válida de compra</div>
 </div>
 <div class="f-row">
   <div class="f-lbl">Garantía hasta</div>
   <input class="f-inp" type="date" id="ea-garantia"
-    min="2000-01-01" max="2099-12-31"
+    min="1990-01-01" max="2046-12-31"
     onchange="validateFechas();validateDateField(this)">
   <div class="f-err" id="err-ea-garantia">⚠ La garantía debe ser posterior a la fecha de compra</div>
 </div>
@@ -509,7 +509,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row"><div class="f-lbl">Avance %</div><input class="f-inp" type="number" id="et-avance" min="0" max="100" value="0"></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Deadline</div><input class="f-inp" type="date" id="et-dead" min="2000-01-01" max="2099-12-31" onchange="validateDateField(this)"></div>
+    <div class="f-row"><div class="f-lbl">Deadline</div><input class="f-inp" type="date" id="et-dead" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
     <div class="f-row"><div class="f-lbl">Proyecto / Cliente</div><input class="f-inp" id="et-proy" placeholder="Nombre del proyecto"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Descripción</div><input class="f-inp" id="et-desc" placeholder="Detalle completo..."></div>
@@ -565,7 +565,7 @@ tbody tr.clickable{cursor:pointer;}
   <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó?"></div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre"></div>
-    <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="2000-01-01" max="2099-12-31" onchange="validateDateField(this)"></div>
+    <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" onclick="saveMant()">Registrar</button></div>
@@ -1021,12 +1021,24 @@ function validateDateField(input){
   const anio = parseInt(parts[0]);
   const mes  = parseInt(parts[1]);
   const dia  = parseInt(parts[2]);
+  const ANIO_MIN = 1990;
+  const ANIO_MAX = 2046;
+  const ANIO_ACTUAL = new Date().getFullYear();
   let isValid = true;
   let msg = '';
-  // Validar año — exactamente 4 dígitos entre 2000 y 2099
-  if(isNaN(anio) || anio < 2000 || anio > 2099){
+
+  // Validar año — entre 1990 y año actual + 20
+  if(isNaN(anio) || String(parts[0]).length !== 4){
     isValid = false;
-    msg = `⚠ El año debe tener 4 dígitos entre 2000 y 2099. Ingresaste: ${parts[0]}`;
+    msg = `⚠ El año debe tener exactamente 4 dígitos. Ingresaste: ${parts[0]}`;
+  }
+  else if(anio < ANIO_MIN){
+    isValid = false;
+    msg = `⚠ El año no puede ser anterior a ${ANIO_MIN}. Ingresaste: ${anio}`;
+  }
+  else if(anio > ANIO_MAX){
+    isValid = false;
+    msg = `⚠ El año no puede ser mayor a ${ANIO_MAX} (${ANIO_ACTUAL} + 20 años). Ingresaste: ${anio}`;
   }
   // Validar mes
   else if(mes < 1 || mes > 12){
@@ -1038,6 +1050,7 @@ function validateDateField(input){
     isValid = false;
     msg = '⚠ El día debe estar entre 01 y 31';
   }
+
   const errId = 'err-' + input.id;
   const errEl = document.getElementById(errId);
   if(errEl){
@@ -1046,13 +1059,14 @@ function validateDateField(input){
   }
   input.classList.toggle('error', !isValid);
   input.classList.toggle('valid', isValid);
-  // Si el año tiene más de 4 dígitos, limpiar el campo y avisar
-  if(anio > 2099 || anio < 2000){
+
+  // Limpiar el campo automáticamente si el año es inválido
+  if(!isValid){
     setTimeout(()=>{
       input.value = '';
       input.classList.remove('valid');
       input.classList.add('error');
-    }, 100);
+    }, 800);
   }
   return isValid;
 }
@@ -2122,6 +2136,9 @@ loadFromSheets();
   <option value="K4A">
   <option value="K4B">
   <option value="K4C">
+  <option value="K5A">
+  <option value="K5B">
+  <option value="K5C">
   <option value="1A">
   <option value="1B">
   <option value="1C">
@@ -2199,6 +2216,9 @@ loadFromSheets();
   <option value="Aula K4A">
   <option value="Aula K4B">
   <option value="Aula K4C">
+  <option value="Aula K5A">
+  <option value="Aula K5B">
+  <option value="Aula K5C">
   <option value="Aula 1A">
   <option value="Aula 1B">
   <option value="Aula 1C">
