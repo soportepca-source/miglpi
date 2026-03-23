@@ -649,10 +649,8 @@ async function loadFromSheets(){
   tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
   cntTickets = tickets.length;
   auditLog = rawAud.slice().reverse();
-  if(!usuarios.length){
-    const a={username:'admin',passHash:hashPass('admin123'),rol:'admin',nombre:'Administrador',email:'admin@miglpi.com',tel:'',depto:'TI',cargo:'Administrador del sistema',estado:'activo',fechaCreacion:ts(),ultimoAcceso:'Nunca'};
-    usuarios.push(a);await apiPost('usuarios','insert',a);
-  }
+  // NOTA: No se crea admin automáticamente para evitar duplicados
+  // Si no hay usuarios, mostrar aviso y dejar entrar igual
   ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
   lt.textContent='¡Sistema listo!';
   setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
@@ -710,11 +708,14 @@ function doLogin(){
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
   }else{
     ll.style.display='none';
-    // Debug temporal — mostrar info del usuario encontrado
-    const totalUsuarios = usuarios.length;
-    err.textContent=usuario
-      ? `Contraseña incorrecta. (${totalUsuarios} usuarios cargados)`
-      : `Usuario "${u}" no encontrado. (${totalUsuarios} usuarios cargados — verifica que esté en Sheets y estado=activo)`;
+    _loginAttempts.count++;
+    if(_loginAttempts.count >= 5){
+      _loginAttempts.blockedUntil = Date.now() + 5*60*1000;
+      _loginAttempts.count = 0;
+      err.textContent='⛔ 5 intentos fallidos. Espera 5 minutos.';
+    } else {
+      err.textContent=usuario?`Contraseña incorrecta. Intento ${_loginAttempts.count}/5.`:'Usuario no encontrado o inactivo.';
+    }
     err.style.display='block';
     apiPost('auditoria','insert',{ts:ts(),usuario:u,nombre:u,rol:'—',accion:'LOGIN_FAIL',tipo:'Sistema',codigo:'—',detalle:'Intento fallido de acceso'});
   }
@@ -2365,6 +2366,7 @@ loadFromSheets();
 
 </body>
 </html>
+
 
 
 
