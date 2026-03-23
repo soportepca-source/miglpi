@@ -2,6 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://script.google.com https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; connect-src 'self' https://script.google.com;">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAGA — Sistema de Activos y Gestión Administrativa</title>
 <style>
@@ -639,7 +643,20 @@ async function loadFromSheets(){
   setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
 }
 
-async function doLogin(){
+async // Rate limiting — máximo 5 intentos, bloqueo de 5 minutos
+const _loginAttempts = {count:0, blockedUntil:0};
+
+function doLogin(){
+  const ahora = Date.now();
+  // Verificar si está bloqueado
+  if(_loginAttempts.blockedUntil > ahora){
+    const segs = Math.ceil((_loginAttempts.blockedUntil - ahora)/1000);
+    const mins = Math.ceil(segs/60);
+    const err=document.getElementById('login-err');
+    err.textContent=`⛔ Demasiados intentos fallidos. Espera ${mins} minuto${mins>1?'s':''} antes de intentar de nuevo.`;
+    err.style.display='block';
+    return;
+  }
   const u=document.getElementById('l-user').value.trim(),p=document.getElementById('l-pass').value;
   const err=document.getElementById('login-err'),ll=document.getElementById('login-loading');
   err.style.display='none';
@@ -652,7 +669,8 @@ async function doLogin(){
     usuario.ultimoAcceso=ts();
     apiPost('usuarios','update',usuario);
     session={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
-    document.getElementById('login-screen').style.display='none';
+    _loginAttempts.count=0;_loginAttempts.blockedUntil=0;
+  document.getElementById('login-screen').style.display='none';
     document.getElementById('app-screen').classList.add('visible');
     document.getElementById('sb-username').textContent=u;
     document.getElementById('sb-avatar').textContent=initials(usuario.nombre);
@@ -1012,6 +1030,40 @@ function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.class
 // VALIDACIONES DE FORMULARIO
 // ════════════════════════════════════════════════════════════════════
 
+
+
+// ── SEGURIDAD: Sanitizar texto antes de insertar en HTML ─────────
+
+// ── SEGURIDAD: Timeout de sesión por inactividad (30 minutos) ────
+let _inactivityTimer = null;
+const _INACTIVITY_LIMIT = 30 * 60 * 1000; // 30 minutos
+
+function resetInactivityTimer(){
+  if(!session) return;
+  clearTimeout(_inactivityTimer);
+  _inactivityTimer = setTimeout(()=>{
+    if(session){
+      showToast('Sesión cerrada por inactividad (30 min)','');
+      setTimeout(()=>{ doLogout(); }, 2000);
+    }
+  }, _INACTIVITY_LIMIT);
+}
+
+// Resetear timer en cualquier interacción del usuario
+['click','keypress','mousemove','touchstart'].forEach(evt=>{
+  document.addEventListener(evt, resetInactivityTimer, {passive:true});
+});
+
+function sanitizeHTML(str){
+  if(!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;')
+    .replace(/\//g,'&#x2F;');
+}
 
 function validateDateField(input){
   if(!input.value) return true;
