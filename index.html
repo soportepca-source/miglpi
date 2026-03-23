@@ -688,7 +688,11 @@ function doLogin(){
   err.style.display='none';
   if(!u||!p){err.textContent='Ingresa usuario y contraseña.';err.style.display='block';return;}
   ll.style.display='block';
-  const usuario=usuarios.find(x=>x.username===u&&x.estado!=='inactivo');
+  // Búsqueda robusta — ignorar espacios y case, aceptar activo/sin estado
+  const usuario=usuarios.find(x=>
+    String(x.username||'').trim().toLowerCase()===u.toLowerCase() &&
+    x.estado!=='inactivo'
+  );
   const passOk=usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p);
   if(passOk){
     ll.style.display='none';
@@ -706,7 +710,11 @@ function doLogin(){
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
   }else{
     ll.style.display='none';
-    err.textContent=usuario?'Contraseña incorrecta.':'Usuario no encontrado o inactivo.';
+    // Debug temporal — mostrar info del usuario encontrado
+    const totalUsuarios = usuarios.length;
+    err.textContent=usuario
+      ? `Contraseña incorrecta. (${totalUsuarios} usuarios cargados)`
+      : `Usuario "${u}" no encontrado. (${totalUsuarios} usuarios cargados — verifica que esté en Sheets y estado=activo)`;
     err.style.display='block';
     apiPost('auditoria','insert',{ts:ts(),usuario:u,nombre:u,rol:'—',accion:'LOGIN_FAIL',tipo:'Sistema',codigo:'—',detalle:'Intento fallido de acceso'});
   }
@@ -2357,6 +2365,7 @@ loadFromSheets();
 
 </body>
 </html>
+
 
 
 
