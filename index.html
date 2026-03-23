@@ -454,13 +454,15 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row">
   <div class="f-lbl">Fecha de compra</div>
   <input class="f-inp" type="date" id="ea-compra"
-    onchange="validateFechas()">
+    min="2000-01-01" max="2099-12-31"
+    onchange="validateFechas();validateDateField(this)">
   <div class="f-err" id="err-ea-compra">⚠ Selecciona una fecha válida de compra</div>
 </div>
 <div class="f-row">
   <div class="f-lbl">Garantía hasta</div>
   <input class="f-inp" type="date" id="ea-garantia"
-    onchange="validateFechas()">
+    min="2000-01-01" max="2099-12-31"
+    onchange="validateFechas();validateDateField(this)">
   <div class="f-err" id="err-ea-garantia">⚠ La garantía debe ser posterior a la fecha de compra</div>
 </div>
   </div>
@@ -507,7 +509,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row"><div class="f-lbl">Avance %</div><input class="f-inp" type="number" id="et-avance" min="0" max="100" value="0"></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Deadline</div><input class="f-inp" type="date" id="et-dead"></div>
+    <div class="f-row"><div class="f-lbl">Deadline</div><input class="f-inp" type="date" id="et-dead" min="2000-01-01" max="2099-12-31" onchange="validateDateField(this)"></div>
     <div class="f-row"><div class="f-lbl">Proyecto / Cliente</div><input class="f-inp" id="et-proy" placeholder="Nombre del proyecto"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Descripción</div><input class="f-inp" id="et-desc" placeholder="Detalle completo..."></div>
@@ -563,7 +565,7 @@ tbody tr.clickable{cursor:pointer;}
   <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó?"></div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre"></div>
-    <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha"></div>
+    <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="2000-01-01" max="2099-12-31" onchange="validateDateField(this)"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" onclick="saveMant()">Registrar</button></div>
@@ -870,7 +872,12 @@ async function saveActivo(){
     if(err){err.textContent='⚠ Vida útil debe ser un número entre 1 y 30 años';err.classList.add('show');}
     formOk=false;
   }
-  // Fechas — garantía posterior a compra
+  // Fechas — validación de formato y rango de año
+  const compraEl=document.getElementById('ea-compra');
+  const garantiaEl=document.getElementById('ea-garantia');
+  if(compraEl.value && !validateDateField(compraEl)) formOk=false;
+  if(garantiaEl.value && !validateDateField(garantiaEl)) formOk=false;
+  // Garantía posterior a compra
   if(!validateFechas()) formOk=false;
 
   if(!formOk){
@@ -1004,6 +1011,51 @@ function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.class
 // ════════════════════════════════════════════════════════════════════
 // VALIDACIONES DE FORMULARIO
 // ════════════════════════════════════════════════════════════════════
+
+
+function validateDateField(input){
+  if(!input.value) return true;
+  const val = input.value; // formato YYYY-MM-DD del browser
+  const parts = val.split('-');
+  if(parts.length !== 3) return false;
+  const anio = parseInt(parts[0]);
+  const mes  = parseInt(parts[1]);
+  const dia  = parseInt(parts[2]);
+  let isValid = true;
+  let msg = '';
+  // Validar año — exactamente 4 dígitos entre 2000 y 2099
+  if(isNaN(anio) || anio < 2000 || anio > 2099){
+    isValid = false;
+    msg = `⚠ El año debe tener 4 dígitos entre 2000 y 2099. Ingresaste: ${parts[0]}`;
+  }
+  // Validar mes
+  else if(mes < 1 || mes > 12){
+    isValid = false;
+    msg = '⚠ El mes debe estar entre 01 y 12';
+  }
+  // Validar día
+  else if(dia < 1 || dia > 31){
+    isValid = false;
+    msg = '⚠ El día debe estar entre 01 y 31';
+  }
+  const errId = 'err-' + input.id;
+  const errEl = document.getElementById(errId);
+  if(errEl){
+    errEl.textContent = msg;
+    errEl.classList.toggle('show', !isValid);
+  }
+  input.classList.toggle('error', !isValid);
+  input.classList.toggle('valid', isValid);
+  // Si el año tiene más de 4 dígitos, limpiar el campo y avisar
+  if(anio > 2099 || anio < 2000){
+    setTimeout(()=>{
+      input.value = '';
+      input.classList.remove('valid');
+      input.classList.add('error');
+    }, 100);
+  }
+  return isValid;
+}
 
 function validateField(input, tipo, hint){
   const errId = 'err-' + input.id;
