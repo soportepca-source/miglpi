@@ -969,7 +969,14 @@ async function saveActivo(){
     a.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
     await apiPost('activos','update',a);audit('EDITAR','Activo',a.codigo,det);
   }else{
-    const code=genCode('ACT',cntActivos++);
+    // Consultar Sheets para el consecutivo real de activos
+    let cntActReal = 0;
+    try{
+      const _ra = await apiGet('activos');
+      cntActReal = Array.isArray(_ra) ? _ra.length : cntActivos;
+      if(cntActReal >= cntActivos) cntActivos = cntActReal;
+    }catch(e){ cntActReal = cntActivos; }
+    const code=genCode('ACT',cntActReal);cntActivos=cntActReal+1;
     const a={id:code,codigo:code,nombre,tipo:document.getElementById('ea-tipo').value,estado:document.getElementById('ea-estado').value,marca:document.getElementById('ea-marca').value.trim()||'—',modelo:document.getElementById('ea-modelo').value.trim()||'—',serial:document.getElementById('ea-serial').value.trim()||'—',ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',asignado:document.getElementById('ea-asignado').value.trim()||'—',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     activos.push(a);await apiPost('activos','insert',a);audit('CREAR','Activo',code,'Registrado: '+nombre);
   }
@@ -1017,7 +1024,16 @@ async function saveTicket(){
     t.historial=t.historial||[];t.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
     await apiPost('tickets','update',t);audit('EDITAR','Ticket',t.codigo,det);
   }else{
-    const code=genCode('TKT',cntTickets++);const aId=document.getElementById('et-activo').value;
+    // Consultar Sheets en tiempo real para obtener el siguiente consecutivo
+    let cntReal = 0;
+    try{
+      const _r = await apiGet('tickets');
+      cntReal = Array.isArray(_r) ? _r.length : cntTickets;
+      // Actualizar el contador local también
+      if(cntReal >= cntTickets) cntTickets = cntReal;
+    }catch(e){ cntReal = cntTickets; }
+    const code=genCode('TKT',cntReal);cntTickets=cntReal+1;
+    const aId=document.getElementById('et-activo').value;
     const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
     const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     tickets.push(t);
@@ -1251,6 +1267,30 @@ function populateSuggestions(){
   if(dlAsig) dlAsig.innerHTML=asignados.map(a=>`<option value="${a}">`).join('');
 }
 
+
+// ── DEADLINE — color y formato según proximidad ──────────────────
+function deadStyle(dead){
+  if(!dead || dead==='—') return {color:'var(--text3)', icon:'', label:dead||'—'};
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fecha = new Date(dead); fecha.setHours(0,0,0,0);
+  const dias = Math.round((fecha-hoy)/(1000*60*60*24));
+  const label = fmtFecha(dead);
+  if(dias < 0)  return {color:'#D85A30', icon:'⛔', label, badge:'VENCIDO', bgColor:'#FEF2F2'};
+  if(dias === 0) return {color:'#D85A30', icon:'🚨', label, badge:'HOY', bgColor:'#FEF2F2'};
+  if(dias <= 3)  return {color:'#BA7517', icon:'⚠️', label, badge:`${dias}d`, bgColor:'#FFFBEB'};
+  if(dias <= 7)  return {color:'#185FA5', icon:'📅', label, badge:`${dias}d`, bgColor:'#EFF6FF'};
+  return {color:'var(--text2)', icon:'', label, badge:'', bgColor:'transparent'};
+}
+
+function renderDead(dead){
+  if(!dead || dead==='—') return '<span style="color:var(--text3)">—</span>';
+  const s = deadStyle(dead);
+  return `<span style="color:${s.color};white-space:nowrap;font-size:11px">
+    ${s.icon} ${s.label}
+    ${s.badge?`<span style="background:${s.bgColor};color:${s.color};border:1px solid ${s.color};border-radius:3px;padding:0 4px;font-size:10px;font-weight:700;margin-left:3px">${s.badge}</span>`:''}
+  </span>`;
+}
+
 // ── FORMATO DE FECHAS ────────────────────────────────────────────────
 function fmtFecha(v){
   if(!v||v==='—'||v===''||v===null)return '—';
@@ -1307,7 +1347,7 @@ function showDetalle(id){
     <div style="margin-bottom:14px"><div class="sec-title">Tickets vinculados (${tks.length})</div>
       ${tks.length?tks.map(t=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border:1px solid var(--border);border-radius:var(--r-md);margin-bottom:5px">
         <span class="code-cell">${t.codigo}</span><span class="badge s-${t.estado}">${t.estado}</span>
-        <span style="flex:1;font-size:12px;font-weight:500">${t.titulo}</span><span style="font-size:11px;color:var(--text3)">${t.resp} · ${t.dead||'—'}</span>
+        <span style="flex:1;font-size:12px;font-weight:500">${t.titulo}</span><span style="font-size:11px;color:var(--text3)">${t.resp} · ${renderDead(t.dead)}</span>
       </div>`).join(''):'<div style="font-size:12px;color:var(--text3);padding:8px 0">Sin tickets vinculados.</div>'}
     </div>
     <div><div class="sec-title">Historial completo (${(activoActual.historial||[]).length} eventos)</div>
@@ -1370,7 +1410,7 @@ function renderTickets(){
     <td style="font-size:11px">${t.activoNombre||'—'}</td><td>${t.resp||'—'}</td>
     <td><span class="badge s-${t.prior}">${t.prior}</span></td><td><span class="badge s-${t.estado}">${t.estado}</span></td>
     <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
-    <td style="font-size:11px;color:var(--text3)">${t.dead||'—'}</td>
+    <td style="font-size:11px;color:var(--text3)">${renderDead(t.dead)}</td>
     <td>
       ${per.edit&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openTicket('${t.codigo}')">✎</button>`:''}
       ${per.delete&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('ticket','${t.codigo}')" style="color:var(--red)">×</button>`:''}
@@ -1384,7 +1424,7 @@ function renderKanban(){
       <div class="code-cell" style="font-size:9px;margin-bottom:3px">${t.codigo}</div>
       <div class="k-card-t">${t.titulo}</div>
       <div class="k-card-m"><span>${t.activoNombre&&t.activoNombre!=='—'?t.activoNombre:t.proy||'—'}</span><span class="badge s-${t.prior}" style="font-size:9px">${t.prior}</span></div>
-      <div class="k-card-m"><span>${t.resp||'—'}</span><span>${t.dead||'—'}</span></div>
+      <div class="k-card-m"><span>${t.resp||'—'}</span><span>${renderDead(t.dead)}</span></div>
       <div class="k-prog"><div class="k-pf" style="width:${t.avance||0}%"></div></div>
     </div>`).join(''):'<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Vacío</div>';
   });
@@ -1714,7 +1754,7 @@ function repHojaVida(el, ts){
             <span class="badge s-${t.prior}">${t.prior}</span>
           </div>
           <div style="font-weight:500">${t.titulo}</div>
-          <div style="color:var(--text3);font-size:10px">${t.resp||'—'} · ${t.dead||'—'} · Avance: ${t.avance||0}%</div>
+          <div style="color:var(--text3);font-size:10px">${t.resp||'—'} · ${renderDead(t.dead)} · Avance: ${t.avance||0}%</div>
         </div>`).join(''):'<div class="empty-c">Sin tickets vinculados</div>'}
       </div>
     </div>
@@ -1796,7 +1836,7 @@ function repTickets(el, ts){
           <td><span class="badge s-${t.prior}">${t.prior}</span></td>
           <td><span class="badge s-${t.estado}">${t.estado}</span></td>
           <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
-          <td style="font-size:10px;color:var(--text3)">${t.dead||'—'}</td>
+          <td style="font-size:10px;color:var(--text3)">${renderDead(t.dead)}</td>
         </tr>`).join('')}</tbody>
       </table></div>
     </div>`;
@@ -2014,7 +2054,7 @@ function repDanos(el, ts){
           <td>${t.resp||'—'}</td>
           <td><span class="badge s-${t.prior}">${t.prior}</span></td>
           <td><span class="badge s-${t.estado}">${t.estado}</span></td>
-          <td style="font-size:10px;color:var(--text3)">${t.dead||'—'}</td>
+          <td style="font-size:10px;color:var(--text3)">${renderDead(t.dead)}</td>
         </tr>`).join('')}</tbody>
       </table></div>`:'<div class="empty-c">No hay incidencias registradas.</div>'}
     </div>`;
@@ -2366,6 +2406,7 @@ loadFromSheets();
 
 </body>
 </html>
+
 
 
 
