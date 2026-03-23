@@ -632,6 +632,7 @@ function audit(accion,tipo,codigo,detalle){
 
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
+  try{
   // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
   lt.textContent='Conectando a Google Sheets...';
   ls.textContent='Cargando datos en paralelo...';
@@ -655,9 +656,20 @@ async function loadFromSheets(){
   ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
   lt.textContent='¡Sistema listo!';
   setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
+  }catch(err){
+    // Si la carga falla — mostrar error y dejar entrar de todas formas
+    console.error('Error cargando datos:',err);
+    lt.textContent='⚠️ Error de conexión';
+    ls.textContent='Reintentando en 5 segundos...';
+    setTimeout(()=>{
+      document.getElementById('loading-overlay').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+      setSyncStatus(false,'Error de conexión');
+    },3000);
+  }
 }
 
-async // Rate limiting — máximo 5 intentos, bloqueo de 5 minutos
+// Rate limiting — máximo 5 intentos, bloqueo de 5 minutos
 const _loginAttempts = {count:0, blockedUntil:0};
 
 function doLogin(){
@@ -2345,6 +2357,7 @@ loadFromSheets();
 
 </body>
 </html>
+
 
 
 
