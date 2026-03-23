@@ -1075,11 +1075,20 @@ function populateSuggestions(){
     ...usuarios.map(u=>u.depto).filter(Boolean)
   ])].sort();
   const dlDeptos=document.getElementById('dl-deptos');
-  if(dlDeptos) dlDeptos.innerHTML=deptos.map(d=>`<option value="${d}">`).join('');
+  if(dlDeptos){
+    // Agregar solo los que no estén ya en la lista fija
+    const existing=new Set([...dlDeptos.options].map(o=>o.value));
+    const nuevos=deptos.filter(d=>!existing.has(d));
+    dlDeptos.innerHTML += nuevos.map(d=>`<option value="${d}">`).join('');
+  }
   // Ubicaciones únicas
   const ubics=[...new Set(activos.map(a=>a.ubicacion).filter(Boolean))].sort();
   const dlUbics=document.getElementById('dl-ubicaciones');
-  if(dlUbics) dlUbics.innerHTML=ubics.map(u=>`<option value="${u}">`).join('');
+  if(dlUbics){
+    const existingU=new Set([...dlUbics.options].map(o=>o.value));
+    const nuevosU=ubics.filter(u=>!existingU.has(u));
+    dlUbics.innerHTML += nuevosU.map(u=>`<option value="${u}">`).join('');
+  }
   // Personas asignadas únicas (activos + usuarios)
   const asignados=[...new Set([
     ...activos.map(a=>a.asignado).filter(Boolean),
@@ -2052,8 +2061,137 @@ loadFromSheets();
 </script>
 
 <!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
-<datalist id="dl-deptos"></datalist>
-<datalist id="dl-ubicaciones"></datalist>
+<datalist id="dl-deptos">
+  <option value="Administración">
+  <option value="Cómputo P">
+  <option value="Cómputo S">
+  <option value="Pre Es">
+  <option value="Edi Ala N">
+  <option value="K4A">
+  <option value="K4B">
+  <option value="K4C">
+  <option value="1A">
+  <option value="1B">
+  <option value="1C">
+  <option value="2A">
+  <option value="2B">
+  <option value="2C">
+  <option value="3A">
+  <option value="3B">
+  <option value="3C">
+  <option value="4A">
+  <option value="4B">
+  <option value="4C">
+  <option value="5A">
+  <option value="5B">
+  <option value="5C">
+  <option value="6A">
+  <option value="6B">
+  <option value="6C">
+  <option value="7A">
+  <option value="7B">
+  <option value="7C">
+  <option value="8A">
+  <option value="8B">
+  <option value="8C">
+  <option value="9A">
+  <option value="9B">
+  <option value="9C">
+  <option value="10A">
+  <option value="10B">
+  <option value="10C">
+  <option value="11A">
+  <option value="11B">
+  <option value="11C">
+  <option value="12A">
+  <option value="12B">
+  <option value="12C">
+  <option value="Robo Lab">
+  <option value="Sal Doc Pre">
+  <option value="Sal Doc Pri">
+  <option value="Sal Doc Sec">
+  <option value="Gym">
+  <option value="Gym Pri">
+  <option value="Gym Sec">
+  <option value="Auditorio">
+  <option value="Capilla N">
+  <option value="Rack Pri">
+  <option value="Rack Sec">
+  <option value="Informática">
+  <option value="Dirección">
+  <option value="Coordinación">
+</datalist>
+<datalist id="dl-ubicaciones">
+  <option value="Planta Baja">
+  <option value="Primer Piso">
+  <option value="Segundo Piso">
+  <option value="Edificio Ala Norte">
+  <option value="Edificio Ala Sur">
+  <option value="Oficina de Administración">
+  <option value="Oficina de Dirección">
+  <option value="Oficina de Coordinación">
+  <option value="Sala de Reuniones">
+  <option value="Laboratorio de Robótica">
+  <option value="Robo Lab">
+  <option value="Rack Principal">
+  <option value="Rack Primaria">
+  <option value="Rack Secundaria">
+  <option value="Sala de Docentes Preescolar">
+  <option value="Sala de Docentes Primaria">
+  <option value="Sala de Docentes Secundaria">
+  <option value="Gimnasio">
+  <option value="Gimnasio Primaria">
+  <option value="Gimnasio Secundaria">
+  <option value="Auditorio">
+  <option value="Capilla Norte">
+  <option value="Aula K4A">
+  <option value="Aula K4B">
+  <option value="Aula K4C">
+  <option value="Aula 1A">
+  <option value="Aula 1B">
+  <option value="Aula 1C">
+  <option value="Aula 2A">
+  <option value="Aula 2B">
+  <option value="Aula 2C">
+  <option value="Aula 3A">
+  <option value="Aula 3B">
+  <option value="Aula 3C">
+  <option value="Aula 4A">
+  <option value="Aula 4B">
+  <option value="Aula 4C">
+  <option value="Aula 5A">
+  <option value="Aula 5B">
+  <option value="Aula 5C">
+  <option value="Aula 6A">
+  <option value="Aula 6B">
+  <option value="Aula 6C">
+  <option value="Aula 7A">
+  <option value="Aula 7B">
+  <option value="Aula 7C">
+  <option value="Aula 8A">
+  <option value="Aula 8B">
+  <option value="Aula 8C">
+  <option value="Aula 9A">
+  <option value="Aula 9B">
+  <option value="Aula 9C">
+  <option value="Aula 10A">
+  <option value="Aula 10B">
+  <option value="Aula 10C">
+  <option value="Aula 11A">
+  <option value="Aula 11B">
+  <option value="Aula 11C">
+  <option value="Aula 12A">
+  <option value="Aula 12B">
+  <option value="Aula 12C">
+  <option value="Lab Cómputo Primaria">
+  <option value="Lab Cómputo Secundaria">
+  <option value="Pasillo Planta Baja">
+  <option value="Pasillo Primer Piso">
+  <option value="Entrada Principal">
+  <option value="Estacionamiento">
+  <option value="Patio Central">
+  <option value="Área de Recreo">
+</datalist>
 <datalist id="dl-asignados"></datalist>
 <datalist id="dl-marcas">
   <option>Dell</option><option>HP</option><option>Lenovo</option>
