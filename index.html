@@ -609,8 +609,20 @@ async function apiPost(sheet,action,payload){
   catch(e){setSyncStatus(false,'Error al guardar');return false;}
 }
 async function apiGet(sheet){
-  try{const r=await fetch(API+'?sheet='+sheet,{mode:'cors'});if(!r.ok)return[];const d=await r.json();return Array.isArray(d)?d:[];}
-  catch(e){return[];}
+  try{
+    // Timeout de 15 segundos por llamada
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(), 15000);
+    const r = await fetch(API+'?sheet='+sheet, {mode:'cors', signal:controller.signal});
+    clearTimeout(timer);
+    if(!r.ok) return [];
+    const d = await r.json();
+    return Array.isArray(d) ? d : [];
+  }
+  catch(e){
+    if(e.name==='AbortError') console.warn('Timeout cargando '+sheet);
+    return [];
+  }
 }
 
 function audit(accion,tipo,codigo,detalle){
@@ -620,25 +632,27 @@ function audit(accion,tipo,codigo,detalle){
 
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
-  lt.textContent='Cargando usuarios...';
-  const rawU=await apiGet('usuarios');
-  usuarios=rawU.map(r=>({...r}));
-  lt.textContent='Cargando activos...';
-  const rawA=await apiGet('activos');
-  activos=rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
-  cntActivos=activos.length;
-  lt.textContent='Cargando tickets...';
-  const rawT=await apiGet('tickets');
-  tickets=rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
-  cntTickets=tickets.length;
-  lt.textContent='Cargando auditoría...';
-  const rawAud=await apiGet('auditoria');
-  auditLog=rawAud.slice().reverse();
+  // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
+  lt.textContent='Conectando a Google Sheets...';
+  ls.textContent='Cargando datos en paralelo...';
+  const [rawU, rawA, rawT, rawAud] = await Promise.all([
+    apiGet('usuarios'),
+    apiGet('activos'),
+    apiGet('tickets'),
+    apiGet('auditoria')
+  ]);
+  lt.textContent='Procesando datos...';
+  usuarios = rawU.map(r=>({...r}));
+  activos  = rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
+  cntActivos = activos.length;
+  tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
+  cntTickets = tickets.length;
+  auditLog = rawAud.slice().reverse();
   if(!usuarios.length){
     const a={username:'admin',passHash:hashPass('admin123'),rol:'admin',nombre:'Administrador',email:'admin@miglpi.com',tel:'',depto:'TI',cargo:'Administrador del sistema',estado:'activo',fechaCreacion:ts(),ultimoAcceso:'Nunca'};
     usuarios.push(a);await apiPost('usuarios','insert',a);
   }
-  ls.textContent=`${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
+  ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
   lt.textContent='¡Sistema listo!';
   setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
 }
