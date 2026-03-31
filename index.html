@@ -189,6 +189,47 @@ tbody tr.clickable{cursor:pointer;}
 .sr-badge{font-size:10px;padding:1px 7px;border-radius:20px;flex-shrink:0;}
 .sr-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--text3);}
 
+
+/* ── ETIQUETAS DE CÓDIGO DE BARRAS ──────────────────────────────── */
+#modal-etiqueta{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;}
+#modal-etiqueta.open{display:flex;}
+.etiqueta-wrap{background:#fff;border-radius:8px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-width:400px;width:100%;}
+.etiqueta-titulo{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;border-bottom:2px solid var(--navy);padding-bottom:8px;}
+.etiqueta-preview{border:1px solid #DDD;border-radius:6px;padding:12px;background:#FAFAFA;margin-bottom:16px;text-align:center;}
+.etiqueta-nombre{font-size:11px;font-weight:700;color:#111;margin-bottom:4px;max-width:180px;word-wrap:break-word;margin:0 auto 4px;}
+.etiqueta-codigo{font-size:10px;color:#444;margin-bottom:6px;}
+.etiqueta-barcode-svg{max-width:180px;height:50px;}
+.etiqueta-qr{margin-top:8px;display:inline-block;}
+.etiqueta-acciones{display:flex;gap:8px;justify-content:flex-end;}
+/* Barcode en Detalle del activo */
+.det-barcode-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;text-align:center;}
+.det-barcode-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.det-barcode-row{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+.det-barcode-item{text-align:center;}
+.det-barcode-label{font-size:10px;color:var(--text3);margin-top:4px;}
+#det-barcode-svg{max-width:200px;height:55px;}
+
+/* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
+@media print{
+  body *{visibility:hidden!important;}
+  #print-etiqueta-area,#print-etiqueta-area *{visibility:visible!important;}
+  #print-etiqueta-area{
+    position:fixed!important;top:0!important;left:0!important;
+    width:5cm!important;height:3cm!important;
+    margin:0!important;padding:4px!important;
+    background:#fff!important;
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;justify-content:center!important;
+    font-family:Arial,sans-serif!important;
+    border:0.5px solid #CCC!important;
+  }
+  #print-nombre{font-size:7pt!important;font-weight:700!important;color:#000!important;text-align:center!important;word-wrap:break-word!important;max-width:4.5cm!important;margin-bottom:2px!important;}
+  #print-codigo{font-size:6pt!important;color:#333!important;margin-bottom:3px!important;}
+  #print-barcode-svg{width:4.2cm!important;height:1.1cm!important;}
+  #print-qr-wrap{margin-top:2px!important;}
+  #print-qr-wrap canvas,#print-qr-wrap img{width:0.8cm!important;height:0.8cm!important;}
+}
+
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
 
 /* ── VALIDACIONES DE FORMULARIO ──────────────────────────────────── */
@@ -201,6 +242,9 @@ tbody tr.clickable{cursor:pointer;}
 .f-inp[list]::-webkit-calendar-picker-indicator{opacity:0.5;}
 
 </style>
+  <!-- CÓDIGOS DE BARRA — JsBarcode (Code128) + QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <div class="screen" id="screen">
@@ -628,6 +672,157 @@ async function apiGet(sheet){
 function audit(accion,tipo,codigo,detalle){
   const e={ts:ts(),usuario:session.username,nombre:session.nombre,rol:session.rol,accion,tipo,codigo,detalle};
   auditLog.unshift(e);apiPost('auditoria','insert',e);
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+// CÓDIGOS DE BARRA — Generación, Visualización e Impresión
+// ════════════════════════════════════════════════════════════════════
+
+// Genera el SVG del Code128 en un elemento <svg> dado su id
+function generarBarcode(svgId, codigo){
+  try{
+    if(typeof JsBarcode === 'undefined') return;
+    JsBarcode('#'+svgId, codigo, {
+      format:"CODE128",
+      width:2,
+      height:50,
+      displayValue:true,
+      fontOptions:"bold",
+      fontSize:12,
+      margin:4,
+      background:"#FFFFFF",
+      lineColor:"#000000"
+    });
+  }catch(e){ console.warn('Barcode error:',e); }
+}
+
+// Genera el QR en un elemento <div> dado su id
+// La URL del QR apunta a la búsqueda del activo en el sistema
+let _qrInstances = {};
+function generarQR(divId, codigo){
+  try{
+    if(typeof QRCode === 'undefined') return;
+    // Destruir instancia anterior si existe
+    if(_qrInstances[divId]){
+      const el = document.getElementById(divId);
+      if(el) el.innerHTML = '';
+      delete _qrInstances[divId];
+    }
+    const el = document.getElementById(divId);
+    if(!el) return;
+    _qrInstances[divId] = new QRCode(el, {
+      text: codigo,
+      width: 72,
+      height: 72,
+      colorDark:"#000000",
+      colorLight:"#FFFFFF",
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }catch(e){ console.warn('QR error:',e); }
+}
+
+// Abrir el modal de impresión de etiqueta para un activo
+function abrirEtiqueta(codigo){
+  const a = activos.find(x=>x.codigo===codigo);
+  if(!a) return;
+  const modal = document.getElementById('modal-etiqueta');
+  if(!modal) return;
+  // Llenar nombre y código en la preview del modal
+  document.getElementById('prev-nombre').textContent = a.nombre;
+  document.getElementById('prev-codigo').textContent = a.codigo + (a.tipo?' · '+a.tipo:'');
+  // Llenar área de impresión
+  document.getElementById('print-nombre').textContent = a.nombre;
+  document.getElementById('print-codigo').textContent = a.codigo + (a.tipo?' · '+a.tipo:'');
+  modal.classList.add('open');
+  // Generar barcode y QR con pequeño delay para que el DOM esté listo
+  setTimeout(()=>{
+    generarBarcode('prev-barcode-svg', a.codigo);
+    generarBarcode('print-barcode-svg', a.codigo);
+    generarQR('prev-qr-div', a.codigo);
+    generarQR('print-qr-div', a.codigo);
+  }, 120);
+}
+
+// Cerrar modal de etiqueta
+function cerrarEtiqueta(){
+  const modal = document.getElementById('modal-etiqueta');
+  if(modal) modal.classList.remove('open');
+}
+
+// Imprimir etiqueta
+function imprimirEtiqueta(){
+  // Hacer visible el área de impresión momentáneamente
+  const area = document.getElementById('print-etiqueta-area');
+  if(area) area.style.display = 'flex';
+  setTimeout(()=>{
+    window.print();
+    // Ocultar de nuevo después de imprimir
+    setTimeout(()=>{ if(area) area.style.display = 'none'; }, 500);
+  }, 100);
+}
+
+// ── BÚSQUEDA POR ESCÁNER ──────────────────────────────────────────
+// Un lector USB actúa como teclado — escribe el código + Enter
+// Detectamos secuencias rápidas (velocidad de escáner > 50 chars/seg)
+// y las redirigimos a la búsqueda de activos
+
+let _scanBuffer = '';
+let _scanTimer = null;
+const _SCAN_SPEED = 50;   // ms máximo entre teclas para considerar que es un escáner
+const _SCAN_MIN_LEN = 6;  // longitud mínima para procesar (ACT-0001 = 8 chars)
+
+document.addEventListener('keydown', function(e){
+  // Solo procesar si no hay un input/textarea enfocado (excepto el buscador)
+  const active = document.activeElement;
+  const isInput = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT');
+  const isSearchBar = active && (active.id==='main-search'||active.id==='search-bar'||active.classList.contains('search-inp'));
+
+  // Si el Enter llega después de un buffer rápido — procesar como escáner
+  if(e.key==='Enter' && _scanBuffer.length >= _SCAN_MIN_LEN){
+    e.preventDefault();
+    const codigo = _scanBuffer.trim().toUpperCase();
+    _scanBuffer = '';
+    clearTimeout(_scanTimer);
+    procesarCodigoEscaneado(codigo);
+    return;
+  }
+
+  // Si hay un input enfocado que no es el buscador, no interceptar
+  if(isInput && !isSearchBar) return;
+
+  // Acumular caracteres al buffer del escáner
+  if(e.key.length === 1){
+    _scanBuffer += e.key;
+    clearTimeout(_scanTimer);
+    _scanTimer = setTimeout(()=>{ _scanBuffer=''; }, _SCAN_SPEED);
+  }
+});
+
+// Procesar el código escaneado — buscar en activos y abrir el detalle
+function procesarCodigoEscaneado(codigo){
+  if(!codigo) return;
+  // Buscar por código exacto (ACT-XXXX)
+  const activo = activos.find(a=>
+    a.codigo.toUpperCase()===codigo ||
+    (a.serial && a.serial.toUpperCase()===codigo)
+  );
+  if(activo){
+    // Ir al módulo de inventario y abrir el detalle del activo
+    go('activos', document.getElementById('nav-activos'));
+    setTimeout(()=>{ showDetalle(activo.codigo); }, 150);
+    showToast('✅ Activo encontrado: '+activo.nombre,'success');
+    return;
+  }
+  // Si no es un activo, intentar buscar como ticket
+  const ticket = tickets.find(t=>t.codigo.toUpperCase()===codigo);
+  if(ticket){
+    go('tickets', document.getElementById('nav-tickets'));
+    showToast('🎫 Ticket encontrado: '+ticket.titulo,'');
+    return;
+  }
+  // No encontrado
+  showToast('⚠️ Código "'+codigo+'" no encontrado en el inventario','');
 }
 
 async function loadFromSheets(){
@@ -1374,8 +1569,31 @@ function showDetalle(id){
           '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+(h.fecha||'')+' · '+(h.usuario||'—')+(h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:'')+(h.costo?' · $'+h.costo:'')+'</div></div>' +
           '</div>';
       }).join('')}
-    </div>`;
+    </div>
+    <div class="det-barcode-section">
+      <div class="det-barcode-title">Código de Barras del Activo</div>
+      <div class="det-barcode-row">
+        <div class="det-barcode-item">
+          <svg id="det-barcode-svg" class="det-barcode-svg"></svg>
+          <div class="det-barcode-label">Code 128 — Lector físico USB</div>
+        </div>
+        <div class="det-barcode-item">
+          <div id="det-qr-div" class="etiqueta-qr"></div>
+          <div class="det-barcode-label">QR — Cámara del teléfono</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;text-align:center">
+        <button class="btn btn-p" onclick="abrirEtiqueta('${activoActual.codigo}')" style="font-size:12px;padding:6px 18px">
+          🏷️ Imprimir etiqueta
+        </button>
+      </div>
+    </div>\`;
   go('detalle',document.getElementById('nav-detalle'));
+  // Generar barcode y QR después de que el DOM esté listo
+  setTimeout(()=>{
+    generarBarcode('det-barcode-svg', activoActual.codigo);
+    generarQR('det-qr-div', activoActual.codigo);
+  }, 120);
 }
 
 function renderActivos(){
@@ -2403,6 +2621,34 @@ loadFromSheets();
   <option>Netgear</option><option>Fortinet</option><option>SonicWall</option>
 </datalist>
 <datalist id="dl-seriales"></datalist>
+
+
+<!-- MODAL DE ETIQUETA IMPRIMIBLE -->
+<div id="modal-etiqueta">
+  <div class="etiqueta-wrap">
+    <div class="etiqueta-titulo">🏷️ Etiqueta del Activo</div>
+    <!-- Preview de la etiqueta -->
+    <div class="etiqueta-preview">
+      <div id="prev-nombre" class="etiqueta-nombre"></div>
+      <div id="prev-codigo" class="etiqueta-codigo"></div>
+      <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
+      <div id="prev-qr-div" class="etiqueta-qr" style="margin-top:6px"></div>
+      <div style="font-size:9px;color:#888;margin-top:4px">5 × 3 cm — para pegar en el equipo</div>
+    </div>
+    <div class="etiqueta-acciones">
+      <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
+      <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA INVISIBLE PARA IMPRESIÓN — solo visible al imprimir -->
+<div id="print-etiqueta-area" style="display:none">
+  <div id="print-nombre"></div>
+  <div id="print-codigo"></div>
+  <svg id="print-barcode-svg"></svg>
+  <div id="print-qr-div"></div>
+</div>
 
 </body>
 </html>
