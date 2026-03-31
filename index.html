@@ -210,10 +210,12 @@ tbody tr.clickable{cursor:pointer;}
 #det-barcode-svg{max-width:200px;height:55px;}
 
 /* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
+/* SOLO aplica cuando se está imprimiendo una etiqueta (clase en body) */
 @media print{
-  body *{visibility:hidden!important;}
-  #print-etiqueta-area,#print-etiqueta-area *{visibility:visible!important;}
-  #print-etiqueta-area{
+  body.printing-label *{visibility:hidden!important;}
+  body.printing-label #print-etiqueta-area,
+  body.printing-label #print-etiqueta-area *{visibility:visible!important;}
+  body.printing-label #print-etiqueta-area{
     position:fixed!important;top:0!important;left:0!important;
     width:5cm!important;height:3cm!important;
     margin:0!important;padding:4px!important;
@@ -223,11 +225,12 @@ tbody tr.clickable{cursor:pointer;}
     font-family:Arial,sans-serif!important;
     border:0.5px solid #CCC!important;
   }
-  #print-nombre{font-size:7pt!important;font-weight:700!important;color:#000!important;text-align:center!important;word-wrap:break-word!important;max-width:4.5cm!important;margin-bottom:2px!important;}
-  #print-codigo{font-size:6pt!important;color:#333!important;margin-bottom:3px!important;}
-  #print-barcode-svg{width:4.2cm!important;height:1.1cm!important;}
-  #print-qr-wrap{margin-top:2px!important;}
-  #print-qr-wrap canvas,#print-qr-wrap img{width:0.8cm!important;height:0.8cm!important;}
+  body.printing-label #print-nombre{font-size:7pt!important;font-weight:700!important;color:#000!important;text-align:center!important;word-wrap:break-word!important;max-width:4.5cm!important;margin-bottom:2px!important;}
+  body.printing-label #print-codigo{font-size:6pt!important;color:#333!important;margin-bottom:3px!important;}
+  body.printing-label #print-barcode-svg{width:4.2cm!important;height:1.1cm!important;}
+  body.printing-label #print-qr-wrap{margin-top:2px!important;}
+  body.printing-label #print-qr-wrap canvas,
+  body.printing-label #print-qr-wrap img{width:0.8cm!important;height:0.8cm!important;}
 }
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
@@ -703,7 +706,6 @@ let _qrInstances = {};
 function generarQR(divId, codigo){
   try{
     if(typeof QRCode === 'undefined') return;
-    // Destruir instancia anterior si existe
     if(_qrInstances[divId]){
       const el = document.getElementById(divId);
       if(el) el.innerHTML = '';
@@ -711,8 +713,12 @@ function generarQR(divId, codigo){
     }
     const el = document.getElementById(divId);
     if(!el) return;
+    // Contenido seguro — solo SAGA puede interpretar este formato
+    // Una cámara externa ve texto sin sentido, no una URL
+    const sessionHash = session ? hashPass(session.username).substring(1,7) : 'NOSESS';
+    const qrContent = 'SAGA|' + codigo + '|' + sessionHash;
     _qrInstances[divId] = new QRCode(el, {
-      text: codigo,
+      text: qrContent,
       width: 72,
       height: 72,
       colorDark:"#000000",
@@ -752,13 +758,17 @@ function cerrarEtiqueta(){
 
 // Imprimir etiqueta
 function imprimirEtiqueta(){
-  // Hacer visible el área de impresión momentáneamente
   const area = document.getElementById('print-etiqueta-area');
   if(area) area.style.display = 'flex';
+  // Agregar clase al body para activar el CSS de impresión de etiqueta
+  document.body.classList.add('printing-label');
   setTimeout(()=>{
     window.print();
-    // Ocultar de nuevo después de imprimir
-    setTimeout(()=>{ if(area) area.style.display = 'none'; }, 500);
+    // Quitar la clase y ocultar el área después de imprimir
+    setTimeout(()=>{
+      document.body.classList.remove('printing-label');
+      if(area) area.style.display = 'none';
+    }, 500);
   }, 100);
 }
 
@@ -776,7 +786,7 @@ document.addEventListener('keydown', function(e){
   // Solo procesar si no hay un input/textarea enfocado (excepto el buscador)
   const active = document.activeElement;
   const isInput = active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA'||active.tagName==='SELECT');
-  const isSearchBar = active && (active.id==='main-search'||active.id==='search-bar'||active.classList.contains('search-inp'));
+  const isSearchBar = active && (active.id==='global-search'||active.id==='main-search'||active.id==='search-bar'||active.classList.contains('search-inp'));
 
   // Si el Enter llega después de un buffer rápido — procesar como escáner
   if(e.key==='Enter' && _scanBuffer.length >= _SCAN_MIN_LEN){
@@ -800,29 +810,54 @@ document.addEventListener('keydown', function(e){
 });
 
 // Procesar el código escaneado — buscar en activos y abrir el detalle
-function procesarCodigoEscaneado(codigo){
-  if(!codigo) return;
-  // Buscar por código exacto (ACT-XXXX)
+function procesarCodigoEscaneado(rawCodigo){
+  if(!rawCodigo) return;
+  let codigo = rawCodigo.trim().toUpperCase();
+
+  // ── Validar si viene del QR interno de SAGA ────────────────────
+  // Formato QR interno: SAGA|ACT-0012|sessionHash
+  if(codigo.startsWith('SAGA|')){
+    const partes = codigo.split('|');
+    if(partes.length < 2){ showToast('⚠️ QR inválido',''); return; }
+    codigo = partes[1]; // Extraer el código del activo
+    // Verificar rol — solo tecnico e inventario pueden usar el QR
+    if(!session || !['admin','tecnico','inventario'].includes(session.rol)){
+      showToast('⛔ Sin permiso para escanear QR de activos','');
+      return;
+    }
+  }
+
+  // ── Buscar por código exacto (ACT-XXXX) o número de serie ─────
   const activo = activos.find(a=>
     a.codigo.toUpperCase()===codigo ||
     (a.serial && a.serial.toUpperCase()===codigo)
   );
   if(activo){
-    // Ir al módulo de inventario y abrir el detalle del activo
-    go('activos', document.getElementById('nav-activos'));
-    setTimeout(()=>{ showDetalle(activo.codigo); }, 150);
-    showToast('✅ Activo encontrado: '+activo.nombre,'success');
+    // Verificar que el rol puede ver el detalle del activo
+    const per = PERMS[session.rol]||{};
+    if(!per.activos){
+      showToast('⛔ Sin permiso para ver activos','');
+      return;
+    }
+    showDetalle(activo.codigo);
+    showToast('✅ '+activo.codigo+' — '+activo.nombre,'success');
     return;
   }
-  // Si no es un activo, intentar buscar como ticket
+
+  // ── Buscar como ticket ────────────────────────────────────────
   const ticket = tickets.find(t=>t.codigo.toUpperCase()===codigo);
   if(ticket){
-    go('tickets', document.getElementById('nav-tickets'));
-    showToast('🎫 Ticket encontrado: '+ticket.titulo,'');
+    const per = PERMS[session.rol]||{};
+    if(per.tickets){
+      go('tickets', document.getElementById('nav-tickets'));
+      showToast('🎫 Ticket encontrado: '+ticket.titulo,'');
+    } else {
+      showToast('⛔ Sin permiso para ver tickets','');
+    }
     return;
   }
-  // No encontrado
-  showToast('⚠️ Código "'+codigo+'" no encontrado en el inventario','');
+
+  showToast('⚠️ Código "'+codigo+'" no encontrado','');
 }
 
 async function loadFromSheets(){
@@ -1570,6 +1605,7 @@ function showDetalle(id){
           '</div>';
       }).join('')}
     </div>
+    ${['admin','tecnico','inventario'].includes(session.rol)?`
     <div class="det-barcode-section">
       <div class="det-barcode-title">Código de Barras del Activo</div>
       <div class="det-barcode-row">
@@ -1579,7 +1615,7 @@ function showDetalle(id){
         </div>
         <div class="det-barcode-item">
           <div id="det-qr-div" class="etiqueta-qr"></div>
-          <div class="det-barcode-label">QR — Cámara del teléfono</div>
+          <div class="det-barcode-label">QR — Solo SAGA</div>
         </div>
       </div>
       <div style="margin-top:12px;text-align:center">
@@ -1587,13 +1623,15 @@ function showDetalle(id){
           🏷️ Imprimir etiqueta
         </button>
       </div>
-    </div>`;
+    </div>`:''}`;
   go('detalle',document.getElementById('nav-detalle'));
   // Generar barcode y QR después de que el DOM esté listo
-  setTimeout(()=>{
-    generarBarcode('det-barcode-svg', activoActual.codigo);
-    generarQR('det-qr-div', activoActual.codigo);
-  }, 120);
+  if(['admin','tecnico','inventario'].includes(session.rol)){
+    setTimeout(()=>{
+      generarBarcode('det-barcode-svg', activoActual.codigo);
+      generarQR('det-qr-div', activoActual.codigo);
+    }, 120);
+  }
 }
 
 function renderActivos(){
@@ -2652,6 +2690,7 @@ loadFromSheets();
 
 </body>
 </html>
+
 
 
 
