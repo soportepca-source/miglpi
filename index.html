@@ -190,17 +190,32 @@ tbody tr.clickable{cursor:pointer;}
 .sr-empty{padding:16px 12px;text-align:center;font-size:12px;color:var(--text3);}
 
 
-/* ── ETIQUETAS DE CÓDIGO DE BARRAS ──────────────────────────────── */
-#modal-etiqueta{position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;display:none;align-items:center;justify-content:center;}
+/* ── ETIQUETAS DE CÓDIGO DE BARRAS — FORMATO ZEBRA ──────────────── */
+#modal-etiqueta{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;}
 #modal-etiqueta.open{display:flex;}
-.etiqueta-wrap{background:#fff;border-radius:8px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-width:400px;width:100%;}
-.etiqueta-titulo{font-size:14px;font-weight:700;color:var(--navy);margin-bottom:16px;border-bottom:2px solid var(--navy);padding-bottom:8px;}
-.etiqueta-preview{border:1px solid #DDD;border-radius:6px;padding:12px;background:#FAFAFA;margin-bottom:16px;text-align:center;}
-.etiqueta-nombre{font-size:11px;font-weight:700;color:#111;margin-bottom:4px;max-width:180px;word-wrap:break-word;margin:0 auto 4px;}
-.etiqueta-codigo{font-size:10px;color:#444;margin-bottom:6px;}
-.etiqueta-barcode-svg{max-width:180px;height:50px;}
-.etiqueta-qr{margin-top:8px;display:inline-block;}
-.etiqueta-acciones{display:flex;gap:8px;justify-content:flex-end;}
+.etiqueta-wrap{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 24px 64px rgba(0,0,0,0.45);max-width:480px;width:100%;}
+.etiqueta-titulo{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;border-bottom:2px solid var(--navy);padding-bottom:8px;display:flex;align-items:center;gap:6px;}
+/* Preview en pantalla — muestra cómo quedará la etiqueta */
+.etiqueta-preview{
+  border:2px dashed #CCC;border-radius:6px;padding:10px;background:#FAFAFA;
+  margin-bottom:14px;
+  /* Proporción Zebra 2.25" × 1.25" */
+  width:100%;max-width:360px;margin-left:auto;margin-right:auto;
+}
+.etiqueta-preview-inner{
+  background:#fff;border:1px solid #DDD;border-radius:3px;
+  padding:8px 10px;
+  display:flex;align-items:center;gap:10px;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.etiqueta-barcode-col{flex:1;text-align:center;}
+.etiqueta-qr-col{display:flex;flex-direction:column;align-items:center;gap:3px;}
+.etiqueta-nombre-print{font-size:10px;font-weight:700;color:#000;line-height:1.2;text-align:left;margin-bottom:4px;max-width:220px;word-break:break-word;}
+.etiqueta-codigo-print{font-size:9px;color:#333;text-align:center;margin-top:3px;letter-spacing:0.5px;}
+.etiqueta-barcode-svg{width:200px;height:50px;}
+.etiqueta-qr-label{font-size:7px;color:#666;text-align:center;}
+.etiqueta-acciones{display:flex;gap:8px;justify-content:space-between;align-items:center;}
+.etiqueta-info{font-size:10px;color:#888;}
 /* Barcode en Detalle del activo */
 .det-barcode-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;text-align:center;}
 .det-barcode-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
@@ -215,22 +230,45 @@ tbody tr.clickable{cursor:pointer;}
   body.printing-label *{visibility:hidden!important;}
   body.printing-label #print-etiqueta-area,
   body.printing-label #print-etiqueta-area *{visibility:visible!important;}
+  /* Formato Zebra 2.25 x 1.25 pulgadas = 57mm x 32mm */
   body.printing-label #print-etiqueta-area{
     position:fixed!important;top:0!important;left:0!important;
-    width:5cm!important;height:3cm!important;
-    margin:0!important;padding:4px!important;
+    width:57mm!important;height:32mm!important;
+    margin:0!important;padding:3mm!important;
     background:#fff!important;
-    display:flex!important;flex-direction:column!important;
-    align-items:center!important;justify-content:center!important;
-    font-family:Arial,sans-serif!important;
-    border:0.5px solid #CCC!important;
+    display:flex!important;flex-direction:row!important;
+    align-items:center!important;gap:3mm!important;
+    font-family:Arial,Helvetica,sans-serif!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
   }
-  body.printing-label #print-nombre{font-size:7pt!important;font-weight:700!important;color:#000!important;text-align:center!important;word-wrap:break-word!important;max-width:4.5cm!important;margin-bottom:2px!important;}
-  body.printing-label #print-codigo{font-size:6pt!important;color:#333!important;margin-bottom:3px!important;}
-  body.printing-label #print-barcode-svg{width:4.2cm!important;height:1.1cm!important;}
-  body.printing-label #print-qr-wrap{margin-top:2px!important;}
-  body.printing-label #print-qr-wrap canvas,
-  body.printing-label #print-qr-wrap img{width:0.8cm!important;height:0.8cm!important;}
+  body.printing-label #print-barcode-col{
+    flex:1!important;display:flex!important;flex-direction:column!important;
+    align-items:flex-start!important;justify-content:center!important;
+  }
+  body.printing-label #print-nombre{
+    font-size:7pt!important;font-weight:700!important;color:#000!important;
+    line-height:1.2!important;word-break:break-word!important;
+    max-width:38mm!important;margin-bottom:2mm!important;
+  }
+  body.printing-label #print-barcode-svg{
+    width:38mm!important;height:12mm!important;
+  }
+  body.printing-label #print-codigo{
+    font-size:6pt!important;color:#333!important;
+    margin-top:1mm!important;letter-spacing:0.5pt!important;
+  }
+  body.printing-label #print-qr-col{
+    display:flex!important;flex-direction:column!important;
+    align-items:center!important;gap:1mm!important;
+  }
+  body.printing-label #print-qr-div canvas,
+  body.printing-label #print-qr-div img{
+    width:18mm!important;height:18mm!important;
+  }
+  body.printing-label #print-qr-label{
+    font-size:5pt!important;color:#555!important;text-align:center!important;
+  }
 }
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
@@ -311,10 +349,14 @@ tbody tr.clickable{cursor:pointer;}
       <div class="topbar-title" id="tb-title">Dashboard</div>
       <div class="global-search-wrap" id="search-wrap">
         <span class="global-search-icon">🔍</span>
-        <input class="global-search" id="global-search" placeholder="Buscar ticket, activo, código..." 
+        <input class="global-search" id="global-search" placeholder="Buscar o escanear código..." 
           oninput="globalSearch(this.value)" onblur="setTimeout(()=>closeSearch(),200)" onkeydown="searchKeyNav(event)">
         <div class="search-results" id="search-results"></div>
       </div>
+      <button id="scan-mode-btn" onclick="activarModoEscaneo()" title="Activar modo escaneo de código de barras/QR"
+        style="display:none;background:var(--navy);color:#fff;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;font-size:13px;margin-left:6px;white-space:nowrap">
+        📷 Escanear
+      </button>
       <div id="tb-buttons"></div>
     </div>
     <div class="content">
@@ -734,20 +776,26 @@ function abrirEtiqueta(codigo){
   if(!a) return;
   const modal = document.getElementById('modal-etiqueta');
   if(!modal) return;
-  // Llenar nombre y código en la preview del modal
-  document.getElementById('prev-nombre').textContent = a.nombre;
-  document.getElementById('prev-codigo').textContent = a.codigo + (a.tipo?' · '+a.tipo:'');
-  // Llenar área de impresión
-  document.getElementById('print-nombre').textContent = a.nombre;
-  document.getElementById('print-codigo').textContent = a.codigo + (a.tipo?' · '+a.tipo:'');
+  // Nombre + código en PREVIEW del modal
+  const nombreText = a.nombre;
+  const codigoText = a.codigo + (a.tipo?' · '+a.tipo:'');
+  document.getElementById('prev-nombre').textContent = nombreText;
+  document.getElementById('prev-codigo').textContent = codigoText;
+  // Nombre + código en ÁREA DE IMPRESIÓN
+  document.getElementById('print-nombre').textContent = nombreText;
+  document.getElementById('print-codigo').textContent = codigoText;
   modal.classList.add('open');
-  // Generar barcode y QR con pequeño delay para que el DOM esté listo
+  // Generar AMBOS — Code128 y QR — en preview y en área de impresión
   setTimeout(()=>{
+    // Code 128 en preview
     generarBarcode('prev-barcode-svg', a.codigo);
+    // Code 128 en impresión
     generarBarcode('print-barcode-svg', a.codigo);
+    // QR en preview (el QR contiene el código del activo con formato SAGA)
     generarQR('prev-qr-div', a.codigo);
+    // QR en impresión
     generarQR('print-qr-div', a.codigo);
-  }, 120);
+  }, 150);
 }
 
 // Cerrar modal de etiqueta
@@ -860,6 +908,37 @@ function procesarCodigoEscaneado(rawCodigo){
   showToast('⚠️ Código "'+codigo+'" no encontrado','');
 }
 
+
+// ── MODO ESCÁNER ─────────────────────────────────────────────────
+function activarModoEscaneo(){
+  const input = document.getElementById('global-search');
+  if(!input) return;
+  input.value = '';
+  input.focus();
+  input.placeholder = '📷 Listo — escanea el código de barras o QR...';
+  input.style.borderColor = 'var(--gold, #C9A84C)';
+  input.style.boxShadow = '0 0 0 2px rgba(201,168,76,0.3)';
+  showToast('📷 Modo escaneo activo — apunta el lector al código','');
+  // Restaurar placeholder después de 8 segundos
+  setTimeout(()=>{
+    input.placeholder = 'Buscar o escanear código...';
+    input.style.borderColor = '';
+    input.style.boxShadow = '';
+  }, 8000);
+  // Al presionar Enter en modo escaneo → buscar activo
+  input.onkeydown = function(e){
+    if(e.key === 'Enter'){
+      e.preventDefault();
+      const codigo = input.value.trim().toUpperCase();
+      input.value = '';
+      input.placeholder = 'Buscar o escanear código...';
+      input.style.borderColor = '';
+      input.style.boxShadow = '';
+      if(codigo) procesarCodigoEscaneado(codigo);
+    }
+  };
+}
+
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
   try{
@@ -928,6 +1007,11 @@ function doLogin(){
     apiPost('usuarios','update',usuario);
     session={username:u,nombre:usuario.nombre,rol:usuario.rol,data:usuario};
     _loginAttempts.count=0;_loginAttempts.blockedUntil=0;
+  // Mostrar botón de escáner solo para admin, tecnico e inventario
+  const scanBtn = document.getElementById('scan-mode-btn');
+  if(scanBtn){
+    scanBtn.style.display = ['admin','tecnico','inventario'].includes(usuario.rol) ? 'inline-flex' : 'none';
+  }
   document.getElementById('login-screen').style.display='none';
     document.getElementById('app-screen').classList.add('visible');
     document.getElementById('sb-username').textContent=u;
@@ -2661,31 +2745,53 @@ loadFromSheets();
 <datalist id="dl-seriales"></datalist>
 
 
-<!-- MODAL DE ETIQUETA IMPRIMIBLE -->
+<!-- MODAL DE ETIQUETA IMPRIMIBLE — FORMATO ZEBRA -->
 <div id="modal-etiqueta">
   <div class="etiqueta-wrap">
-    <div class="etiqueta-titulo">🏷️ Etiqueta del Activo</div>
-    <!-- Preview de la etiqueta -->
+    <div class="etiqueta-titulo">
+      🏷️ Etiqueta del Activo
+      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Formato Zebra 57×32mm</span>
+    </div>
+    <!-- Preview: layout Zebra — barcode izquierda, QR derecha -->
     <div class="etiqueta-preview">
-      <div id="prev-nombre" class="etiqueta-nombre"></div>
-      <div id="prev-codigo" class="etiqueta-codigo"></div>
-      <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
-      <div id="prev-qr-div" class="etiqueta-qr" style="margin-top:6px"></div>
-      <div style="font-size:9px;color:#888;margin-top:4px">5 × 3 cm — para pegar en el equipo</div>
+      <div style="font-size:10px;color:#999;text-align:center;margin-bottom:6px">Vista previa de la etiqueta</div>
+      <div class="etiqueta-preview-inner">
+        <!-- Columna izquierda: nombre + barcode Code128 -->
+        <div class="etiqueta-barcode-col">
+          <div id="prev-nombre" class="etiqueta-nombre-print"></div>
+          <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
+          <div id="prev-codigo" class="etiqueta-codigo-print"></div>
+        </div>
+        <!-- Columna derecha: QR -->
+        <div class="etiqueta-qr-col">
+          <div id="prev-qr-div"></div>
+          <div class="etiqueta-qr-label">Reporte<br>individual</div>
+        </div>
+      </div>
     </div>
     <div class="etiqueta-acciones">
-      <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
-      <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir</button>
+      <span class="etiqueta-info">📌 Code 128 + QR en una etiqueta</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
+        <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir en Zebra</button>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- ÁREA INVISIBLE PARA IMPRESIÓN — solo visible al imprimir -->
+<!-- ÁREA DE IMPRESIÓN ZEBRA — layout horizontal -->
 <div id="print-etiqueta-area" style="display:none">
-  <div id="print-nombre"></div>
-  <div id="print-codigo"></div>
-  <svg id="print-barcode-svg"></svg>
-  <div id="print-qr-div"></div>
+  <!-- Col izquierda: barcode + nombre -->
+  <div id="print-barcode-col">
+    <div id="print-nombre"></div>
+    <svg id="print-barcode-svg"></svg>
+    <div id="print-codigo"></div>
+  </div>
+  <!-- Col derecha: QR -->
+  <div id="print-qr-col">
+    <div id="print-qr-div"></div>
+    <div id="print-qr-label">Reporte individual</div>
+  </div>
 </div>
 
 </body>
