@@ -647,6 +647,14 @@ tbody tr.clickable{cursor:pointer;}
   <div class="modal-title"><span>Registrar mantenimiento</span><button class="modal-close" onclick="closeModals()">✕</button></div>
   <div class="f-row"><div class="f-lbl">Tipo</div><select class="f-inp f-sel" id="mm-tipo"><option>Preventivo</option><option>Correctivo</option><option>Actualización</option><option>Limpieza</option><option>Reparación</option><option>Inspección</option></select></div>
   <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó o qué problema tiene?"></div>
+  <div class="f-row" id="mm-row-email-resp" style="background:#EBF1FF;border-radius:6px;padding:8px;margin-bottom:2px">
+    <div class="f-lbl" style="color:var(--navy);font-weight:700">📧 Correo del responsable del equipo
+      <span style="font-size:10px;font-weight:400;color:#666;display:block;margin-top:2px">Opcional — para notificarle que su equipo está en IT</span>
+    </div>
+    <input class="f-inp" type="email" id="mm-email-resp"
+      placeholder="correo@dominio.com"
+      value="${activoActual&&activoActual._emailResp?activoActual._emailResp:''}">
+  </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre del técnico"></div>
     <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
@@ -1268,30 +1276,37 @@ async function saveActivo(){
     // ── DETECTAR ENTRADA A MANTENIMIENTO ────────────────────────
     const _estadoNuevo = a.estado||'activo';
     if(_estadoAntes !== 'mantenimiento' && _estadoNuevo === 'mantenimiento'){
-      // Registrar evento especial en historial
       const motivoMant = motivo || 'Sin especificar';
+      // Capturar el correo del responsable desde el modal
+      const emailResp = document.getElementById('mm-email-resp')?.value.trim() || '';
       a.historial.push({
-        tipo:'Entrada a Mantenimiento',
-        desc:`Equipo ingresado a IT para mantenimiento por ${session.nombre}. Motivo: ${motivoMant}. Equipo estará en el Departamento de Tecnología hasta ser devuelto.`,
-        tecnico: session.nombre,
-        fecha: ts(),
-        usuario: session.nombre,
-        color: 'amber'
+        tipo:        'Entrada a Mantenimiento',
+        desc:        `Equipo ingresado a IT para mantenimiento por ${session.nombre}. Motivo: ${motivoMant}. Equipo estará en el Departamento de Tecnología hasta ser devuelto.`,
+        tecnico:     session.nombre,
+        emailResp:   emailResp,   // ← correo capturado al momento del retiro
+        asignadoA:   a.asignado||'—',
+        fecha:       ts(),
+        usuario:     session.nombre,
+        color:       'amber'
       });
-      // Toast informativo
-      showToast('🔧 Equipo marcado en mantenimiento — se notificará por correo','');
+      showToast('🔧 Equipo marcado en mantenimiento' + (emailResp?' — se notificará a '+emailResp:''),'');
     }
     // ── DETECTAR SALIDA DE MANTENIMIENTO ────────────────────────
     if(_estadoAntes === 'mantenimiento' && _estadoNuevo !== 'mantenimiento'){
+      // Recuperar el correo del responsable del evento de entrada en historial
+      const entradaEvt = (a.historial||[]).slice().reverse().find(h=>h.tipo==='Entrada a Mantenimiento');
+      const emailRespSalida = entradaEvt?.emailResp || '';
       a.historial.push({
-        tipo:'Salida de Mantenimiento',
-        desc:`Equipo devuelto de mantenimiento. Nuevo estado: ${_estadoNuevo}. Técnico: ${session.nombre}. Motivo: ${motivo||'Mantenimiento completado'}.`,
-        tecnico: session.nombre,
-        fecha: ts(),
-        usuario: session.nombre,
-        color: 'green'
+        tipo:        'Salida de Mantenimiento',
+        desc:        `Equipo devuelto de mantenimiento. Nuevo estado: ${_estadoNuevo}. Técnico: ${session.nombre}. Motivo: ${motivo||'Mantenimiento completado'}.`,
+        tecnico:     session.nombre,
+        emailResp:   emailRespSalida,
+        asignadoA:   a.asignado||'—',
+        fecha:       ts(),
+        usuario:     session.nombre,
+        color:       'green'
       });
-      showToast('✅ Equipo devuelto de mantenimiento — se notificará por correo','success');
+      showToast('✅ Equipo devuelto de mantenimiento' + (emailRespSalida?' — se notificará a '+emailRespSalida:''),'success');
     }
 
     await apiPost('activos','update',a);audit('EDITAR','Activo',a.codigo,det);
@@ -1451,7 +1466,7 @@ async function saveMant(){
   audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
 
   // Resetear campos del modal
-  ['mm-desc','mm-tec','mm-costo','mm-fecha','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
+  ['mm-desc','mm-tec','mm-costo','mm-fecha','mm-email-resp','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
   const chk = document.getElementById('mm-necesita-piezas');
