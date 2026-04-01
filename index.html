@@ -209,11 +209,11 @@ tbody tr.clickable{cursor:pointer;}
   font-family:Arial,Helvetica,sans-serif;
 }
 .etiqueta-barcode-col{flex:1;text-align:center;}
-.etiqueta-qr-col{display:flex;flex-direction:column;align-items:center;gap:3px;}
+
 .etiqueta-nombre-print{font-size:10px;font-weight:700;color:#000;line-height:1.2;text-align:left;margin-bottom:4px;max-width:220px;word-break:break-word;}
 .etiqueta-codigo-print{font-size:9px;color:#333;text-align:center;margin-top:3px;letter-spacing:0.5px;}
 .etiqueta-barcode-svg{width:200px;height:50px;}
-.etiqueta-qr-label{font-size:7px;color:#666;text-align:center;}
+
 .etiqueta-acciones{display:flex;gap:8px;justify-content:space-between;align-items:center;}
 .etiqueta-info{font-size:10px;color:#888;}
 /* Barcode en Detalle del activo */
@@ -258,17 +258,9 @@ tbody tr.clickable{cursor:pointer;}
     font-size:6pt!important;color:#333!important;
     margin-top:1mm!important;letter-spacing:0.5pt!important;
   }
-  body.printing-label #print-qr-col{
-    display:flex!important;flex-direction:column!important;
-    align-items:center!important;gap:1mm!important;
-  }
-  body.printing-label #print-qr-div canvas,
-  body.printing-label #print-qr-div img{
-    width:18mm!important;height:18mm!important;
-  }
-  body.printing-label #print-qr-label{
-    font-size:5pt!important;color:#555!important;text-align:center!important;
-  }
+  body.printing-label 
+  
+  body.printing-label 
 }
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
@@ -285,7 +277,6 @@ tbody tr.clickable{cursor:pointer;}
 </style>
   <!-- CÓDIGOS DE BARRA — JsBarcode (Code128) + QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
 <body>
 <div class="screen" id="screen">
@@ -652,15 +643,45 @@ tbody tr.clickable{cursor:pointer;}
 </div></div>
 
 <!-- MODAL MANTENIMIENTO -->
-<div class="modal-bg" id="mod-mant"><div class="modal" style="max-width:420px;">
+<div class="modal-bg" id="mod-mant"><div class="modal" style="max-width:480px;">
   <div class="modal-title"><span>Registrar mantenimiento</span><button class="modal-close" onclick="closeModals()">✕</button></div>
   <div class="f-row"><div class="f-lbl">Tipo</div><select class="f-inp f-sel" id="mm-tipo"><option>Preventivo</option><option>Correctivo</option><option>Actualización</option><option>Limpieza</option><option>Reparación</option><option>Inspección</option></select></div>
-  <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó?"></div>
+  <div class="f-row"><div class="f-lbl">Descripción *</div><input class="f-inp" id="mm-desc" placeholder="¿Qué se realizó o qué problema tiene?"></div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre"></div>
+    <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre del técnico"></div>
     <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
+  <!-- ── SECCIÓN SOLICITUD DE PIEZAS ──────────────────────── -->
+  <div style="background:#F0F4F8;border-radius:8px;padding:12px;margin-top:6px;border:1px solid #CBD5E1">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <input type="checkbox" id="mm-necesita-piezas" onchange="toggleSolicitudPiezas(this.checked)" style="width:16px;height:16px;cursor:pointer">
+      <label for="mm-necesita-piezas" style="font-size:13px;font-weight:700;color:var(--navy);cursor:pointer">🛒 Solicitar piezas o repuestos al encargado de compras</label>
+    </div>
+    <div id="mm-piezas-form" style="display:none">
+      <div class="f-row"><div class="f-lbl">Piezas / repuestos necesarios *</div>
+        <textarea class="f-inp" id="mm-piezas-desc" rows="2" placeholder="Ej: 1 disco duro SSD 256GB, 1 cargador Dell 65W..."></textarea>
+      </div>
+      <div class="f-2">
+        <div class="f-row"><div class="f-lbl">Urgencia</div>
+          <select class="f-inp f-sel" id="mm-piezas-urgencia">
+            <option value="normal">🟢 Normal</option>
+            <option value="importante">🟡 Importante</option>
+            <option value="urgente">🔴 Urgente</option>
+          </select>
+        </div>
+        <div class="f-row"><div class="f-lbl">Correo del encargado de compras *</div>
+          <input class="f-inp" type="email" id="mm-piezas-email" placeholder="compras@colegio.edu">
+        </div>
+      </div>
+      <div class="f-row"><div class="f-lbl">Presupuesto estimado ($)</div>
+        <input class="f-inp" type="number" id="mm-piezas-presupuesto" placeholder="0.00">
+      </div>
+      <div style="font-size:11px;color:#666;margin-top:4px">
+        📧 Se enviará una solicitud de compra por correo al encargado y quedará registrada en el historial del activo.
+      </div>
+    </div>
+  </div>
   <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" onclick="saveMant()">Registrar</button></div>
 </div></div>
 
@@ -744,31 +765,7 @@ function generarBarcode(svgId, codigo){
 
 // Genera el QR en un elemento <div> dado su id
 // La URL del QR apunta a la búsqueda del activo en el sistema
-let _qrInstances = {};
-function generarQR(divId, codigo){
-  try{
-    if(typeof QRCode === 'undefined') return;
-    if(_qrInstances[divId]){
-      const el = document.getElementById(divId);
-      if(el) el.innerHTML = '';
-      delete _qrInstances[divId];
-    }
-    const el = document.getElementById(divId);
-    if(!el) return;
-    // Contenido seguro — solo SAGA puede interpretar este formato
-    // Una cámara externa ve texto sin sentido, no una URL
-    const sessionHash = session ? hashPass(session.username).substring(1,7) : 'NOSESS';
-    const qrContent = 'SAGA|' + codigo + '|' + sessionHash;
-    _qrInstances[divId] = new QRCode(el, {
-      text: qrContent,
-      width: 72,
-      height: 72,
-      colorDark:"#000000",
-      colorLight:"#FFFFFF",
-      correctLevel: QRCode.CorrectLevel.M
-    });
-  }catch(e){ console.warn('QR error:',e); }
-}
+
 
 // Abrir el modal de impresión de etiqueta para un activo
 function abrirEtiqueta(codigo){
@@ -792,9 +789,7 @@ function abrirEtiqueta(codigo){
     // Code 128 en impresión
     generarBarcode('print-barcode-svg', a.codigo);
     // QR en preview (el QR contiene el código del activo con formato SAGA)
-    generarQR('prev-qr-div', a.codigo);
     // QR en impresión
-    generarQR('print-qr-div', a.codigo);
   }, 150);
 }
 
@@ -861,19 +856,6 @@ document.addEventListener('keydown', function(e){
 function procesarCodigoEscaneado(rawCodigo){
   if(!rawCodigo) return;
   let codigo = rawCodigo.trim().toUpperCase();
-
-  // ── Validar si viene del QR interno de SAGA ────────────────────
-  // Formato QR interno: SAGA|ACT-0012|sessionHash
-  if(codigo.startsWith('SAGA|')){
-    const partes = codigo.split('|');
-    if(partes.length < 2){ showToast('⚠️ QR inválido',''); return; }
-    codigo = partes[1]; // Extraer el código del activo
-    // Verificar rol — solo tecnico e inventario pueden usar el QR
-    if(!session || !['admin','tecnico','inventario'].includes(session.rol)){
-      showToast('⛔ Sin permiso para escanear QR de activos','');
-      return;
-    }
-  }
 
   // ── Buscar por código exacto (ACT-XXXX) o número de serie ─────
   const activo = activos.find(a=>
@@ -1259,6 +1241,7 @@ async function saveActivo(){
     // Guardar asignado y depto ANTES de aplicar cambios para detectar reasignación
     const _asignadoAntes = a.asignado||'—';
     const _deptoAntes = a.depto||'—';
+    const _estadoAntes = a.estado||'activo';  // ← capturar estado ANTES de cambios
     const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
     Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
     a.compra=document.getElementById('ea-compra').value||'—';a.garantia=document.getElementById('ea-garantia').value||'—';
@@ -1281,6 +1264,36 @@ async function saveActivo(){
       });
     }
     a.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
+
+    // ── DETECTAR ENTRADA A MANTENIMIENTO ────────────────────────
+    const _estadoNuevo = a.estado||'activo';
+    if(_estadoAntes !== 'mantenimiento' && _estadoNuevo === 'mantenimiento'){
+      // Registrar evento especial en historial
+      const motivoMant = motivo || 'Sin especificar';
+      a.historial.push({
+        tipo:'Entrada a Mantenimiento',
+        desc:`Equipo ingresado a IT para mantenimiento por ${session.nombre}. Motivo: ${motivoMant}. Equipo estará en el Departamento de Tecnología hasta ser devuelto.`,
+        tecnico: session.nombre,
+        fecha: ts(),
+        usuario: session.nombre,
+        color: 'amber'
+      });
+      // Toast informativo
+      showToast('🔧 Equipo marcado en mantenimiento — se notificará por correo','');
+    }
+    // ── DETECTAR SALIDA DE MANTENIMIENTO ────────────────────────
+    if(_estadoAntes === 'mantenimiento' && _estadoNuevo !== 'mantenimiento'){
+      a.historial.push({
+        tipo:'Salida de Mantenimiento',
+        desc:`Equipo devuelto de mantenimiento. Nuevo estado: ${_estadoNuevo}. Técnico: ${session.nombre}. Motivo: ${motivo||'Mantenimiento completado'}.`,
+        tecnico: session.nombre,
+        fecha: ts(),
+        usuario: session.nombre,
+        color: 'green'
+      });
+      showToast('✅ Equipo devuelto de mantenimiento — se notificará por correo','success');
+    }
+
     await apiPost('activos','update',a);audit('EDITAR','Activo',a.codigo,det);
   }else{
     // Consultar Sheets para el consecutivo real de activos
@@ -1379,12 +1392,74 @@ async function confirmDelete(){
 }
 
 function openMant(){document.getElementById('mod-mant').classList.add('open');}
+async function toggleSolicitudPiezas(checked){
+  document.getElementById('mm-piezas-form').style.display = checked ? 'block' : 'none';
+}
+
 async function saveMant(){
-  if(!activoActual)return;const desc=document.getElementById('mm-desc').value.trim();if(!desc){alert('La descripción es obligatoria.');return;}
-  const e={tipo:document.getElementById('mm-tipo').value,desc,fecha:document.getElementById('mm-fecha').value||ts(),tec:document.getElementById('mm-tec').value.trim()||session.nombre,costo:parseFloat(document.getElementById('mm-costo').value)||0,usuario:session.nombre,color:'amber'};
-  activoActual.historial=activoActual.historial||[];activoActual.historial.push(e);
-  await apiPost('activos','update',activoActual);audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
-  ['mm-desc','mm-tec','mm-costo','mm-fecha'].forEach(i=>document.getElementById(i).value='');closeModals();showDetalle(activoActual.codigo);
+  if(!activoActual) return;
+  const desc = document.getElementById('mm-desc').value.trim();
+  if(!desc){ showToast('La descripción es obligatoria','error'); return; }
+
+  const e = {
+    tipo:     document.getElementById('mm-tipo').value,
+    desc,
+    fecha:    document.getElementById('mm-fecha').value || ts(),
+    tec:      document.getElementById('mm-tec').value.trim() || session.nombre,
+    costo:    parseFloat(document.getElementById('mm-costo').value) || 0,
+    usuario:  session.nombre,
+    color:    'amber'
+  };
+
+  // ── SOLICITUD DE COMPRA DE PIEZAS ────────────────────────────
+  const necesitaPiezas = document.getElementById('mm-necesita-piezas')?.checked;
+  if(necesitaPiezas){
+    const piezasDesc    = document.getElementById('mm-piezas-desc')?.value.trim();
+    const emailCompras  = document.getElementById('mm-piezas-email')?.value.trim();
+    const urgencia      = document.getElementById('mm-piezas-urgencia')?.value || 'normal';
+    const presupuesto   = parseFloat(document.getElementById('mm-piezas-presupuesto')?.value) || 0;
+
+    if(!piezasDesc){ showToast('Describe las piezas necesarias','error'); return; }
+    if(!emailCompras){ showToast('El correo del encargado de compras es obligatorio','error'); return; }
+
+    // Registro de la solicitud en el historial del activo
+    const solicitud = {
+      tipo:        'Solicitud de Compra',
+      desc:        `Piezas solicitadas: ${piezasDesc}. Urgencia: ${urgencia}. Presupuesto estimado: $${presupuesto||'Por definir'}. Solicita: ${session.nombre}. Correo enviado a: ${emailCompras}.`,
+      fecha:       ts(),
+      usuario:     session.nombre,
+      tec:         session.nombre,
+      piezas:      piezasDesc,
+      urgencia,
+      presupuesto,
+      emailCompras,
+      estado:      'pendiente',
+      color:       'red'
+    };
+
+    e.solicitudPiezas = solicitud; // Adjuntar la solicitud al evento de mantenimiento
+    activoActual.historial = activoActual.historial || [];
+    activoActual.historial.push(e);
+    activoActual.historial.push(solicitud); // También como evento independiente
+
+  } else {
+    activoActual.historial = activoActual.historial || [];
+    activoActual.historial.push(e);
+  }
+
+  await apiPost('activos','update',activoActual);
+  audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
+
+  // Resetear campos del modal
+  ['mm-desc','mm-tec','mm-costo','mm-fecha','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  const chk = document.getElementById('mm-necesita-piezas');
+  if(chk){ chk.checked=false; toggleSolicitudPiezas(false); }
+
+  closeModals();
+  showDetalle(activoActual.codigo);
+  showToast('✅ Mantenimiento registrado' + (necesitaPiezas?' — Solicitud de compra enviada':''),'success');
 }
 
 function closeModals(){document.querySelectorAll('.modal-bg').forEach(m=>m.classList.remove('open'));}
@@ -1697,10 +1772,7 @@ function showDetalle(id){
           <svg id="det-barcode-svg" class="det-barcode-svg"></svg>
           <div class="det-barcode-label">Code 128 — Lector físico USB</div>
         </div>
-        <div class="det-barcode-item">
-          <div id="det-qr-div" class="etiqueta-qr"></div>
-          <div class="det-barcode-label">QR — Solo SAGA</div>
-        </div>
+
       </div>
       <div style="margin-top:12px;text-align:center">
         <button class="btn btn-p" onclick="abrirEtiqueta('${activoActual.codigo}')" style="font-size:12px;padding:6px 18px">
@@ -1713,7 +1785,6 @@ function showDetalle(id){
   if(['admin','tecnico','inventario'].includes(session.rol)){
     setTimeout(()=>{
       generarBarcode('det-barcode-svg', activoActual.codigo);
-      generarQR('det-qr-div', activoActual.codigo);
     }, 120);
   }
 }
@@ -1891,9 +1962,21 @@ function cambiarReporte(tipo){
       </select>`;
   }
   if(tipo==='mantenimientos'){
+    const deptosMant=[...new Set(activos.map(a=>a.depto||'Sin departamento'))].sort();
     filtros.innerHTML=`
-      <input class="f-inp" type="date" id="fil-desde" onchange="generarReporte()" style="max-width:150px">
-      <input class="f-inp" type="date" id="fil-hasta" onchange="generarReporte()" style="max-width:150px">`;
+      <input type="date" class="f-inp" id="fil-desde" onchange="generarReporte()" style="max-width:148px" title="Desde">
+      <input type="date" class="f-inp" id="fil-hasta" onchange="generarReporte()" style="max-width:148px" title="Hasta">
+      <select class="f-sel" id="fil-area-mant" onchange="generarReporte()" style="max-width:200px">
+        <option value="">Todos los departamentos</option>
+        ${deptosMant.map(d=>`<option value="${d}">${d}</option>`).join('')}
+      </select>
+      <select class="f-sel" id="fil-tipo-mant" onchange="generarReporte()" style="max-width:180px">
+        <option value="">Todos los tipos</option>
+        <option>Preventivo</option><option>Correctivo</option>
+        <option>Actualización</option><option>Limpieza</option>
+        <option>Reparación</option><option>Inspección</option>
+        <option>Entrada a Mantenimiento</option><option>Salida de Mantenimiento</option>
+      </select>`;
   }
   generarReporte();
 }
@@ -2302,7 +2385,7 @@ function repMantenimientos(el, ts){
   activos.forEach(a=>{
     // Filtrar por área si está seleccionada
     if(areaMant && (a.depto||'Sin departamento')!==areaMant) return;
-    (a.historial||[]).filter(h=>['Preventivo','Correctivo','Actualización','Limpieza','Reparación','Inspección'].includes(h.tipo)).forEach(h=>{
+    (a.historial||[]).filter(h=>['Preventivo','Correctivo','Actualización','Limpieza','Reparación','Inspección','Entrada a Mantenimiento','Salida de Mantenimiento'].includes(h.tipo)).forEach(h=>{
       if(desde&&h.fecha&&h.fecha<desde)return;
       if(hasta&&h.fecha&&h.fecha>hasta)return;
       if(tipoMant&&h.tipo!==tipoMant)return;
@@ -2750,7 +2833,7 @@ loadFromSheets();
   <div class="etiqueta-wrap">
     <div class="etiqueta-titulo">
       🏷️ Etiqueta del Activo
-      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Formato Zebra 57×32mm</span>
+      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Etiqueta Zebra 57×32mm</span>
     </div>
     <!-- Preview: layout Zebra — barcode izquierda, QR derecha -->
     <div class="etiqueta-preview">
@@ -2762,15 +2845,11 @@ loadFromSheets();
           <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
           <div id="prev-codigo" class="etiqueta-codigo-print"></div>
         </div>
-        <!-- Columna derecha: QR -->
-        <div class="etiqueta-qr-col">
-          <div id="prev-qr-div"></div>
-          <div class="etiqueta-qr-label">Reporte<br>individual</div>
-        </div>
+
       </div>
     </div>
     <div class="etiqueta-acciones">
-      <span class="etiqueta-info">📌 Code 128 + QR en una etiqueta</span>
+      <span class="etiqueta-info">📌 Code 128 — Para lector físico</span>
       <div style="display:flex;gap:8px">
         <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
         <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir en Zebra</button>
@@ -2787,11 +2866,7 @@ loadFromSheets();
     <svg id="print-barcode-svg"></svg>
     <div id="print-codigo"></div>
   </div>
-  <!-- Col derecha: QR -->
-  <div id="print-qr-col">
-    <div id="print-qr-div"></div>
-    <div id="print-qr-label">Reporte individual</div>
-  </div>
+
 </div>
 
 </body>
