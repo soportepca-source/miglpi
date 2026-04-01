@@ -265,6 +265,49 @@ tbody tr.clickable{cursor:pointer;}
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
 
+/* ── IMPRESIÓN MÚLTIPLE — GRUPO DE ETIQUETAS ZEBRA ─────────────── */
+/* Cada etiqueta es 57mm × 32mm con margen mínimo entre ellas       */
+@media print{
+  body.printing-multi *{visibility:hidden!important;}
+  body.printing-multi #print-multi-area,
+  body.printing-multi #print-multi-area *{visibility:visible!important;}
+  body.printing-multi #print-multi-area{
+    position:fixed!important;top:0!important;left:0!important;
+    width:100%!important;height:auto!important;
+    margin:0!important;padding:2mm!important;
+    background:#fff!important;
+    display:flex!important;flex-wrap:wrap!important;gap:2mm!important;
+    box-sizing:border-box!important;
+  }
+  body.printing-multi .etiq-multi{
+    width:57mm!important;height:32mm!important;
+    padding:3mm!important;
+    display:flex!important;flex-direction:row!important;align-items:center!important;
+    gap:2mm!important;
+    font-family:Arial,Helvetica,sans-serif!important;
+    box-sizing:border-box!important;
+    overflow:hidden!important;
+    border:0.3mm solid #ccc!important;
+    page-break-inside:avoid!important;
+  }
+  body.printing-multi .etiq-multi-col{
+    flex:1!important;display:flex!important;flex-direction:column!important;
+    align-items:flex-start!important;justify-content:center!important;
+  }
+  body.printing-multi .etiq-multi-nom{
+    font-size:6.5pt!important;font-weight:700!important;color:#000!important;
+    line-height:1.2!important;word-break:break-word!important;
+    max-width:36mm!important;margin-bottom:1.5mm!important;
+  }
+  body.printing-multi .etiq-multi-cod{
+    font-size:5.5pt!important;color:#333!important;letter-spacing:0.3pt!important;
+    margin-top:1mm!important;
+  }
+  body.printing-multi .etiq-multi-svg{
+    width:36mm!important;height:11mm!important;
+  }
+}
+
 /* ── VALIDACIONES DE FORMULARIO ──────────────────────────────────── */
 .f-inp.error{border-color:#D85A30!important;background:#FFF5F5!important;}
 .f-inp.valid{border-color:#1D9E75!important;}
@@ -368,7 +411,7 @@ tbody tr.clickable{cursor:pointer;}
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:6px;">
   ℹ️ <strong>Valor depreciado:</strong> calculado automáticamente según precio de compra, fecha y vida útil del equipo. El valor original nunca cambia.
 </div>
-<div class="tab-row" style="flex-wrap:wrap;gap:4px;">
+<div id="filter-row-estado" class="tab-row" style="flex-wrap:wrap;gap:4px;">
   <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 8px;align-self:center;">Estado:</span>
   <button class="tab-btn on" onclick="filterA('todos',this)">Todos</button>
   <button class="tab-btn" onclick="filterA('activo',this)">Activos</button>
@@ -377,7 +420,7 @@ tbody tr.clickable{cursor:pointer;}
   <button class="tab-btn" onclick="filterA('baja',this)">Baja</button>
   <button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button>
 </div>
-<div class="tab-row" style="flex-wrap:wrap;gap:4px;border-top:1px solid var(--border);padding-top:6px;">
+<div id="filter-row-tipo" class="tab-row" style="flex-wrap:wrap;gap:4px;border-top:1px solid var(--border);padding-top:6px;">
   <span style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;padding:4px 8px;align-self:center;">Tipo:</span>
   <button class="tab-btn on" id="tipo-btn-todos" onclick="filterTipo('todos',this)">Todos</button>
   <button class="tab-btn" onclick="filterTipo('Computadora',this)">🖥️ Computadora</button>
@@ -655,7 +698,11 @@ tbody tr.clickable{cursor:pointer;}
       placeholder="correo@dominio.com">
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Técnico</div><input class="f-inp" id="mm-tec" placeholder="Nombre del técnico"></div>
+    <div class="f-row"><div class="f-lbl">Técnico</div>
+      <select class="f-inp f-sel" id="mm-tec">
+        <option value="">— Selecciona técnico —</option>
+      </select>
+    </div>
     <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
@@ -1056,7 +1103,13 @@ function go(panel,el){
 
 function renderTopbarBtns(p){
   const c=document.getElementById('tb-buttons'),per=PERMS[session.rol]||{};c.innerHTML='';
-  if(p==='activos'&&per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openActivo(null)">+ Nuevo activo</button>';
+  if(p==='activos'){
+    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openActivo(null)">+ Nuevo activo</button>';
+    // Botón de impresión masiva: visible para admin/tecnico/inventario
+    if(['admin','tecnico','inventario'].includes(session.rol)){
+      c.innerHTML+='<button class="btn" onclick="abrirModalEtiquetasGrupo()" style="margin-left:6px">🏷️ Etiquetas</button>';
+    }
+  }
   if(p==='tickets'&&per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openTicket(null)">+ Nuevo ticket</button>';
   if(p==='usuarios'&&per.usuarios)c.innerHTML+='<button class="btn btn-p" onclick="openUsuario(null)">+ Nuevo usuario</button>';
   if(p==='detalle'&&activoActual){
@@ -1405,7 +1458,28 @@ async function confirmDelete(){
   closeModals();renderAll();if(type==='activo')go('activos',document.getElementById('nav-activos'));
 }
 
-function openMant(){document.getElementById('mod-mant').classList.add('open');}
+function openMant(){
+  // Poblar select de técnicos con usuarios activos que sean admin o tecnico
+  const tecSel = document.getElementById('mm-tec');
+  const tecnicos = usuarios.filter(u=>(u.estado==='activo'||!u.estado||u.estado!=='inactivo') && ['admin','tecnico'].includes(u.rol));
+  tecSel.innerHTML = '<option value="">— Selecciona técnico —</option>' +
+    tecnicos.map(u=>`<option value="${u.nombre}">${u.nombre} (${u.rol==='admin'?'Admin':'Técnico'})</option>`).join('');
+  // Pre-seleccionar al usuario actual si es técnico o admin
+  if(['admin','tecnico'].includes(session.rol)){
+    tecSel.value = session.nombre;
+    if(!tecSel.value){ // si el nombre no está en la lista, agregar como opción extra
+      tecSel.innerHTML += `<option value="${session.nombre}" selected>${session.nombre} (sesión actual)</option>`;
+      tecSel.value = session.nombre;
+    }
+  }
+  // Establecer la fecha de hoy por defecto
+  const hoyInput = document.getElementById('mm-fecha');
+  if(hoyInput && !hoyInput.value){
+    const hoy = new Date();
+    hoyInput.value = hoy.toISOString().split('T')[0];
+  }
+  document.getElementById('mod-mant').classList.add('open');
+}
 async function toggleSolicitudPiezas(checked){
   document.getElementById('mm-piezas-form').style.display = checked ? 'block' : 'none';
 }
@@ -1465,9 +1539,12 @@ async function saveMant(){
   audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
 
   // Resetear campos del modal
-  ['mm-desc','mm-tec','mm-costo','mm-fecha','mm-email-resp','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
+  ['mm-desc','mm-costo','mm-email-resp','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
+  // Resetear fecha y técnico
+  const mmFecha = document.getElementById('mm-fecha'); if(mmFecha) mmFecha.value='';
+  const mmTec = document.getElementById('mm-tec'); if(mmTec) mmTec.value='';
   const chk = document.getElementById('mm-necesita-piezas');
   if(chk){ chk.checked=false; toggleSolicitudPiezas(false); }
 
@@ -1883,8 +1960,8 @@ function renderDash(){
   document.getElementById('ch-rec').innerHTML=rec.length?rec.map(r=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:7px;height:7px;border-radius:50%;background:#1B3A6B;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:500">${r.txt}</div><div style="font-size:10px;color:var(--text3)">${r.sub}</div></div></div>`).join(''):'<div class="empty-c">Sin actividad</div>';
 }
 
-function filterA(f,el){filtroA=f;document.querySelectorAll('#pnl-activos .tab-row:first-child .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
-function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#pnl-activos .tab-row:last-child .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterA(f,el){filtroA=f;document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
 function filterT(f,el){filtroT=f;document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTickets();}
 function filterAud(f,el){filtroAud=f;document.querySelectorAll('#pnl-auditoria .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAudit();}
 function renderAll(){renderDash();renderActivos();renderTickets();populateSuggestions();renderKanban();renderAudit();}
@@ -2872,16 +2949,211 @@ loadFromSheets();
   </div>
 </div>
 
-<!-- ÁREA DE IMPRESIÓN ZEBRA — layout horizontal -->
+<!-- ÁREA DE IMPRESIÓN ZEBRA — etiqueta individual -->
 <div id="print-etiqueta-area" style="display:none">
-  <!-- Col izquierda: barcode + nombre -->
   <div id="print-barcode-col">
     <div id="print-nombre"></div>
     <svg id="print-barcode-svg"></svg>
     <div id="print-codigo"></div>
   </div>
-
 </div>
+
+<!-- ÁREA DE IMPRESIÓN MÚLTIPLE — grupo/rango de etiquetas Zebra -->
+<div id="print-multi-area" style="display:none"></div>
+
+<!-- MODAL ETIQUETAS GRUPALES -->
+<div class="modal-bg" id="mod-etiq-grupo">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">
+      <span>🏷️ Imprimir etiquetas</span>
+      <button class="modal-close" onclick="closeModals()">✕</button>
+    </div>
+
+    <!-- Selector de conjunto -->
+    <div class="f-row">
+      <div class="f-lbl">¿Qué etiquetas imprimir?</div>
+      <select class="f-inp f-sel" id="eg-modo" onchange="actualizarModoEtiq()">
+        <option value="filtro">Vista actual (estado + tipo filtrado)</option>
+        <option value="tipo">Por tipo de activo</option>
+        <option value="rango">Rango de códigos (ACT-XXXX a ACT-YYYY)</option>
+        <option value="todos">Todos los activos (sin eliminados)</option>
+      </select>
+    </div>
+
+    <!-- Panel: por tipo -->
+    <div id="eg-panel-tipo" style="display:none">
+      <div class="f-row">
+        <div class="f-lbl">Tipo de activo</div>
+        <select class="f-inp f-sel" id="eg-tipo-sel" onchange="actualizarPreviewEtiq()">
+          <option value="">— Selecciona un tipo —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Panel: rango -->
+    <div id="eg-panel-rango" style="display:none">
+      <div class="f-2">
+        <div class="f-row">
+          <div class="f-lbl">Desde (número)</div>
+          <input class="f-inp" type="number" id="eg-desde" min="1" placeholder="1" oninput="actualizarPreviewEtiq()">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Hasta (número)</div>
+          <input class="f-inp" type="number" id="eg-hasta" min="1" placeholder="50" oninput="actualizarPreviewEtiq()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:-6px;margin-bottom:8px;">
+        Ej: desde 1 hasta 30 → ACT-0001 a ACT-0030
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div id="eg-resumen" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;min-height:38px;">
+      Selecciona el modo para ver el resumen.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-p" id="eg-btn-imprimir" onclick="imprimirGrupoEtiquetas()" disabled>
+        🖨️ Imprimir etiquetas
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════
+// ETIQUETAS MASIVAS — Tareas 3, 4 y 5
+// ════════════════════════════════════════════════════════════════════
+
+let _etiqCodigosActuales = []; // lista de códigos seleccionados para imprimir
+
+function abrirModalEtiquetasGrupo(){
+  // Poblar select de tipos con los que hay en inventario
+  const tiposSel = document.getElementById('eg-tipo-sel');
+  const tiposEnUso = [...new Set(
+    activos.filter(a=>a.estado!=='eliminado').map(a=>a.tipo||'Otro')
+  )].sort();
+  tiposSel.innerHTML = '<option value="">— Selecciona un tipo —</option>' +
+    tiposEnUso.map(t=>`<option value="${t}">${TIPO_ICON[t]||'📦'} ${t}</option>`).join('');
+
+  // Modo inicial: vista actual
+  document.getElementById('eg-modo').value = 'filtro';
+  actualizarModoEtiq();
+  document.getElementById('mod-etiq-grupo').classList.add('open');
+}
+
+function actualizarModoEtiq(){
+  const modo = document.getElementById('eg-modo').value;
+  document.getElementById('eg-panel-tipo').style.display  = modo==='tipo'  ? 'block' : 'none';
+  document.getElementById('eg-panel-rango').style.display = modo==='rango' ? 'block' : 'none';
+  actualizarPreviewEtiq();
+}
+
+function actualizarPreviewEtiq(){
+  const modo = document.getElementById('eg-modo').value;
+  let lista = [];
+
+  if(modo === 'filtro'){
+    // Igual que renderActivos: estado + tipo filtrados
+    lista = filtroA==='todos' ? activos : activos.filter(a=>a.estado===filtroA);
+    if(filtroTipo!=='todos') lista = lista.filter(a=>a.tipo===filtroTipo);
+    lista = lista.filter(a=>a.estado!=='eliminado');
+  }
+  else if(modo === 'tipo'){
+    const t = document.getElementById('eg-tipo-sel').value;
+    if(!t){ lista = []; }
+    else lista = activos.filter(a=>a.tipo===t && a.estado!=='eliminado');
+  }
+  else if(modo === 'rango'){
+    const desde = parseInt(document.getElementById('eg-desde').value)||0;
+    const hasta  = parseInt(document.getElementById('eg-hasta').value)||0;
+    if(desde>0 && hasta>=desde){
+      lista = activos.filter(a=>{
+        if(a.estado==='eliminado') return false;
+        const m = a.codigo.match(/(\d+)$/);
+        if(!m) return false;
+        const n = parseInt(m[1]);
+        return n>=desde && n<=hasta;
+      });
+    }
+  }
+  else if(modo === 'todos'){
+    lista = activos.filter(a=>a.estado!=='eliminado');
+  }
+
+  _etiqCodigosActuales = lista.map(a=>a.codigo);
+  const res = document.getElementById('eg-resumen');
+  const btn = document.getElementById('eg-btn-imprimir');
+
+  if(!_etiqCodigosActuales.length){
+    res.innerHTML = '<span style="color:var(--red)">⚠ Sin activos que coincidan con los criterios seleccionados.</span>';
+    btn.disabled = true;
+  } else {
+    const desc = modo==='filtro'
+      ? `Vista actual: Estado "<strong>${filtroA}</strong>" · Tipo "<strong>${filtroTipo==='todos'?'Todos':filtroTipo}</strong>"`
+      : modo==='tipo'
+      ? `Tipo: <strong>${document.getElementById('eg-tipo-sel').value}</strong>`
+      : modo==='rango'
+      ? `Rango ACT-${String(document.getElementById('eg-desde').value||'?').padStart(4,'0')} → ACT-${String(document.getElementById('eg-hasta').value||'?').padStart(4,'0')}`
+      : 'Todos los activos activos';
+    res.innerHTML = `${desc}<br><span style="color:var(--green);font-weight:700">${_etiqCodigosActuales.length} etiqueta${_etiqCodigosActuales.length!==1?'s':''}</span> listas para imprimir`;
+    btn.disabled = false;
+  }
+}
+
+async function imprimirGrupoEtiquetas(){
+  if(!_etiqCodigosActuales.length) return;
+  const area = document.getElementById('print-multi-area');
+  area.innerHTML = '';
+  area.style.display = 'flex';
+
+  // Construir HTML de cada etiqueta con SVG placeholder
+  const items = _etiqCodigosActuales.map(cod=>{
+    const a = activos.find(x=>x.codigo===cod);
+    if(!a) return '';
+    const nombreCorto = a.nombre.length>38 ? a.nombre.substring(0,36)+'…' : a.nombre;
+    const codigoText  = a.codigo + (a.tipo ? ' · '+a.tipo : '');
+    return `<div class="etiq-multi">
+      <div class="etiq-multi-col">
+        <div class="etiq-multi-nom">${nombreCorto}</div>
+        <svg id="etiq-svg-${cod}" class="etiq-multi-svg"></svg>
+        <div class="etiq-multi-cod">${codigoText}</div>
+      </div>
+    </div>`;
+  }).join('');
+  area.innerHTML = items;
+
+  // Generar barcodes en todos los SVGs
+  await new Promise(res=>setTimeout(res,80));
+  _etiqCodigosActuales.forEach(cod=>{
+    try{
+      JsBarcode('#etiq-svg-'+cod, cod, {
+        format:"CODE128",
+        width:1.6,
+        height:32,
+        displayValue:false,
+        margin:2,
+        background:"#FFFFFF",
+        lineColor:"#000000"
+      });
+    }catch(e){}
+  });
+
+  // Pequeño delay para que los SVGs rendericen antes de imprimir
+  await new Promise(res=>setTimeout(res,150));
+  document.body.classList.add('printing-multi');
+  closeModals();
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.body.classList.remove('printing-multi');
+      area.style.display = 'none';
+      area.innerHTML = '';
+    }, 600);
+  }, 120);
+}
+</script>
 
 </body>
 </html>
