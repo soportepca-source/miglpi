@@ -265,70 +265,9 @@ tbody tr.clickable{cursor:pointer;}
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
 
-/* ── IMPRESIÓN MÚLTIPLE — GRUPO DE ETIQUETAS ZEBRA ─────────────── */
-/* @page define márgenes físicos de la hoja — evita que se corten   */
-@media print{
-  @page { margin: 8mm 6mm; }
-
-  body.printing-multi *{ visibility:hidden!important; }
-  body.printing-multi #print-multi-area,
-  body.printing-multi #print-multi-area *{ visibility:visible!important; }
-
-  /* CRÍTICO: position STATIC (flujo normal) — nunca fixed            */
-  /* fixed repite el área en cada página porque se ancla al viewport  */
-  body.printing-multi #print-multi-area{
-    position:static!important;
-    width:100%!important;
-    height:auto!important;
-    margin:0!important;
-    padding:0!important;
-    background:#fff!important;
-    display:flex!important;
-    flex-wrap:wrap!important;
-    gap:2mm!important;
-    box-sizing:border-box!important;
-    overflow:visible!important;
-  }
-
-  body.printing-multi .etiq-multi{
-    width:57mm!important;
-    height:32mm!important;
-    padding:2.5mm!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:space-between!important;
-    font-family:Arial,Helvetica,sans-serif!important;
-    box-sizing:border-box!important;
-    overflow:hidden!important;
-    border:0.3mm solid #aaa!important;
-    page-break-inside:avoid!important;
-    break-inside:avoid!important;
-  }
-
-  body.printing-multi .etiq-multi-nom{
-    font-size:6.5pt!important;
-    font-weight:700!important;
-    color:#000!important;
-    line-height:1.2!important;
-    word-break:break-word!important;
-    max-width:100%!important;
-    margin-bottom:1mm!important;
-  }
-
-  body.printing-multi .etiq-multi-svg{
-    width:100%!important;
-    height:13mm!important;
-    display:block!important;
-  }
-
-  body.printing-multi .etiq-multi-cod{
-    font-size:5.5pt!important;
-    color:#333!important;
-    letter-spacing:0.3pt!important;
-    margin-top:1mm!important;
-    text-align:center!important;
-  }
-}
+/* ── IMPRESIÓN MÚLTIPLE: el CSS va en la ventana popup, no aquí ── */
+/* Las etiquetas se imprimen en una ventana separada para evitar     */
+/* interferencia del CSS de la app (body:flex, screen:overflow:hidden)*/
 
 /* ── VALIDACIONES DE FORMULARIO ──────────────────────────────────── */
 .f-inp.error{border-color:#D85A30!important;background:#FFF5F5!important;}
@@ -3126,75 +3065,182 @@ function actualizarPreviewEtiq(){
 
 async function imprimirGrupoEtiquetas(){
   if(!_etiqCodigosActuales.length) return;
-  const area = document.getElementById('print-multi-area');
-  area.innerHTML = '';
-  // CRÍTICO: display:block en el área para flujo normal — no flex
-  // El flex lo aplica solo el CSS de impresión (@media print)
-  area.style.display = 'block';
 
-  // Construir HTML de cada etiqueta
-  const items = _etiqCodigosActuales.map(cod=>{
+  // ── ENFOQUE: ventana emergente independiente ─────────────────────
+  // Razón: el body principal tiene display:flex y .screen tiene
+  // overflow:hidden, lo que hace que cualquier @media print dentro
+  // de la app principal recorte o distorsione las etiquetas.
+  // Una ventana separada tiene su propio DOM limpio sin esas reglas.
+
+  // Zebra 2" × 1" = 51mm × 25mm (tamaño estándar para activos TI)
+  // Caben 3 etiquetas por fila en carta/A4 con márgenes normales
+
+  // 1. Construir el HTML de las etiquetas con barcodes inline (base64)
+  //    para que funcionen en la ventana popup sin dependencias externas
+  closeModals();
+  showToast('Preparando etiquetas...','');
+
+  // Esperar a que JsBarcode esté disponible
+  await new Promise(res=>setTimeout(res,50));
+
+  // Generar SVG de cada barcode como string
+  const etiquetasHTML = _etiqCodigosActuales.map(cod=>{
     const a = activos.find(x=>x.codigo===cod);
     if(!a) return '';
-    // Nombre corto para caber en 57mm
-    const nombreCorto = a.nombre.length>40 ? a.nombre.substring(0,38)+'…' : a.nombre;
-    // Texto del código: ACT-XXXX · Tipo
+    const nombre = a.nombre.length>42 ? a.nombre.substring(0,40)+'…' : a.nombre;
     const codigoText = a.codigo + (a.tipo ? ' · '+a.tipo : '');
-    // ID único para el SVG — reemplazar caracteres especiales
-    const svgId = 'etiq-svg-' + cod.replace(/[^a-zA-Z0-9]/g,'_');
-    return `<div class="etiq-multi">
-      <div class="etiq-multi-nom">${nombreCorto}</div>
-      <svg id="${svgId}" class="etiq-multi-svg"></svg>
-      <div class="etiq-multi-cod">${codigoText}</div>
-    </div>`;
-  }).join('');
-  area.innerHTML = items;
 
-  // Esperar a que el DOM esté listo
-  await new Promise(res=>setTimeout(res,100));
-
-  // Generar barcodes — usar el ID sanitizado
-  _etiqCodigosActuales.forEach(cod=>{
-    const svgId = 'etiq-svg-' + cod.replace(/[^a-zA-Z0-9]/g,'_');
+    // Generar SVG del barcode en un elemento temporal
+    let svgHTML = '';
     try{
-      JsBarcode('#'+svgId, cod, {
+      const tmpSvg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      tmpSvg.setAttribute('id','_tmp_svg_'+Math.random().toString(36).slice(2));
+      tmpSvg.style.position='absolute';
+      tmpSvg.style.left='-9999px';
+      document.body.appendChild(tmpSvg);
+      JsBarcode(tmpSvg, cod, {
         format:"CODE128",
-        width:1.4,
-        height:38,
+        width:1.3,
+        height:28,
         displayValue:false,
         margin:1,
         background:"#FFFFFF",
         lineColor:"#000000"
       });
-    }catch(e){ console.warn('Barcode error '+cod, e); }
-  });
+      svgHTML = tmpSvg.outerHTML;
+      document.body.removeChild(tmpSvg);
+    }catch(e){
+      svgHTML = '<svg width="100%" height="18mm"></svg>';
+    }
 
-  // Delay para que SVGs rendericen completamente
-  await new Promise(res=>setTimeout(res,200));
+    return `<div class="etiq">
+      <div class="etiq-nom">${nombre}</div>
+      <div class="etiq-bc">${svgHTML}</div>
+      <div class="etiq-cod">${codigoText}</div>
+    </div>`;
+  }).join('');
 
-  closeModals();
-  // Mover el área al flujo normal del documento antes de imprimir
-  area.style.position = 'static';
-  area.style.left = '';
-  area.style.top = '';
-  area.style.display = 'block';
-  document.body.classList.add('printing-multi');
+  // 2. Abrir ventana popup con CSS limpio y sin interferencias
+  const popup = window.open('','_blank','width=800,height=600,scrollbars=yes');
+  if(!popup){
+    showToast('⚠ El navegador bloqueó la ventana emergente. Permite popups para este sitio.','error');
+    return;
+  }
 
-  setTimeout(()=>{
-    window.print();
-    setTimeout(()=>{
-      document.body.classList.remove('printing-multi');
-      area.style.display = 'none';
-      area.style.position = 'absolute';
-      area.style.left = '-9999px';
-      area.innerHTML = '';
-    }, 800);
-  }, 150);
+  popup.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>SAGAE — Etiquetas ${_etiqCodigosActuales.length}</title>
+<style>
+  /* ── Reset total — sin herencia del sistema ── */
+  *{ box-sizing:border-box; margin:0; padding:0; }
+
+  /* ── Tamaño de página Zebra 2"×1" = 51×25mm ── */
+  /* Se imprime en papel carta/A4, caben 3 por fila */
+  @page{
+    size: letter portrait;
+    margin: 10mm 8mm;
+  }
+
+  body{
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Barra de control — solo en pantalla, no imprime */
+  .ctrl{
+    background:#1B3A6B; color:#fff;
+    padding:10px 16px;
+    display:flex; align-items:center; gap:12px;
+    position:sticky; top:0; z-index:99;
+  }
+  .ctrl h2{ font-size:14px; flex:1; }
+  .ctrl button{
+    padding:7px 16px; border-radius:6px; border:none;
+    background:#B8960C; color:#fff; font-weight:700;
+    font-size:13px; cursor:pointer;
+  }
+  .ctrl .cerrar{
+    background:rgba(255,255,255,.15);
+    color:#fff; margin-left:4px;
+  }
+  @media print{ .ctrl{ display:none!important; } }
+
+  /* ── Contenedor de etiquetas ── */
+  .grid{
+    display:flex;
+    flex-wrap:wrap;
+    gap:3mm;
+    padding:0;
+    width:100%;
+  }
+
+  /* ── Etiqueta individual Zebra 2"×1" ── */
+  /* 51mm × 25mm — caben 3 por fila en carta con márgenes 8mm        */
+  .etiq{
+    width:51mm;
+    height:25mm;
+    padding:1.5mm 2mm;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    border:0.3mm solid #999;
+    overflow:hidden;
+    page-break-inside:avoid;
+    break-inside:avoid;
+    background:#fff;
+  }
+
+  .etiq-nom{
+    font-size:6pt;
+    font-weight:700;
+    color:#000;
+    line-height:1.25;
+    word-break:break-word;
+    max-height:8mm;
+    overflow:hidden;
+  }
+
+  /* El SVG del barcode ocupa el espacio central */
+  .etiq-bc svg{
+    width:100%!important;
+    height:12mm!important;
+    display:block;
+  }
+
+  .etiq-cod{
+    font-size:5pt;
+    color:#222;
+    text-align:center;
+    letter-spacing:0.3pt;
+    white-space:nowrap;
+    overflow:hidden;
+  }
+</style>
+</head>
+<body>
+<div class="ctrl">
+  <h2>🏷️ SAGAE — ${_etiqCodigosActuales.length} etiquetas listas · Zebra 2"×1" (51×25mm)</h2>
+  <button onclick="window.print()">🖨️ Imprimir</button>
+  <button class="cerrar" onclick="window.close()">✕ Cerrar</button>
+</div>
+<div class="grid">
+${etiquetasHTML}
+</div>
+</body>
+</html>`);
+
+  popup.document.close();
+  showToast(`✅ ${_etiqCodigosActuales.length} etiquetas listas en la ventana de impresión`,'success');
 }
 </script>
 
 </body>
 </html>
+
 
 
 
