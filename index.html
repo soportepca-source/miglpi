@@ -1017,13 +1017,24 @@ function doLogin(){
     document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
-    resetInactivityTimer(); // ← Iniciar contador de inactividad AL HACER LOGIN
-    iniciarControlSesionUnica(); // ← Monitorear sesión única
-    // ── Sesión única: escribir token en Sheets para bloquear sesiones paralelas ──
-    const _sessionToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    resetInactivityTimer();
+    // ── SESIÓN ÚNICA — generar token PRIMERO, luego iniciar monitoreo ──
+    // El token debe estar en session.token ANTES de llamar iniciarControlSesionUnica
+    const _sessionToken = Date.now().toString(36)+Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);
     session.token = _sessionToken;
     usuario.sessionToken = _sessionToken;
-    apiPost('usuarios','update',usuario);
+    // Escribir token en Sheets — usamos fetch con cors para mayor velocidad
+    fetch(API, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({sheet:'usuarios', action:'update', payload:{...usuario, sessionToken:_sessionToken}})
+    }).then(()=>{
+      // Solo iniciar el monitoreo DESPUÉS de confirmar que el token fue escrito
+      iniciarControlSesionUnica();
+    }).catch(()=>{
+      // Si falla la escritura, iniciar monitoreo de todas formas
+      iniciarControlSesionUnica();
+    });
   }else{
     ll.style.display='none';
     _loginAttempts.count++;
@@ -1566,20 +1577,42 @@ function resetInactivityTimer(){
 let _sessionCheckInterval = null;
 function iniciarControlSesionUnica(){
   clearInterval(_sessionCheckInterval);
+
+  // Verificar cada 30 segundos — detecta sesión paralela en menos de 1 minuto
   _sessionCheckInterval = setInterval(async()=>{
-    if(!session) return;
+    if(!session || !session.token) return;
     try{
-      const raw = await apiGet('usuarios');
-      const uRemoto = raw.find(x=>x.username===session.username);
+      // Consulta directa y fresca al Sheets — con timestamp para evitar caché
+      const r = await fetch(API+'?sheet=usuarios&t='+Date.now(), {mode:'cors'});
+      if(!r.ok) return;
+      const raw = await r.json();
+      if(!Array.isArray(raw)) return;
+      const uRemoto = raw.find(x=>
+        String(x.username||'').toLowerCase() === session.username.toLowerCase()
+      );
       if(!uRemoto) return;
-      // Si el token remoto es diferente al de esta sesión → otra pestaña inició sesión
-      if(uRemoto.sessionToken && uRemoto.sessionToken !== session.token){
+      const tokenRemoto = String(uRemoto.sessionToken||'').trim();
+      const tokenLocal  = String(session.token||'').trim();
+      // Solo invalidar si el token remoto es distinto Y no está vacío
+      // (vacío = logout legítimo no cuenta como conflicto)
+      if(tokenRemoto && tokenLocal && tokenRemoto !== tokenLocal){
         clearInterval(_sessionCheckInterval);
-        showToast('⛔ Tu sesión fue iniciada en otro dispositivo. Cerrando esta sesión...','');
-        setTimeout(()=>doLogout(), 2500);
+        clearTimeout(_inactivityTimer);
+        // Mostrar aviso y forzar logout
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<div style="background:#fff;border-radius:12px;padding:32px 40px;text-align:center;max-width:380px">' +
+          '<div style="font-size:48px;margin-bottom:12px">⛔</div>' +
+          '<div style="font-size:18px;font-weight:700;color:#1B3A6B;margin-bottom:8px">Sesión cerrada</div>' +
+          '<div style="font-size:14px;color:#444;margin-bottom:20px">Tu usuario inició sesión en otro dispositivo o navegador. Por seguridad esta sesión fue cerrada.</div>' +
+          '<div style="font-size:12px;color:#888">Redirigiendo al login...</div></div>';
+        document.body.appendChild(overlay);
+        setTimeout(()=>{ doLogout(); }, 3000);
       }
-    }catch(e){}
-  }, 2 * 60 * 1000); // cada 2 minutos
+    }catch(e){
+      // Error de red — no hacer nada, esperar siguiente ciclo
+    }
+  }, 30 * 1000); // cada 30 segundos
 }
 
 function sanitizeHTML(str){
@@ -2759,266 +2792,17 @@ document.addEventListener('click', e => {
 });
 
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModals();});
-document.querySelectorAll('.modal-bg').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals();}));
+// Cierre de modales con delegación — funciona para TODOS los modal-bg
+// incluyendo los que se añadan después (como mod-etiq-grupo)
+document.addEventListener('click', e=>{
+  if(e.target && e.target.classList.contains('modal-bg')) closeModals();
+});
 loadFromSheets();
 
-</script>
-
-<!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
-<datalist id="dl-deptos">
-  <option value="Administración">
-  <option value="Cómputo P">
-  <option value="Cómputo S">
-  <option value="Pre Es">
-  <option value="Edi Ala N">
-  <option value="K4A">
-  <option value="K4B">
-  <option value="K4C">
-  <option value="K5A">
-  <option value="K5B">
-  <option value="K5C">
-  <option value="1A">
-  <option value="1B">
-  <option value="1C">
-  <option value="2A">
-  <option value="2B">
-  <option value="2C">
-  <option value="3A">
-  <option value="3B">
-  <option value="3C">
-  <option value="4A">
-  <option value="4B">
-  <option value="4C">
-  <option value="5A">
-  <option value="5B">
-  <option value="5C">
-  <option value="6A">
-  <option value="6B">
-  <option value="6C">
-  <option value="7A">
-  <option value="7B">
-  <option value="7C">
-  <option value="8A">
-  <option value="8B">
-  <option value="8C">
-  <option value="9A">
-  <option value="9B">
-  <option value="9C">
-  <option value="10A">
-  <option value="10B">
-  <option value="10C">
-  <option value="11A">
-  <option value="11B">
-  <option value="11C">
-  <option value="12A">
-  <option value="12B">
-  <option value="12C">
-  <option value="Robo Lab">
-  <option value="Sal Doc Pre">
-  <option value="Sal Doc Pri">
-  <option value="Sal Doc Sec">
-  <option value="Gym">
-  <option value="Gym Pri">
-  <option value="Gym Sec">
-  <option value="Auditorio">
-  <option value="Capilla N">
-  <option value="Rack Pri">
-  <option value="Rack Sec">
-  <option value="Informática">
-  <option value="Dirección">
-  <option value="Coordinación">
-</datalist>
-<datalist id="dl-ubicaciones">
-  <option value="Planta Baja">
-  <option value="Primer Piso">
-  <option value="Segundo Piso">
-  <option value="Edificio Ala Norte">
-  <option value="Edificio Ala Sur">
-  <option value="Oficina de Administración">
-  <option value="Oficina de Dirección">
-  <option value="Oficina de Coordinación">
-  <option value="Sala de Reuniones">
-  <option value="Laboratorio de Robótica">
-  <option value="Robo Lab">
-  <option value="Rack Principal">
-  <option value="Rack Primaria">
-  <option value="Rack Secundaria">
-  <option value="Sala de Docentes Preescolar">
-  <option value="Sala de Docentes Primaria">
-  <option value="Sala de Docentes Secundaria">
-  <option value="Gimnasio">
-  <option value="Gimnasio Primaria">
-  <option value="Gimnasio Secundaria">
-  <option value="Auditorio">
-  <option value="Capilla Norte">
-  <option value="Aula K4A">
-  <option value="Aula K4B">
-  <option value="Aula K4C">
-  <option value="Aula K5A">
-  <option value="Aula K5B">
-  <option value="Aula K5C">
-  <option value="Aula 1A">
-  <option value="Aula 1B">
-  <option value="Aula 1C">
-  <option value="Aula 2A">
-  <option value="Aula 2B">
-  <option value="Aula 2C">
-  <option value="Aula 3A">
-  <option value="Aula 3B">
-  <option value="Aula 3C">
-  <option value="Aula 4A">
-  <option value="Aula 4B">
-  <option value="Aula 4C">
-  <option value="Aula 5A">
-  <option value="Aula 5B">
-  <option value="Aula 5C">
-  <option value="Aula 6A">
-  <option value="Aula 6B">
-  <option value="Aula 6C">
-  <option value="Aula 7A">
-  <option value="Aula 7B">
-  <option value="Aula 7C">
-  <option value="Aula 8A">
-  <option value="Aula 8B">
-  <option value="Aula 8C">
-  <option value="Aula 9A">
-  <option value="Aula 9B">
-  <option value="Aula 9C">
-  <option value="Aula 10A">
-  <option value="Aula 10B">
-  <option value="Aula 10C">
-  <option value="Aula 11A">
-  <option value="Aula 11B">
-  <option value="Aula 11C">
-  <option value="Aula 12A">
-  <option value="Aula 12B">
-  <option value="Aula 12C">
-  <option value="Lab Cómputo Primaria">
-  <option value="Lab Cómputo Secundaria">
-  <option value="Pasillo Planta Baja">
-  <option value="Pasillo Primer Piso">
-  <option value="Entrada Principal">
-  <option value="Estacionamiento">
-  <option value="Patio Central">
-  <option value="Área de Recreo">
-</datalist>
-<datalist id="dl-asignados"></datalist>
-<datalist id="dl-marcas">
-  <option>Dell</option><option>HP</option><option>Lenovo</option>
-  <option>Apple</option><option>Asus</option><option>Acer</option>
-  <option>Samsung</option><option>LG</option><option>Sony</option>
-  <option>Cisco</option><option>TP-Link</option><option>Hikvision</option>
-  <option>Dahua</option><option>Epson</option><option>Canon</option>
-  <option>Brother</option><option>Logitech</option><option>APC</option>
-  <option>Ubiquiti</option><option>Mikrotik</option><option>D-Link</option>
-  <option>Netgear</option><option>Fortinet</option><option>SonicWall</option>
-</datalist>
-<datalist id="dl-seriales"></datalist>
-
-
-<!-- MODAL DE ETIQUETA IMPRIMIBLE — FORMATO ZEBRA -->
-<div id="modal-etiqueta">
-  <div class="etiqueta-wrap">
-    <div class="etiqueta-titulo">
-      🏷️ Etiqueta del Activo
-      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Etiqueta Zebra 57×32mm</span>
-    </div>
-    <!-- Preview: layout Zebra — barcode izquierda, QR derecha -->
-    <div class="etiqueta-preview">
-      <div style="font-size:10px;color:#999;text-align:center;margin-bottom:6px">Vista previa de la etiqueta</div>
-      <div class="etiqueta-preview-inner">
-        <!-- Columna izquierda: nombre + barcode Code128 -->
-        <div class="etiqueta-barcode-col">
-          <div id="prev-nombre" class="etiqueta-nombre-print"></div>
-          <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
-          <div id="prev-codigo" class="etiqueta-codigo-print"></div>
-        </div>
-
-      </div>
-    </div>
-    <div class="etiqueta-acciones">
-      <span class="etiqueta-info">📌 Code 128 — Para lector físico</span>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
-        <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir en Zebra</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ÁREA DE IMPRESIÓN ZEBRA — etiqueta individual -->
-<div id="print-etiqueta-area" style="display:none">
-  <div id="print-barcode-col">
-    <div id="print-nombre"></div>
-    <svg id="print-barcode-svg"></svg>
-    <div id="print-codigo"></div>
-  </div>
-</div>
-
-<!-- ÁREA DE IMPRESIÓN MÚLTIPLE — grupo/rango de etiquetas Zebra -->
-<div id="print-multi-area" style="display:none;position:absolute;left:-9999px;top:0;"></div>
-
-<!-- MODAL ETIQUETAS GRUPALES -->
-<div class="modal-bg" id="mod-etiq-grupo">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-title">
-      <span>🏷️ Imprimir etiquetas</span>
-      <button class="modal-close" onclick="closeModals()">✕</button>
-    </div>
-
-    <!-- Selector de conjunto -->
-    <div class="f-row">
-      <div class="f-lbl">¿Qué etiquetas imprimir?</div>
-      <select class="f-inp f-sel" id="eg-modo" onchange="actualizarModoEtiq()">
-        <option value="filtro">Vista actual (estado + tipo filtrado)</option>
-        <option value="tipo">Por tipo de activo</option>
-        <option value="rango">Rango de códigos (ACT-XXXX a ACT-YYYY)</option>
-        <option value="todos">Todos los activos (sin eliminados)</option>
-      </select>
-    </div>
-
-    <!-- Panel: por tipo -->
-    <div id="eg-panel-tipo" style="display:none">
-      <div class="f-row">
-        <div class="f-lbl">Tipo de activo</div>
-        <select class="f-inp f-sel" id="eg-tipo-sel" onchange="actualizarPreviewEtiq()">
-          <option value="">— Selecciona un tipo —</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Panel: rango -->
-    <div id="eg-panel-rango" style="display:none">
-      <div class="f-2">
-        <div class="f-row">
-          <div class="f-lbl">Desde (número)</div>
-          <input class="f-inp" type="number" id="eg-desde" min="1" placeholder="1" oninput="actualizarPreviewEtiq()">
-        </div>
-        <div class="f-row">
-          <div class="f-lbl">Hasta (número)</div>
-          <input class="f-inp" type="number" id="eg-hasta" min="1" placeholder="50" oninput="actualizarPreviewEtiq()">
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:-6px;margin-bottom:8px;">
-        Ej: desde 1 hasta 30 → ACT-0001 a ACT-0030
-      </div>
-    </div>
-
-    <!-- Resumen -->
-    <div id="eg-resumen" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;min-height:38px;">
-      Selecciona el modo para ver el resumen.
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModals()">Cancelar</button>
-      <button class="btn btn-p" id="eg-btn-imprimir" onclick="imprimirGrupoEtiquetas()" disabled>
-        🖨️ Imprimir etiquetas
-      </button>
-    </div>
-  </div>
-</div>
-
-<script>
+// ════════════════════════════════════════════════════════════════════
+// ETIQUETAS MASIVAS — fusionado en script principal para acceso
+// correcto a TIPO_ICON, activos, filtroA, filtroTipo, closeModals
+// ════════════════════════════════════════════════════════════════════
 // ════════════════════════════════════════════════════════════════════
 // ETIQUETAS MASIVAS — Tareas 3, 4 y 5
 // ════════════════════════════════════════════════════════════════════
@@ -3283,10 +3067,267 @@ async function imprimirGrupoEtiquetas(){
   popup.document.close();
   showToast(`✅ ${_etiqCodigosActuales.length} etiquetas listas en la ventana de impresión`,'success');
 }
+
 </script>
+
+<!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
+<datalist id="dl-deptos">
+  <option value="Administración">
+  <option value="Cómputo P">
+  <option value="Cómputo S">
+  <option value="Pre Es">
+  <option value="Edi Ala N">
+  <option value="K4A">
+  <option value="K4B">
+  <option value="K4C">
+  <option value="K5A">
+  <option value="K5B">
+  <option value="K5C">
+  <option value="1A">
+  <option value="1B">
+  <option value="1C">
+  <option value="2A">
+  <option value="2B">
+  <option value="2C">
+  <option value="3A">
+  <option value="3B">
+  <option value="3C">
+  <option value="4A">
+  <option value="4B">
+  <option value="4C">
+  <option value="5A">
+  <option value="5B">
+  <option value="5C">
+  <option value="6A">
+  <option value="6B">
+  <option value="6C">
+  <option value="7A">
+  <option value="7B">
+  <option value="7C">
+  <option value="8A">
+  <option value="8B">
+  <option value="8C">
+  <option value="9A">
+  <option value="9B">
+  <option value="9C">
+  <option value="10A">
+  <option value="10B">
+  <option value="10C">
+  <option value="11A">
+  <option value="11B">
+  <option value="11C">
+  <option value="12A">
+  <option value="12B">
+  <option value="12C">
+  <option value="Robo Lab">
+  <option value="Sal Doc Pre">
+  <option value="Sal Doc Pri">
+  <option value="Sal Doc Sec">
+  <option value="Gym">
+  <option value="Gym Pri">
+  <option value="Gym Sec">
+  <option value="Auditorio">
+  <option value="Capilla N">
+  <option value="Rack Pri">
+  <option value="Rack Sec">
+  <option value="Informática">
+  <option value="Dirección">
+  <option value="Coordinación">
+</datalist>
+<datalist id="dl-ubicaciones">
+  <option value="Planta Baja">
+  <option value="Primer Piso">
+  <option value="Segundo Piso">
+  <option value="Edificio Ala Norte">
+  <option value="Edificio Ala Sur">
+  <option value="Oficina de Administración">
+  <option value="Oficina de Dirección">
+  <option value="Oficina de Coordinación">
+  <option value="Sala de Reuniones">
+  <option value="Laboratorio de Robótica">
+  <option value="Robo Lab">
+  <option value="Rack Principal">
+  <option value="Rack Primaria">
+  <option value="Rack Secundaria">
+  <option value="Sala de Docentes Preescolar">
+  <option value="Sala de Docentes Primaria">
+  <option value="Sala de Docentes Secundaria">
+  <option value="Gimnasio">
+  <option value="Gimnasio Primaria">
+  <option value="Gimnasio Secundaria">
+  <option value="Auditorio">
+  <option value="Capilla Norte">
+  <option value="Aula K4A">
+  <option value="Aula K4B">
+  <option value="Aula K4C">
+  <option value="Aula K5A">
+  <option value="Aula K5B">
+  <option value="Aula K5C">
+  <option value="Aula 1A">
+  <option value="Aula 1B">
+  <option value="Aula 1C">
+  <option value="Aula 2A">
+  <option value="Aula 2B">
+  <option value="Aula 2C">
+  <option value="Aula 3A">
+  <option value="Aula 3B">
+  <option value="Aula 3C">
+  <option value="Aula 4A">
+  <option value="Aula 4B">
+  <option value="Aula 4C">
+  <option value="Aula 5A">
+  <option value="Aula 5B">
+  <option value="Aula 5C">
+  <option value="Aula 6A">
+  <option value="Aula 6B">
+  <option value="Aula 6C">
+  <option value="Aula 7A">
+  <option value="Aula 7B">
+  <option value="Aula 7C">
+  <option value="Aula 8A">
+  <option value="Aula 8B">
+  <option value="Aula 8C">
+  <option value="Aula 9A">
+  <option value="Aula 9B">
+  <option value="Aula 9C">
+  <option value="Aula 10A">
+  <option value="Aula 10B">
+  <option value="Aula 10C">
+  <option value="Aula 11A">
+  <option value="Aula 11B">
+  <option value="Aula 11C">
+  <option value="Aula 12A">
+  <option value="Aula 12B">
+  <option value="Aula 12C">
+  <option value="Lab Cómputo Primaria">
+  <option value="Lab Cómputo Secundaria">
+  <option value="Pasillo Planta Baja">
+  <option value="Pasillo Primer Piso">
+  <option value="Entrada Principal">
+  <option value="Estacionamiento">
+  <option value="Patio Central">
+  <option value="Área de Recreo">
+</datalist>
+<datalist id="dl-asignados"></datalist>
+<datalist id="dl-marcas">
+  <option>Dell</option><option>HP</option><option>Lenovo</option>
+  <option>Apple</option><option>Asus</option><option>Acer</option>
+  <option>Samsung</option><option>LG</option><option>Sony</option>
+  <option>Cisco</option><option>TP-Link</option><option>Hikvision</option>
+  <option>Dahua</option><option>Epson</option><option>Canon</option>
+  <option>Brother</option><option>Logitech</option><option>APC</option>
+  <option>Ubiquiti</option><option>Mikrotik</option><option>D-Link</option>
+  <option>Netgear</option><option>Fortinet</option><option>SonicWall</option>
+</datalist>
+<datalist id="dl-seriales"></datalist>
+
+
+<!-- MODAL DE ETIQUETA IMPRIMIBLE — FORMATO ZEBRA -->
+<div id="modal-etiqueta">
+  <div class="etiqueta-wrap">
+    <div class="etiqueta-titulo">
+      🏷️ Etiqueta del Activo
+      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Etiqueta Zebra 57×32mm</span>
+    </div>
+    <!-- Preview: layout Zebra — barcode izquierda, QR derecha -->
+    <div class="etiqueta-preview">
+      <div style="font-size:10px;color:#999;text-align:center;margin-bottom:6px">Vista previa de la etiqueta</div>
+      <div class="etiqueta-preview-inner">
+        <!-- Columna izquierda: nombre + barcode Code128 -->
+        <div class="etiqueta-barcode-col">
+          <div id="prev-nombre" class="etiqueta-nombre-print"></div>
+          <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
+          <div id="prev-codigo" class="etiqueta-codigo-print"></div>
+        </div>
+
+      </div>
+    </div>
+    <div class="etiqueta-acciones">
+      <span class="etiqueta-info">📌 Code 128 — Para lector físico</span>
+      <div style="display:flex;gap:8px">
+        <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
+        <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir en Zebra</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESIÓN ZEBRA — etiqueta individual -->
+<div id="print-etiqueta-area" style="display:none">
+  <div id="print-barcode-col">
+    <div id="print-nombre"></div>
+    <svg id="print-barcode-svg"></svg>
+    <div id="print-codigo"></div>
+  </div>
+</div>
+
+<!-- ÁREA DE IMPRESIÓN MÚLTIPLE — grupo/rango de etiquetas Zebra -->
+<div id="print-multi-area" style="display:none;position:absolute;left:-9999px;top:0;"></div>
+
+<!-- MODAL ETIQUETAS GRUPALES -->
+<div class="modal-bg" id="mod-etiq-grupo">
+  <div class="modal" style="max-width:520px;">
+    <div class="modal-title">
+      <span>🏷️ Imprimir etiquetas</span>
+      <button class="modal-close" onclick="closeModals()">✕</button>
+    </div>
+
+    <!-- Selector de conjunto -->
+    <div class="f-row">
+      <div class="f-lbl">¿Qué etiquetas imprimir?</div>
+      <select class="f-inp f-sel" id="eg-modo" onchange="actualizarModoEtiq()">
+        <option value="filtro">Vista actual (estado + tipo filtrado)</option>
+        <option value="tipo">Por tipo de activo</option>
+        <option value="rango">Rango de códigos (ACT-XXXX a ACT-YYYY)</option>
+        <option value="todos">Todos los activos (sin eliminados)</option>
+      </select>
+    </div>
+
+    <!-- Panel: por tipo -->
+    <div id="eg-panel-tipo" style="display:none">
+      <div class="f-row">
+        <div class="f-lbl">Tipo de activo</div>
+        <select class="f-inp f-sel" id="eg-tipo-sel" onchange="actualizarPreviewEtiq()">
+          <option value="">— Selecciona un tipo —</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Panel: rango -->
+    <div id="eg-panel-rango" style="display:none">
+      <div class="f-2">
+        <div class="f-row">
+          <div class="f-lbl">Desde (número)</div>
+          <input class="f-inp" type="number" id="eg-desde" min="1" placeholder="1" oninput="actualizarPreviewEtiq()">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Hasta (número)</div>
+          <input class="f-inp" type="number" id="eg-hasta" min="1" placeholder="50" oninput="actualizarPreviewEtiq()">
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:-6px;margin-bottom:8px;">
+        Ej: desde 1 hasta 30 → ACT-0001 a ACT-0030
+      </div>
+    </div>
+
+    <!-- Resumen -->
+    <div id="eg-resumen" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;min-height:38px;">
+      Selecciona el modo para ver el resumen.
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModals()">Cancelar</button>
+      <button class="btn btn-p" id="eg-btn-imprimir" onclick="imprimirGrupoEtiquetas()" disabled>
+        🖨️ Imprimir etiquetas
+      </button>
+    </div>
+  </div>
+</div>
+
 
 </body>
 </html>
+
 
 
 
