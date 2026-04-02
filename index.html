@@ -1017,6 +1017,13 @@ function doLogin(){
     document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
+    resetInactivityTimer(); // ← Iniciar contador de inactividad AL HACER LOGIN
+    iniciarControlSesionUnica(); // ← Monitorear sesión única
+    // ── Sesión única: escribir token en Sheets para bloquear sesiones paralelas ──
+    const _sessionToken = Date.now().toString(36) + Math.random().toString(36).slice(2);
+    session.token = _sessionToken;
+    usuario.sessionToken = _sessionToken;
+    apiPost('usuarios','update',usuario);
   }else{
     ll.style.display='none';
     _loginAttempts.count++;
@@ -1033,7 +1040,13 @@ function doLogin(){
 }
 
 function doLogout(){
+  // Limpiar token de sesión en Sheets al cerrar sesión
+  if(session){
+    const uObj = usuarios.find(x=>x.username===session.username);
+    if(uObj){ uObj.sessionToken=''; apiPost('usuarios','update',uObj); }
+  }
   audit('LOGOUT','Sistema','—','Cierre de sesión');session=null;activoActual=null;
+  clearTimeout(_inactivityTimer);
   document.getElementById('app-screen').classList.remove('visible');document.getElementById('login-screen').style.display='flex';
   document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));document.getElementById('pnl-dashboard').classList.add('on');
@@ -1545,6 +1558,29 @@ function resetInactivityTimer(){
 ['click','keypress','mousemove','touchstart'].forEach(evt=>{
   document.addEventListener(evt, resetInactivityTimer, {passive:true});
 });
+
+// ── CONTROL DE SESIÓN ÚNICA ─────────────────────────────────────────
+// Cada 2 minutos verifica que el token de sesión en Sheets siga siendo
+// el mismo que el de esta pestaña. Si alguien inició sesión en otro lugar
+// el token cambiará y esta sesión se cierra automáticamente.
+let _sessionCheckInterval = null;
+function iniciarControlSesionUnica(){
+  clearInterval(_sessionCheckInterval);
+  _sessionCheckInterval = setInterval(async()=>{
+    if(!session) return;
+    try{
+      const raw = await apiGet('usuarios');
+      const uRemoto = raw.find(x=>x.username===session.username);
+      if(!uRemoto) return;
+      // Si el token remoto es diferente al de esta sesión → otra pestaña inició sesión
+      if(uRemoto.sessionToken && uRemoto.sessionToken !== session.token){
+        clearInterval(_sessionCheckInterval);
+        showToast('⛔ Tu sesión fue iniciada en otro dispositivo. Cerrando esta sesión...','');
+        setTimeout(()=>doLogout(), 2500);
+      }
+    }catch(e){}
+  }, 2 * 60 * 1000); // cada 2 minutos
+}
 
 function sanitizeHTML(str){
   if(!str) return '';
@@ -3120,8 +3156,9 @@ async function imprimirGrupoEtiquetas(){
     </div>`;
   }).join('');
 
-  // 2. Abrir ventana popup con CSS limpio y sin interferencias
-  const popup = window.open('','_blank','width=800,height=600,scrollbars=yes');
+  // 2. Abrir ventana popup maximizada — DOM limpio sin CSS del sistema
+  const popup = window.open('','_blank',
+    'width='+screen.availWidth+',height='+screen.availHeight+',left=0,top=0,scrollbars=yes,resizable=yes');
   if(!popup){
     showToast('⚠ El navegador bloqueó la ventana emergente. Permite popups para este sitio.','error');
     return;
@@ -3131,107 +3168,117 @@ async function imprimirGrupoEtiquetas(){
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>SAGAE — Etiquetas ${_etiqCodigosActuales.length}</title>
+<title>SAGAE — Etiquetas \${_etiqCodigosActuales.length}</title>
 <style>
-  /* ── Reset total — sin herencia del sistema ── */
   *{ box-sizing:border-box; margin:0; padding:0; }
 
-  /* ── Tamaño de página Zebra 2"×1" = 51×25mm ── */
-  /* Se imprime en papel carta/A4, caben 3 por fila */
   @page{
     size: letter portrait;
-    margin: 10mm 8mm;
+    margin: 12mm 10mm;
   }
 
   body{
     font-family: Arial, Helvetica, sans-serif;
-    background: #fff;
-    padding: 0;
-    margin: 0;
+    background: #f0f0f0;
+    margin: 0; padding: 0;
   }
 
-  /* Barra de control — solo en pantalla, no imprime */
   .ctrl{
     background:#1B3A6B; color:#fff;
     padding:10px 16px;
-    display:flex; align-items:center; gap:12px;
-    position:sticky; top:0; z-index:99;
+    display:flex; align-items:center; gap:10px;
+    position:sticky; top:0; z-index:99; font-size:13px;
   }
-  .ctrl h2{ font-size:14px; flex:1; }
+  .ctrl h2{ flex:1; font-size:13px; font-weight:600; }
+  .ctrl .info{ font-size:10px; opacity:.7; }
   .ctrl button{
     padding:7px 16px; border-radius:6px; border:none;
     background:#B8960C; color:#fff; font-weight:700;
-    font-size:13px; cursor:pointer;
+    font-size:13px; cursor:pointer; white-space:nowrap;
   }
-  .ctrl .cerrar{
-    background:rgba(255,255,255,.15);
-    color:#fff; margin-left:4px;
-  }
+  .ctrl .cerrar{ background:rgba(255,255,255,.2); }
   @media print{ .ctrl{ display:none!important; } }
 
-  /* ── Contenedor de etiquetas ── */
-  .grid{
-    display:flex;
-    flex-wrap:wrap;
-    gap:3mm;
-    padding:0;
-    width:100%;
+  .print-area{
+    background:#fff;
+    padding: 8mm;
+  }
+  @media print{
+    body{ background:#fff; }
+    .print-area{ padding:0; }
   }
 
-  /* ── Etiqueta individual Zebra 2"×1" ── */
-  /* 51mm × 25mm — caben 3 por fila en carta con márgenes 8mm        */
+  /* Grid fijo de 3 columnas de 51mm — carta 215mm - 20mm márgenes = 195mm */
+  /* 3 x 51mm = 153mm + 2 gaps x 3mm = 6mm = 159mm — cabe perfectamente    */
+  .grid{
+    display: grid;
+    grid-template-columns: repeat(3, 51mm);
+    gap: 3mm;
+    width: calc(3 * 51mm + 2 * 3mm);
+  }
+
+  /* Zebra 2" x 1" = 51.0mm x 25.4mm */
   .etiq{
-    width:51mm;
-    height:25mm;
-    padding:1.5mm 2mm;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    border:0.3mm solid #999;
-    overflow:hidden;
-    page-break-inside:avoid;
-    break-inside:avoid;
-    background:#fff;
+    width: 51mm;
+    height: 25.4mm;
+    padding: 1.5mm 2mm 1mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 0.4mm solid #777;
+    overflow: hidden;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: #fff;
   }
 
   .etiq-nom{
-    font-size:6pt;
-    font-weight:700;
-    color:#000;
-    line-height:1.25;
-    word-break:break-word;
-    max-height:8mm;
-    overflow:hidden;
+    font-size: 6pt;
+    font-weight: 700;
+    color: #000;
+    line-height: 1.2;
+    word-break: break-word;
+    overflow: hidden;
+    max-height: 7mm;
   }
 
-  /* El SVG del barcode ocupa el espacio central */
+  .etiq-bc{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
   .etiq-bc svg{
-    width:100%!important;
-    height:12mm!important;
-    display:block;
+    width: 100% !important;
+    height: 12.5mm !important;
+    display: block;
   }
 
   .etiq-cod{
-    font-size:5pt;
-    color:#222;
-    text-align:center;
-    letter-spacing:0.3pt;
-    white-space:nowrap;
-    overflow:hidden;
+    font-size: 5pt;
+    color: #111;
+    text-align: center;
+    letter-spacing: 0.3pt;
+    white-space: nowrap;
+    overflow: hidden;
   }
 </style>
 </head>
 <body>
 <div class="ctrl">
-  <h2>🏷️ SAGAE — ${_etiqCodigosActuales.length} etiquetas listas · Zebra 2"×1" (51×25mm)</h2>
+  <h2>🏷️ SAGAE — \${_etiqCodigosActuales.length} etiquetas · Zebra 2"×1" · 3 por fila</h2>
+  <span class="info">Impresora: Carta · Sin escala (100%) · Sin encabezados ni pies de página</span>
   <button onclick="window.print()">🖨️ Imprimir</button>
   <button class="cerrar" onclick="window.close()">✕ Cerrar</button>
 </div>
-<div class="grid">
-${etiquetasHTML}
+<div class="print-area">
+  <div class="grid">
+\${etiquetasHTML}
+  </div>
 </div>
 </body>
-</html>`);
+</html>\`);
 
   popup.document.close();
   showToast(`✅ ${_etiqCodigosActuales.length} etiquetas listas en la ventana de impresión`,'success');
