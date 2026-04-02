@@ -7,7 +7,7 @@
   <meta http-equiv="X-Frame-Options" content="SAMEORIGIN">
   <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SAGA — Sistema de Activos y Gestión Administrativa</title>
+<title>SAGAE — Sistema de Activos y Gestión Administrativa Educativa</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F0F2F5;min-height:100vh;display:flex;align-items:center;justify-content:center;}
@@ -326,13 +326,13 @@ tbody tr.clickable{cursor:pointer;}
 
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Iniciando SAGA...</div>
+  <div class="loading-text" id="loading-text">Iniciando SAGAE...</div>
   <div class="loading-sub" id="loading-sub">Conectando a Google Sheets</div>
 </div>
 
 <div class="login-wrap" id="login-screen" style="display:none;">
   <div class="login-card">
-    <div class="login-logo">SAGA</div>
+    <div class="login-logo">SAGAE</div>
     <div class="login-sub">Sistema de Activos y Gestión Administrativa</div>
     <div class="sheets-badge"><span class="sdot"></span> Conectado a Google Sheets</div>
     <div class="login-err" id="login-err"></div>
@@ -349,10 +349,10 @@ tbody tr.clickable{cursor:pointer;}
 <div class="app" id="app-screen">
   <div class="sb">
     <div class="sb-head">
-      <div class="sb-logo">SAGA</div>
+      <div class="sb-logo">SAGAE</div>
       <div class="sb-user" id="sb-username">—</div>
       <div class="sb-conn">● Google Sheets</div>
-      <div style="font-size:9px;color:#5A7A9A;margin-top:3px;letter-spacing:.1em;text-transform:uppercase;">Desarrollado por RYEJ</div><br>
+      <div style="font-size:9px;color:#5A7A9A;margin-top:3px;letter-spacing:.1em;text-transform:uppercase;">Desarrollado por RYE Design</div><br>
       <span class="sb-role" id="sb-role-badge">—</span>
     </div>
     <div class="sb-sec">General</div>
@@ -842,7 +842,7 @@ function abrirEtiqueta(codigo){
     generarBarcode('prev-barcode-svg', a.codigo);
     // Code 128 en impresión
     generarBarcode('print-barcode-svg', a.codigo);
-    // QR en preview (el QR contiene el código del activo con formato SAGA)
+    // QR en preview (el QR contiene el código del activo con formato SAGAE)
     // QR en impresión
   }, 150);
 }
@@ -2609,15 +2609,15 @@ function exportCSV(){
   const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');
-  a.href=url;a.download=`SAGA_${tipo}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.href=url;a.download=`SAGAE_${tipo}_${new Date().toISOString().slice(0,10)}.csv`;
   a.click();URL.revokeObjectURL(url);
 }
 
 // ── EXPORTAR PDF (PRINT) ───────────────────────────────────────────
 function exportPDF(){
-  const titulo=document.querySelector('#rep-content .rep-title')?.textContent||'Reporte SAGA';
+  const titulo=document.querySelector('#rep-content .rep-title')?.textContent||'Reporte SAGAE';
   const orig=document.title;
-  document.title=titulo+' — SAGA';
+  document.title=titulo+' — SAGAE';
   window.print();
   document.title=orig;
 }
