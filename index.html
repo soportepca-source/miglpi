@@ -2886,22 +2886,24 @@ function actualizarPreviewEtiq(){
 async function imprimirGrupoEtiquetas(){
   if(!_etiqCodigosActuales.length) return;
 
-  // ── ENFOQUE: ventana emergente independiente ─────────────────────
-  // Razón: el body principal tiene display:flex y .screen tiene
-  // overflow:hidden, lo que hace que cualquier @media print dentro
-  // de la app principal recorte o distorsione las etiquetas.
-  // Una ventana separada tiene su propio DOM limpio sin esas reglas.
+  // CRÍTICO: abrir popup INMEDIATAMENTE desde el evento de clic
+  // antes de cualquier await — los navegadores bloquean window.open()
+  // si se llama después de operaciones asíncronas
+  const popup = window.open('','_blank',
+    'width='+screen.availWidth+',height='+screen.availHeight+',left=0,top=0,scrollbars=yes,resizable=yes');
+  if(!popup){
+    showToast('⚠ El navegador bloqueó la ventana emergente. Permite popups para este sitio.','error');
+    return;
+  }
 
-  // Zebra 2" × 1" = 51mm × 25mm (tamaño estándar para activos TI)
-  // Caben 3 etiquetas por fila en carta/A4 con márgenes normales
+  // Mostrar cargando en el popup mientras generamos los barcodes
+  popup.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SAGAE — Preparando etiquetas...</title></head><body style="font-family:Arial;display:flex;align-items:center;justify-content:center;height:100vh;background:#1B3A6B;color:#fff;font-size:18px;"><div style="text-align:center"><div style="font-size:48px;margin-bottom:16px">🏷️</div><div>Generando etiquetas...</div></div></body></html>');
 
-  // 1. Construir el HTML de las etiquetas con barcodes inline (base64)
-  //    para que funcionen en la ventana popup sin dependencias externas
   closeModals();
   showToast('Preparando etiquetas...','');
 
-  // Esperar a que JsBarcode esté disponible
-  await new Promise(res=>setTimeout(res,50));
+  // Ahora sí podemos usar await — el popup ya está abierto
+  await new Promise(res=>setTimeout(res,80));
 
   // Generar SVG de cada barcode como string
   const etiquetasHTML = _etiqCodigosActuales.map(cod=>{
@@ -2940,14 +2942,7 @@ async function imprimirGrupoEtiquetas(){
     </div>`;
   }).join('');
 
-  // 2. Abrir ventana popup maximizada — DOM limpio sin CSS del sistema
-  const popup = window.open('','_blank',
-    'width='+screen.availWidth+',height='+screen.availHeight+',left=0,top=0,scrollbars=yes,resizable=yes');
-  if(!popup){
-    showToast('⚠ El navegador bloqueó la ventana emergente. Permite popups para este sitio.','error');
-    return;
-  }
-
+  // El popup ya está abierto — ahora escribimos el contenido final
   popup.document.write(`<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -3327,6 +3322,7 @@ ${etiquetasHTML}
 
 </body>
 </html>
+
 
 
 
