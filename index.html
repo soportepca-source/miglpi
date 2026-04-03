@@ -265,29 +265,35 @@ tbody tr.clickable{cursor:pointer;}
 
 @media print{.sb,.topbar,.sync-bar,#rep-tipo,#rep-filtros,#btn-csv,#btn-pdf,.tab-row{display:none!important;}.main{overflow:visible!important;}.content{overflow:visible!important;padding:0!important;}.screen{height:auto!important;max-height:none!important;box-shadow:none!important;border-radius:0!important;}}
 
-/* ── IMPRESIÓN MÚLTIPLE — mismo patrón que etiqueta individual ───── */
+/* ── IMPRESIÓN MÚLTIPLE — Zebra Z-Perform 1.5"×1" = 38×25mm ──────── */
+/* 4 columnas en carta: 4×38 + 3gaps×4 = 164mm < 190mm útiles ✅     */
 @media print{
-  @page{ margin:10mm 8mm; }
+  @page{
+    size: letter portrait;
+    margin: 10mm 12mm;
+  }
   body.printing-multi *{ visibility:hidden!important; }
   body.printing-multi #print-multi-area,
   body.printing-multi #print-multi-area *{ visibility:visible!important; }
   body.printing-multi #print-multi-area{
     position:fixed!important;
     top:0!important;left:0!important;
-    width:210mm!important;
-    margin:0!important;padding:10mm 8mm!important;
+    width:190mm!important;
+    margin:0!important;padding:0!important;
     background:#fff!important;
-    display:flex!important;flex-wrap:wrap!important;
-    gap:3mm!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,38mm)!important;
+    gap:4mm!important;
     box-sizing:border-box!important;
-    overflow:visible!important;
   }
   body.printing-multi .etiq-multi{
-    width:51mm!important;height:25.4mm!important;
-    padding:1.5mm 2mm 1mm!important;
-    display:flex!important;flex-direction:column!important;
+    width:38mm!important;
+    height:25mm!important;
+    padding:1.5mm 1.5mm 1mm!important;
+    display:flex!important;
+    flex-direction:column!important;
     justify-content:space-between!important;
-    border:0.4mm solid #777!important;
+    border:0.3mm solid #888!important;
     overflow:hidden!important;
     page-break-inside:avoid!important;
     break-inside:avoid!important;
@@ -295,22 +301,23 @@ tbody tr.clickable{cursor:pointer;}
     box-sizing:border-box!important;
   }
   body.printing-multi .etiq-multi-nom{
-    font-size:6pt!important;font-weight:700!important;
+    font-size:5.5pt!important;font-weight:700!important;
     color:#000!important;line-height:1.2!important;
     word-break:break-word!important;overflow:hidden!important;
-    max-height:7mm!important;
+    max-height:6mm!important;flex-shrink:0!important;
   }
   body.printing-multi .etiq-multi-bc{
     flex:1!important;display:flex!important;
     align-items:center!important;overflow:hidden!important;
   }
   body.printing-multi .etiq-multi-bc svg{
-    width:100%!important;height:12.5mm!important;display:block!important;
+    width:100%!important;height:11mm!important;display:block!important;
   }
   body.printing-multi .etiq-multi-cod{
-    font-size:5pt!important;color:#111!important;
-    text-align:center!important;letter-spacing:.3pt!important;
+    font-size:4.5pt!important;color:#111!important;
+    text-align:center!important;letter-spacing:0!important;
     white-space:nowrap!important;overflow:hidden!important;
+    flex-shrink:0!important;
   }
 }
 
@@ -2945,7 +2952,7 @@ function imprimirGrupoEtiquetas(){
   area.innerHTML = '';
   // Visible pero fuera de pantalla hasta imprimir — NO usar display:none
   // porque JsBarcode necesita que el SVG esté en el DOM visible
-  area.style.cssText = 'display:flex;flex-wrap:wrap;gap:3mm;padding:10mm 8mm;background:#fff;box-sizing:border-box;position:fixed;top:-9999px;left:0;width:210mm;visibility:hidden;';
+  area.style.cssText = 'display:grid;grid-template-columns:repeat(4,38mm);gap:4mm;padding:0;background:#fff;box-sizing:border-box;position:fixed;top:-9999px;left:0;width:190mm;visibility:hidden;';
 
   // 3. Construir HTML de etiquetas
   _etiqCodigosActuales.forEach(cod=>{
@@ -2981,7 +2988,7 @@ function imprimirGrupoEtiquetas(){
   // 5. Imprimir — mismo patrón exacto que imprimirEtiqueta()
   setTimeout(()=>{
     // Mover área a posición 0,0 visible para impresión
-    area.style.cssText = 'display:flex;flex-wrap:wrap;gap:3mm;padding:0;background:#fff;box-sizing:border-box;position:fixed;top:0;left:0;width:210mm;visibility:visible;';
+    area.style.cssText = 'display:grid;grid-template-columns:repeat(4,38mm);gap:4mm;padding:0;background:#fff;box-sizing:border-box;position:fixed;top:0;left:0;width:190mm;visibility:visible;';
     document.body.classList.add('printing-multi');
     setTimeout(()=>{
       window.print();
@@ -3254,6 +3261,7 @@ function imprimirGrupoEtiquetas(){
 
 </body>
 </html>
+
 
 
 
