@@ -1394,13 +1394,19 @@ function renderTopbarBtns(p){
   const c=document.getElementById('tb-buttons'),per=PERMS[session.rol]||{};c.innerHTML='';
   if(p==='activos'){
     if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openActivo(null)">+ Nuevo activo</button>';
-    // Botón de impresión masiva: visible para admin/tecnico/inventario
+    if(['admin','inventario'].includes(session.rol)){
+      c.innerHTML+='<button class="btn" onclick="abrirModalImportarActivos()" style="margin-left:6px" title="Importar activos desde CSV o Excel">⬆ Importar Excel</button>';
+      c.innerHTML+='<button class="btn" onclick="descargarPlantillaActivos()" style="margin-left:4px" title="Descargar plantilla de carga masiva">⬇ Plantilla</button>';
+    }
     if(['admin','tecnico','inventario'].includes(session.rol)){
       c.innerHTML+='<button class="btn" onclick="abrirModalEtiquetasGrupo()" style="margin-left:6px">🏷️ Etiquetas</button>';
     }
   }
   if(p==='tickets'&&per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openTicket(null)">+ Nuevo ticket</button>';
-  if(p==='usuarios'&&per.usuarios)c.innerHTML+='<button class="btn btn-p" onclick="openUsuario(null)">+ Nuevo usuario</button>';
+  if(p==='usuarios'&&per.usuarios){
+    c.innerHTML+='<button class="btn btn-p" onclick="openUsuario(null)">+ Nuevo usuario</button>';
+    if(session.rol==='admin') c.innerHTML+='<button class="btn" onclick="abrirModalImportarUsuarios()" style="margin-left:6px" title="Importar usuarios desde CSV o Excel">⬆ Importar Excel</button>';
+  }
   if(p==='detalle'&&activoActual){
     if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openActivo(activoActual.codigo)" style="margin-right:6px">✎ Editar</button><button class="btn" onclick="openMant()" style="margin-right:6px">+ Mantenimiento</button>';
     if(per.delete&&activoActual.estado!=='eliminado')c.innerHTML+='<button class="btn btn-warn" onclick="openDelete(\'activo\',activoActual.codigo)">Eliminar</button>';
