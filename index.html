@@ -321,6 +321,258 @@ tbody tr.clickable{cursor:pointer;}
   }
 }
 
+/* ── IMPRESIÓN DE REPORTES — Landscape, bordes por página ────────── */
+@media print{
+
+  /* Landscape para aprovechar el ancho — 279mm × 216mm en carta */
+  @page{
+    size: letter landscape;
+    margin: 12mm 14mm;
+  }
+
+  /* Ocultar todo el chrome del sistema */
+  body.printing-report .sb,
+  body.printing-report .topbar,
+  body.printing-report .sync-bar,
+  body.printing-report #rep-tipo,
+  body.printing-report #rep-filtros,
+  body.printing-report #btn-csv,
+  body.printing-report #btn-pdf,
+  body.printing-report .tab-row,
+  body.printing-report .pnl:not(#pnl-reportes),
+  body.printing-report #pnl-reportes > div:first-child{
+    display:none!important;
+  }
+
+  /* Contenedores — flujo libre sin alturas fijas */
+  body.printing-report .screen,
+  body.printing-report .main,
+  body.printing-report .content,
+  body.printing-report #pnl-reportes,
+  body.printing-report #rep-content{
+    display:block!important;
+    width:100%!important;
+    max-width:none!important;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding:0!important;
+    margin:0!important;
+    box-shadow:none!important;
+    border-radius:0!important;
+    border:none!important;
+    background:#fff!important;
+  }
+
+  /* ── ENCABEZADO DEL REPORTE ── */
+  body.printing-report .rep-header{
+    border:0.5mm solid #1B3A6B!important;
+    border-radius:3mm!important;
+    padding:4mm 6mm!important;
+    margin-bottom:5mm!important;
+    background:#E8F0FB!important;
+    break-inside:avoid!important;
+  }
+
+  body.printing-report .rep-title{
+    font-size:13pt!important;
+    font-weight:700!important;
+    color:#1B3A6B!important;
+    display:block!important;
+    margin-bottom:1mm!important;
+  }
+
+  body.printing-report .rep-meta{
+    font-size:8pt!important;
+    color:#555!important;
+    display:block!important;
+  }
+
+  /* ── KPIs ── */
+  body.printing-report .rep-kpi{
+    display:grid!important;
+    grid-template-columns:repeat(4,1fr)!important;
+    gap:3mm!important;
+    margin-bottom:5mm!important;
+    width:100%!important;
+    break-inside:avoid!important;
+  }
+
+  body.printing-report .rep-kpi-card{
+    border:0.4mm solid #1B3A6B!important;
+    border-radius:2.5mm!important;
+    padding:3mm 4mm!important;
+    text-align:center!important;
+    background:#fff!important;
+    break-inside:avoid!important;
+  }
+
+  body.printing-report .rep-kpi-v{
+    font-size:16pt!important;
+    font-weight:700!important;
+    color:#1B3A6B!important;
+    display:block!important;
+  }
+
+  body.printing-report .rep-kpi-l{
+    font-size:7pt!important;
+    color:#666!important;
+    display:block!important;
+    margin-top:1mm!important;
+  }
+
+  /* ── SECCIÓN DEL REPORTE — borde redondeado en cada página ── */
+  body.printing-report .rep-section{
+    border:0.5mm solid #1B3A6B!important;
+    border-radius:3mm!important;
+    padding:0!important;
+    margin-bottom:5mm!important;
+    background:#fff!important;
+    overflow:visible!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  body.printing-report .rep-sec-title{
+    font-size:8pt!important;
+    font-weight:700!important;
+    text-transform:uppercase!important;
+    color:#fff!important;
+    background:#1B3A6B!important;
+    letter-spacing:.07em!important;
+    padding:2.5mm 4mm!important;
+    margin:0!important;
+    border-radius:2.5mm 2.5mm 0 0!important;
+    display:block!important;
+  }
+
+  /* ── TABLA — ocupa todo el ancho, filas no se cortan entre páginas ── */
+  body.printing-report .tbl-wrap{
+    overflow:visible!important;
+    width:100%!important;
+    padding:0!important;
+  }
+
+  body.printing-report table{
+    width:100%!important;
+    border-collapse:collapse!important;
+    font-size:7pt!important;
+    table-layout:fixed!important;
+    word-wrap:break-word!important;
+  }
+
+  /* Repetir encabezados en cada página */
+  body.printing-report thead{
+    display:table-header-group!important;
+  }
+
+  body.printing-report th{
+    background:#1B3A6B!important;
+    color:#fff!important;
+    padding:2mm 2mm!important;
+    text-align:left!important;
+    font-size:7pt!important;
+    font-weight:700!important;
+    border:0.2mm solid #0D1F3C!important;
+    overflow:hidden!important;
+    word-break:break-word!important;
+    white-space:normal!important;
+  }
+
+  body.printing-report td{
+    padding:1.5mm 2mm!important;
+    border:0.2mm solid #C8D8F0!important;
+    font-size:6.5pt!important;
+    color:#111!important;
+    overflow:hidden!important;
+    word-break:break-word!important;
+    vertical-align:top!important;
+    white-space:normal!important;
+  }
+
+  /* Filas alternas para legibilidad */
+  body.printing-report tbody tr:nth-child(even) td{
+    background:#EFF4FB!important;
+  }
+  body.printing-report tbody tr:nth-child(odd) td{
+    background:#fff!important;
+  }
+
+  /* CRÍTICO: filas nunca se cortan a mitad de página */
+  body.printing-report tbody tr{
+    page-break-inside:avoid!important;
+    break-inside:avoid!important;
+  }
+
+  /* Borde inferior redondeado en la última fila visible */
+  body.printing-report tbody tr:last-child td:first-child{
+    border-bottom-left-radius:2.5mm!important;
+  }
+  body.printing-report tbody tr:last-child td:last-child{
+    border-bottom-right-radius:2.5mm!important;
+  }
+
+  /* ── ANCHOS DE COLUMNA — landscape carta = 251mm útiles (279-28mm) ── */
+  /* 13 columnas ajustadas para ese ancho */
+  body.printing-report .tbl-wrap table th:nth-child(1),
+  body.printing-report .tbl-wrap table td:nth-child(1){ width:15mm!important; } /* Código */
+  body.printing-report .tbl-wrap table th:nth-child(2),
+  body.printing-report .tbl-wrap table td:nth-child(2){ width:30mm!important; } /* Nombre */
+  body.printing-report .tbl-wrap table th:nth-child(3),
+  body.printing-report .tbl-wrap table td:nth-child(3){ width:16mm!important; } /* Tipo */
+  body.printing-report .tbl-wrap table th:nth-child(4),
+  body.printing-report .tbl-wrap table td:nth-child(4){ width:24mm!important; } /* Marca/Modelo */
+  body.printing-report .tbl-wrap table th:nth-child(5),
+  body.printing-report .tbl-wrap table td:nth-child(5){ width:18mm!important; } /* S/N */
+  body.printing-report .tbl-wrap table th:nth-child(6),
+  body.printing-report .tbl-wrap table td:nth-child(6){ width:22mm!important; } /* Asignado */
+  body.printing-report .tbl-wrap table th:nth-child(7),
+  body.printing-report .tbl-wrap table td:nth-child(7){ width:20mm!important; } /* Departamento */
+  body.printing-report .tbl-wrap table th:nth-child(8),
+  body.printing-report .tbl-wrap table td:nth-child(8){ width:20mm!important; } /* Ubicación */
+  body.printing-report .tbl-wrap table th:nth-child(9),
+  body.printing-report .tbl-wrap table td:nth-child(9){ width:13mm!important; } /* Estado */
+  body.printing-report .tbl-wrap table th:nth-child(10),
+  body.printing-report .tbl-wrap table td:nth-child(10){ width:14mm!important; } /* Compra */
+  body.printing-report .tbl-wrap table th:nth-child(11),
+  body.printing-report .tbl-wrap table td:nth-child(11){ width:14mm!important; } /* Garantía */
+  body.printing-report .tbl-wrap table th:nth-child(12),
+  body.printing-report .tbl-wrap table td:nth-child(12){ width:14mm!important; } /* Valor orig */
+  body.printing-report .tbl-wrap table th:nth-child(13),
+  body.printing-report .tbl-wrap table td:nth-child(13){ width:17mm!important; } /* Valor actual */
+  /* Total: 237mm → table-layout:fixed escala proporcional a 251mm útiles */
+
+  /* ── BADGES ── */
+  body.printing-report .badge{
+    border:0.3mm solid #999!important;
+    border-radius:2mm!important;
+    padding:0.3mm 1.5mm!important;
+    font-size:6pt!important;
+    font-weight:600!important;
+    background:#fff!important;
+    color:#222!important;
+    white-space:nowrap!important;
+  }
+
+  /* ── OCULTAR ELEMENTOS NO IMPRIMIBLES ── */
+  body.printing-report button,
+  body.printing-report .btn,
+  body.printing-report select,
+  body.printing-report input,
+  body.printing-report .f-row{
+    display:none!important;
+  }
+
+  /* ── TIMELINE (hoja de vida) ── */
+  body.printing-report .vida-event{
+    display:flex!important;
+    gap:3mm!important;
+    padding:2mm 0!important;
+    border-bottom:0.2mm solid #ddd!important;
+    break-inside:avoid!important;
+  }
+}
+
 /* ── VALIDACIONES DE FORMULARIO ──────────────────────────────────── */
 .f-inp.error{border-color:#D85A30!important;background:#FFF5F5!important;}
 .f-inp.valid{border-color:#1D9E75!important;}
@@ -2697,11 +2949,17 @@ function exportCSV(){
 
 // ── EXPORTAR PDF (PRINT) ───────────────────────────────────────────
 function exportPDF(){
-  const titulo=document.querySelector('#rep-content .rep-title')?.textContent||'Reporte SAGAE';
-  const orig=document.title;
-  document.title=titulo+' — SAGAE';
-  window.print();
-  document.title=orig;
+  const titulo = document.querySelector('#rep-content .rep-title')?.textContent || 'Reporte SAGAE';
+  const orig = document.title;
+  document.title = titulo + ' — SAGAE';
+  document.body.classList.add('printing-report');
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.body.classList.remove('printing-report');
+      document.title = orig;
+    }, 500);
+  }, 100);
 }
 
 
