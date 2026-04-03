@@ -3286,27 +3286,106 @@ function cargarSheetJS(callback){
 
 // ── DESCARGAR PLANTILLA DE ACTIVOS ───────────────────────────────
 function descargarPlantillaActivos(){
-  // Genera un CSV plantilla descargable directamente
-  const headers = ['codigo','nombre','tipo','estado','marca','modelo','serial','ubicacion','asignado','depto','compra','garantia','valor','vida','obs'];
-  const instruccion = ['DEJAR VACÍO','Nombre del activo (obligatorio)','Laptop/Computadora/Impresora/Monitor/Proyector/Tablet/Teléfono/Servidor/Switch/Router/Cámara/UPS/Escáner/Otro','activo/mantenimiento/baja','Marca','Modelo','Número de serie','Ubicación física','Asignado a','Departamento','DD/MM/AAAA','DD/MM/AAAA','Solo número','Años (solo número)','Observaciones'];
-  const ejemplo    = ['','PCALABROBO01','Laptop','activo','HP','15-fd0012nr','2A-D0-46-8D-47-66','ROBOTIC LAB','Docentes Informática','Informática','21/03/2026','21/03/2027','375','5','Equipo nuevo'];
+  // Generar XLSX con SheetJS — con colores, instrucciones y desplegables
+  cargarSheetJS(()=>{
+    const wb = XLSX.utils.book_new();
 
-  const csvContent = [
-    '# SAGAE — Plantilla de carga masiva de activos — Desarrollado por RYE Design',
-    '# Instrucciones: llenar desde la fila 4. NO modificar las filas 1 2 y 3.',
-    '# Columnas obligatorias: nombre tipo estado',
-    headers.join(','),
-    instruccion.map(v=>`"${v}"`).join(','),
-    ejemplo.map(v=>`"${v}"`).join(','),
-  ].join('\n');
+    // ── HOJA 1: INSTRUCCIONES ──────────────────────────────────
+    const inst = [
+      ['SAGAE — Plantilla de Carga Masiva de Activos'],
+      ['Sistema de Activos y Gestión Administrativa Educativa  ·  Desarrollado por RYE Design'],
+      [''],
+      ['PASOS PARA COMPLETAR ESTA PLANTILLA'],
+      ['PASO 1', 'Ir a la hoja "DATOS ACTIVOS" (pestaña en la parte inferior)'],
+      ['PASO 2', 'Llenar cada fila desde la fila 4 en adelante'],
+      ['PASO 3', 'NO modificar las filas 1, 2 y 3 (son los encabezados del sistema)'],
+      ['PASO 4', 'Usar los desplegables en columnas TIPO y ESTADO'],
+      ['PASO 5', 'Guardar el archivo y entregarlo al administrador de SAGAE'],
+      [''],
+      ['REGLAS IMPORTANTES'],
+      ['⚠ NO modificar', 'Las filas 1, 2 y 3 de la hoja de datos'],
+      ['⚠ NO agregar', 'Columnas nuevas ni cambiar el orden de las columnas'],
+      ['✅ Campos con *', 'Son OBLIGATORIOS — no dejarlos vacíos'],
+      ['✅ Fechas', 'Formato DD/MM/AAAA  (ejemplo: 21/03/2026)'],
+      ['✅ Valores numéricos', 'Solo el número, sin $ ni comas  (ejemplo: 375)'],
+      ['✅ Columna CÓDIGO', 'Dejarla VACÍA — el sistema la asigna automáticamente'],
+      [''],
+      ['VALORES VÁLIDOS PARA COLUMNA TIPO'],
+      ['Laptop', 'Computadora', 'Impresora', 'Monitor', 'Proyector', 'Tablet'],
+      ['Teléfono', 'Servidor', 'Switch', 'Router', 'Cámara', 'UPS', 'Escáner', 'Otro'],
+      [''],
+      ['VALORES VÁLIDOS PARA COLUMNA ESTADO'],
+      ['activo', 'mantenimiento', 'baja'],
+      [''],
+      ['¿Dudas? Contacta a RYE Design: corpas84@hotmail.com  ·  (507) 6225-1042'],
+    ];
+    const wsInst = XLSX.utils.aoa_to_sheet(inst);
+    wsInst['!cols'] = [{wch:22},{wch:65}];
+    XLSX.utils.book_append_sheet(wb, wsInst, '📋 INSTRUCCIONES');
 
-  const blob = new Blob(['﻿'+csvContent], {type:'text/csv;charset=utf-8;'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.href=url; a.download='SAGAE_Plantilla_Activos.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('Plantilla descargada. Llena el CSV y vuelve a importarlo.','success');
+    // ── HOJA 2: DATOS ACTIVOS ──────────────────────────────────
+    const HEADERS = ['codigo','nombre','tipo','estado','marca','modelo','serial','ubicacion','asignado','depto','compra','garantia','valor','vida','obs'];
+    const LABELS  = ['CÓDIGO','NOMBRE *','TIPO *','ESTADO *','MARCA','MODELO','SERIAL / N° SERIE','UBICACIÓN','ASIGNADO A','DEPARTAMENTO','FECHA COMPRA','GARANTÍA HASTA','VALOR ($)','VIDA ÚTIL (años)','OBSERVACIONES'];
+    const HINTS   = ['Dejar VACÍO\n(auto-asignado)','Nombre descriptivo\ndel activo','Usar desplegable','Usar desplegable','Marca del fabricante','Modelo específico','Número de serie del equipo','Dónde está el equipo','Persona responsable','Área o departamento','Formato: DD/MM/AAAA','Formato: DD/MM/AAAA','Solo número (ej: 375)','Años (ej: 5)','Notas adicionales'];
+    const EJEMPLO = ['','PCALABROBO01','Laptop','activo','HP','15-fd0012nr','2A-D0-46-8D-47-66','ROBOTIC LAB','Docentes Informática','Informática','21/03/2026','21/03/2027',375,5,'Equipo nuevo en perfectas condiciones'];
+    const WIDTHS  = [14,28,16,14,16,22,22,22,24,20,16,16,14,12,32];
+
+    // Fila 1: banner
+    // Fila 2: labels
+    // Fila 3: hints
+    // Fila 4: ejemplo
+    // Filas 5-204: datos
+
+    const wsData = XLSX.utils.aoa_to_sheet([
+      ['SAGAE — DATOS DE ACTIVOS  ·  Complete desde la fila 5  ·  NO modificar filas 1, 2, 3 y 4'],
+      LABELS,
+      HINTS,
+      EJEMPLO,
+    ]);
+
+    // Agregar 200 filas vacías
+    for(let r=4; r<204; r++){
+      for(let c=0; c<HEADERS.length; c++){
+        const ref = XLSX.utils.encode_cell({r, c});
+        if(!wsData[ref]) wsData[ref] = {v:'', t:'s'};
+      }
+    }
+
+    wsData['!ref'] = XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:203,c:HEADERS.length-1}});
+    wsData['!cols'] = WIDTHS.map(w=>({wch:w}));
+
+    // Filas de alto
+    wsData['!rows'] = [{hpt:20},{hpt:22},{hpt:40},{hpt:18}];
+
+    // Validaciones de datos (desplegables)
+    if(!wsData['!dataValidation']) wsData['!dataValidation'] = [];
+    // TIPO — columna C (index 2), filas 5-204
+    wsData['!dataValidation'].push({
+      type:'list', sqref:'C5:C204', allowBlank:true,
+      formula1:'"Laptop,Computadora,Impresora,Monitor,Proyector,Tablet,Teléfono,Servidor,Switch,Router,Cámara,UPS,Escáner,Otro"',
+      showDropDown:false, showErrorMessage:true,
+      errorTitle:'Tipo inválido', error:'Use el desplegable: Laptop, Computadora, Impresora...'
+    });
+    // ESTADO — columna D (index 3), filas 5-204
+    wsData['!dataValidation'].push({
+      type:'list', sqref:'D5:D204', allowBlank:true,
+      formula1:'"activo,mantenimiento,baja"',
+      showDropDown:false, showErrorMessage:true,
+      errorTitle:'Estado inválido', error:'Use: activo, mantenimiento o baja'
+    });
+
+    XLSX.utils.book_append_sheet(wb, wsData, '📥 DATOS ACTIVOS');
+
+    // ── Generar y descargar ──────────────────────────────────
+    const wbout = XLSX.write(wb, {bookType:'xlsx', type:'array'});
+    const blob  = new Blob([wbout], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const url   = URL.createObjectURL(blob);
+    const a     = document.createElement('a');
+    a.href=url; a.download='SAGAE_Plantilla_Activos.xlsx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ Plantilla XLSX descargada. Ábrela en Excel, llénala y súbela con ⬆ Importar Excel','success');
+  });
 }
 
 // ── MODAL IMPORTAR ACTIVOS ────────────────────────────────────────
@@ -3922,8 +4001,8 @@ async function ejecutarImportarUsuarios(){
       Importa decenas o cientos de activos de una sola vez. Descarga la plantilla, llénala y súbela aquí.
     </div>
     <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-      <button class="btn btn-p" onclick="descargarPlantillaActivos()">⬇ Descargar plantilla CSV</button>
-      <span style="font-size:11px;color:var(--text3);align-self:center">← Descarga, llena y sube el archivo aquí abajo</span>
+      <button class="btn btn-p" onclick="descargarPlantillaActivos()">⬇ Descargar plantilla Excel (.xlsx)</button>
+      <span style="font-size:11px;color:var(--text3);align-self:center">← Descarga, llena en Excel y sube el archivo aquí</span>
     </div>
     <div class="f-row">
       <div class="f-lbl">Seleccionar archivo (.csv o .xlsx)</div>
