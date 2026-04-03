@@ -3260,6 +3260,393 @@ function imprimirGrupoEtiquetas(){
   }, 200);
 }
 
+
+
+// ════════════════════════════════════════════════════════════════════
+// IMPORTACIÓN MASIVA DESDE EXCEL (SheetJS)
+// ════════════════════════════════════════════════════════════════════
+
+// SheetJS se carga dinámicamente solo cuando se necesita
+let _sheetJSLoaded = false;
+
+function cargarSheetJS(callback){
+  if(_sheetJSLoaded){ callback(); return; }
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  script.onload = ()=>{ _sheetJSLoaded=true; callback(); };
+  script.onerror = ()=>{ showToast('Error cargando librería de importación. Verifica tu conexión.',''); };
+  document.head.appendChild(script);
+}
+
+// ── DESCARGAR PLANTILLA DE ACTIVOS ───────────────────────────────
+function descargarPlantillaActivos(){
+  // Genera un CSV plantilla descargable directamente
+  const headers = ['codigo','nombre','tipo','estado','marca','modelo','serial','ubicacion','asignado','depto','compra','garantia','valor','vida','obs'];
+  const instruccion = ['DEJAR VACÍO','Nombre del activo (obligatorio)','Laptop/Computadora/Impresora/Monitor/Proyector/Tablet/Teléfono/Servidor/Switch/Router/Cámara/UPS/Escáner/Otro','activo/mantenimiento/baja','Marca','Modelo','Número de serie','Ubicación física','Asignado a','Departamento','DD/MM/AAAA','DD/MM/AAAA','Solo número','Años (solo número)','Observaciones'];
+  const ejemplo    = ['','PCALABROBO01','Laptop','activo','HP','15-fd0012nr','2A-D0-46-8D-47-66','ROBOTIC LAB','Docentes Informática','Informática','21/03/2026','21/03/2027','375','5','Equipo nuevo'];
+
+  const csvContent = [
+    '# SAGAE — Plantilla de carga masiva de activos — Desarrollado por RYE Design',
+    '# Instrucciones: llenar desde la fila 4. NO modificar las filas 1 2 y 3.',
+    '# Columnas obligatorias: nombre tipo estado',
+    headers.join(','),
+    instruccion.map(v=>`"${v}"`).join(','),
+    ejemplo.map(v=>`"${v}"`).join(','),
+  ].join('\n');
+
+  const blob = new Blob(['﻿'+csvContent], {type:'text/csv;charset=utf-8;'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href=url; a.download='SAGAE_Plantilla_Activos.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Plantilla descargada. Llena el CSV y vuelve a importarlo.','success');
+}
+
+// ── MODAL IMPORTAR ACTIVOS ────────────────────────────────────────
+function abrirModalImportarActivos(){
+  document.getElementById('mod-importar-activos').classList.add('open');
+  document.getElementById('import-activos-preview').innerHTML = '';
+  document.getElementById('import-activos-file').value = '';
+  document.getElementById('import-activos-status').textContent = 'Selecciona un archivo CSV o Excel (.xlsx) para importar.';
+  document.getElementById('import-activos-btn').disabled = true;
+  window._importActivosData = [];
+}
+
+function cerrarImportarActivos(){
+  document.getElementById('mod-importar-activos').classList.remove('open');
+}
+
+function leerArchivoActivos(input){
+  const file = input.files[0];
+  if(!file) return;
+  const ext = file.name.split('.').pop().toLowerCase();
+
+  if(ext === 'csv'){
+    const reader = new FileReader();
+    reader.onload = e => procesarCSVActivos(e.target.result);
+    reader.readAsText(file, 'UTF-8');
+  } else if(ext === 'xlsx' || ext === 'xls'){
+    cargarSheetJS(()=>{
+      const reader = new FileReader();
+      reader.onload = e => {
+        const wb = XLSX.read(e.target.result, {type:'array'});
+        // Buscar hoja de datos (puede llamarse 'DATOS ACTIVOS' o ser la 2da)
+        let sheetName = wb.SheetNames.find(n=>n.includes('DATOS')) || wb.SheetNames[1] || wb.SheetNames[0];
+        const ws = wb.Sheets[sheetName];
+        const csv = XLSX.utils.sheet_to_csv(ws);
+        procesarCSVActivos(csv);
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  } else {
+    showToast('Formato no soportado. Usar .csv o .xlsx','');
+  }
+}
+
+function procesarCSVActivos(csvText){
+  // Limpiar BOM y comentarios
+  const lineas = csvText.replace(/^\uFEFF/,'').split(/\r?\n/)
+    .filter(l=>l.trim() && !l.startsWith('#'));
+
+  if(lineas.length < 2){
+    document.getElementById('import-activos-status').textContent = '❌ El archivo no tiene datos. Mínimo: encabezado + 1 fila de datos.';
+    return;
+  }
+
+  // Detectar separador (coma o punto y coma)
+  const sep = lineas[0].includes(';') ? ';' : ',';
+
+  // Parsear headers (primera línea sin comentarios)
+  const headers = lineas[0].split(sep).map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+
+  // Verificar que tenga las columnas mínimas
+  const requeridos = ['nombre','tipo','estado'];
+  const faltantes = requeridos.filter(r=>!headers.includes(r));
+  if(faltantes.length){
+    document.getElementById('import-activos-status').textContent =
+      '❌ El archivo no tiene las columnas requeridas: '+faltantes.join(', ')+'. Descarga la plantilla correcta.';
+    return;
+  }
+
+  const TIPOS_VALIDOS = ['laptop','computadora','impresora','monitor','proyector','tablet','teléfono','telefono','servidor','switch','router','cámara','camara','ups','escáner','escaner','otro'];
+  const ESTADOS_VALIDOS = ['activo','mantenimiento','baja'];
+
+  let registros = [], errores = [], filaNum = 2;
+
+  // Saltar filas de instrucciones (las que empiezan con DEJAR, etc.)
+  const dataLineas = lineas.slice(1).filter(l=>{
+    const primera = l.split(sep)[0].replace(/^"|"$/g,'').trim();
+    return !primera.toUpperCase().startsWith('DEJAR') &&
+           !primera.toUpperCase().startsWith('NOMBRE DEL') &&
+           !primera.toUpperCase().startsWith('←');
+  });
+
+  dataLineas.forEach((linea, idx)=>{
+    if(!linea.trim()) return;
+    filaNum++;
+    const cols = linea.split(sep).map(c=>c.replace(/^"|"$/g,'').trim());
+    const obj = {};
+    headers.forEach((h,i)=>{ obj[h]=cols[i]||''; });
+
+    // Validaciones
+    const errs = [];
+    if(!obj.nombre) errs.push('nombre vacío');
+    if(!obj.tipo)   errs.push('tipo vacío');
+    else if(!TIPOS_VALIDOS.includes(obj.tipo.toLowerCase())) errs.push(`tipo inválido: "${obj.tipo}"`);
+    if(!obj.estado) errs.push('estado vacío');
+    else if(!ESTADOS_VALIDOS.includes(obj.estado.toLowerCase())) errs.push(`estado inválido: "${obj.estado}"`);
+    if(obj.valor && isNaN(parseFloat(obj.valor))) errs.push('valor no es número');
+    if(obj.vida  && isNaN(parseInt(obj.vida)))    errs.push('vida útil no es número');
+
+    if(errs.length){
+      errores.push({fila:filaNum, nombre:obj.nombre||'(sin nombre)', errores:errs});
+    } else {
+      // Normalizar
+      obj.tipo   = obj.tipo.charAt(0).toUpperCase()+obj.tipo.slice(1).toLowerCase();
+      obj.estado = obj.estado.toLowerCase();
+      obj.valor  = obj.valor ? parseFloat(obj.valor)||0 : 0;
+      obj.vida   = obj.vida  ? parseInt(obj.vida)||0    : 0;
+      obj.codigo = ''; // Se asigna al importar
+      registros.push(obj);
+    }
+  });
+
+  window._importActivosData = registros;
+
+  // Mostrar preview
+  const statusEl = document.getElementById('import-activos-status');
+  const previewEl = document.getElementById('import-activos-preview');
+
+  let html = '';
+  if(errores.length){
+    html += `<div style="background:var(--red-l);border:1px solid var(--red-m);border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;">`;
+    html += `<strong style="color:var(--red)">⚠ ${errores.length} fila(s) con errores (serán omitidas):</strong><br>`;
+    errores.slice(0,5).forEach(e=>{
+      html += `Fila ${e.fila}: <em>${e.nombre}</em> — ${e.errores.join(', ')}<br>`;
+    });
+    if(errores.length>5) html += `...y ${errores.length-5} más.`;
+    html += `</div>`;
+  }
+
+  if(registros.length){
+    html += `<div style="font-size:11px;margin-bottom:8px;color:var(--text2)"><strong>${registros.length} activo(s) listos para importar</strong> — Preview de los primeros 5:</div>`;
+    html += `<div style="overflow-x:auto"><table style="width:100%;font-size:11px;border-collapse:collapse">`;
+    html += `<thead><tr>`;
+    ['Nombre','Tipo','Estado','Marca','Modelo','Ubicación'].forEach(h=>{
+      html += `<th style="background:var(--navy);color:#fff;padding:4px 8px;text-align:left">${h}</th>`;
+    });
+    html += '</tr></thead><tbody>';
+    registros.slice(0,5).forEach((r,i)=>{
+      const bg = i%2===0 ? '#fff' : '#f8f9fa';
+      html += `<tr style="background:${bg}">`;
+      [r.nombre,r.tipo,r.estado,r.marca||'—',r.modelo||'—',r.ubicacion||'—'].forEach(v=>{
+        html += `<td style="padding:4px 8px;border-bottom:1px solid #eee">${v}</td>`;
+      });
+      html += '</tr>';
+    });
+    if(registros.length>5) html += `<tr><td colspan="6" style="padding:4px 8px;color:var(--text3);font-size:10px">...y ${registros.length-5} más</td></tr>`;
+    html += '</tbody></table></div>';
+  }
+
+  previewEl.innerHTML = html;
+
+  if(registros.length > 0){
+    statusEl.textContent = `✅ ${registros.length} activo(s) válidos para importar${errores.length?` (${errores.length} con errores serán omitidos)`:''}`;
+    document.getElementById('import-activos-btn').disabled = false;
+  } else {
+    statusEl.textContent = `❌ No hay registros válidos para importar. Corrige los ${errores.length} errores e intenta de nuevo.`;
+    document.getElementById('import-activos-btn').disabled = true;
+  }
+}
+
+async function ejecutarImportarActivos(){
+  const registros = window._importActivosData || [];
+  if(!registros.length) return;
+
+  const btn = document.getElementById('import-activos-btn');
+  btn.disabled = true;
+  btn.textContent = 'Importando...';
+
+  const statusEl = document.getElementById('import-activos-status');
+  let ok=0, fail=0;
+
+  // Obtener el contador actual de activos para asignar códigos
+  let cntBase = 0;
+  try{
+    const raw = await apiGet('activos');
+    cntBase = Array.isArray(raw) ? raw.length : activos.length;
+  }catch(e){ cntBase = activos.length; }
+
+  for(let i=0; i<registros.length; i++){
+    const r = registros[i];
+    const codigo = 'ACT-'+String(cntBase+i+1).padStart(4,'0');
+    const activo = {
+      codigo, nombre:r.nombre, tipo:r.tipo, estado:r.estado,
+      marca:r.marca||'', modelo:r.modelo||'', serial:r.serial||'',
+      ubicacion:r.ubicacion||'', asignado:r.asignado||'',
+      depto:r.depto||'', compra:r.compra||'', garantia:r.garantia||'',
+      valor:r.valor||0, vida:r.vida||0, obs:r.obs||'',
+      historial:JSON.stringify([{
+        tipo:'Creación',
+        desc:`Importado masivamente desde Excel por ${session.nombre}`,
+        fecha:ts(), usuario:session.nombre, color:'blue'
+      }]),
+      fechaCreacion:ts()
+    };
+    try{
+      await apiPost('activos','insert',activo);
+      activos.push({...activo, historial:[{tipo:'Creación',desc:'Importado',fecha:ts(),usuario:session.nombre,color:'blue'}]});
+      ok++;
+    }catch(e){ fail++; }
+
+    statusEl.textContent = `Importando... ${i+1}/${registros.length} (${ok} OK, ${fail} errores)`;
+    // Pequeño delay para no saturar el API
+    if(i % 5 === 4) await new Promise(res=>setTimeout(res,500));
+  }
+
+  // Registrar en auditoría
+  audit('CREAR','Activos','MASIVO',`Importación masiva: ${ok} activos importados desde Excel`);
+
+  statusEl.textContent = `✅ Importación completada: ${ok} activos importados correctamente${fail?` | ${fail} fallaron`:''}`;
+  btn.textContent = 'Importar activos';
+  btn.disabled = true;
+
+  // Recargar datos
+  await loadFromSheets();
+  showToast(`✅ ${ok} activos importados al inventario`,'success');
+  cerrarImportarActivos();
+}
+
+// ── MODAL IMPORTAR USUARIOS ───────────────────────────────────────
+function abrirModalImportarUsuarios(){
+  document.getElementById('mod-importar-usuarios').classList.add('open');
+  document.getElementById('import-usuarios-preview').innerHTML='';
+  document.getElementById('import-usuarios-file').value='';
+  document.getElementById('import-usuarios-status').textContent='Selecciona un archivo CSV o Excel para importar.';
+  document.getElementById('import-usuarios-btn').disabled=true;
+  window._importUsuariosData=[];
+}
+
+function cerrarImportarUsuarios(){
+  document.getElementById('mod-importar-usuarios').classList.remove('open');
+}
+
+function leerArchivoUsuarios(input){
+  const file=input.files[0]; if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    const reader=new FileReader();
+    reader.onload=e=>procesarCSVUsuarios(e.target.result);
+    reader.readAsText(file,'UTF-8');
+  } else if(ext==='xlsx'||ext==='xls'){
+    cargarSheetJS(()=>{
+      const reader=new FileReader();
+      reader.onload=e=>{
+        const wb=XLSX.read(e.target.result,{type:'array'});
+        let sheetName=wb.SheetNames.find(n=>n.includes('DATOS'))||wb.SheetNames[1]||wb.SheetNames[0];
+        const ws=wb.Sheets[sheetName];
+        procesarCSVUsuarios(XLSX.utils.sheet_to_csv(ws));
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+}
+
+function procesarCSVUsuarios(csvText){
+  const lineas=csvText.replace(/^\uFEFF/,'').split(/\r?\n/).filter(l=>l.trim()&&!l.startsWith('#'));
+  if(lineas.length<2){
+    document.getElementById('import-usuarios-status').textContent='❌ Archivo sin datos.'; return;
+  }
+  const sep=lineas[0].includes(';')?';':',';
+  const headers=lineas[0].split(sep).map(h=>h.replace(/^"|"$/g,'').trim().toLowerCase());
+  const ROLES=['admin','tecnico','inventario','consultor'];
+  const ESTADOS=['activo','inactivo'];
+  let registros=[],errores=[];
+
+  lineas.slice(1).filter(l=>{
+    const p=l.split(sep)[0].replace(/^"|"$/g,'').trim();
+    return p && !p.toUpperCase().startsWith('USUARIO') && !p.includes('←');
+  }).forEach((linea,idx)=>{
+    if(!linea.trim()) return;
+    const cols=linea.split(sep).map(c=>c.replace(/^"|"$/g,'').trim());
+    const obj={}; headers.forEach((h,i)=>{obj[h]=cols[i]||'';});
+    const errs=[];
+    if(!obj.username) errs.push('username vacío');
+    else if(/\s/.test(obj.username)) errs.push('username con espacios');
+    if(!obj.pass_temp&&!obj.password) errs.push('contraseña vacía');
+    if(!obj.rol) errs.push('rol vacío');
+    else if(!ROLES.includes(obj.rol.toLowerCase())) errs.push(`rol inválido: ${obj.rol}`);
+    if(!obj.nombre) errs.push('nombre vacío');
+    if(!obj.email||!obj.email.includes('@')) errs.push('email inválido');
+    if(errs.length){ errores.push({fila:idx+2,nombre:obj.username||'?',errores:errs}); }
+    else {
+      registros.push({
+        username:obj.username.toLowerCase(),
+        passHash:hashPass(obj.pass_temp||obj.password||'Cambiar123'),
+        mustChange:'true', rol:obj.rol.toLowerCase(),
+        nombre:obj.nombre, email:obj.email,
+        tel:obj.tel||'', depto:obj.depto||'', cargo:obj.cargo||'',
+        estado:(obj.estado||'activo').toLowerCase(),
+        fechaCreacion:ts(), ultimoAcceso:'Nunca', sessionToken:''
+      });
+    }
+  });
+
+  window._importUsuariosData=registros;
+  const statusEl=document.getElementById('import-usuarios-status');
+  const previewEl=document.getElementById('import-usuarios-preview');
+  let html='';
+  if(errores.length){
+    html+=`<div style="background:var(--red-l);border:1px solid var(--red-m);border-radius:6px;padding:10px;margin-bottom:10px;font-size:12px;"><strong style="color:var(--red)">⚠ ${errores.length} fila(s) con errores:</strong><br>`;
+    errores.slice(0,5).forEach(e=>{html+=`Fila ${e.fila}: ${e.nombre} — ${e.errores.join(', ')}<br>`;});
+    html+='</div>';
+  }
+  if(registros.length){
+    html+=`<div style="font-size:11px;margin-bottom:8px;color:var(--text2)"><strong>${registros.length} usuario(s) listos para importar</strong></div>`;
+    html+=`<table style="width:100%;font-size:11px;border-collapse:collapse"><thead><tr>`;
+    ['Usuario','Rol','Nombre','Email','Estado'].forEach(h=>{html+=`<th style="background:var(--navy);color:#fff;padding:4px 8px;text-align:left">${h}</th>`;});
+    html+='</tr></thead><tbody>';
+    registros.slice(0,5).forEach((r,i)=>{
+      html+=`<tr style="background:${i%2===0?'#fff':'#f8f9fa'}">`;
+      [r.username,r.rol,r.nombre,r.email,r.estado].forEach(v=>{html+=`<td style="padding:4px 8px;border-bottom:1px solid #eee">${v}</td>`;});
+      html+='</tr>';
+    });
+    if(registros.length>5) html+=`<tr><td colspan="5" style="padding:4px 8px;color:var(--text3);font-size:10px">...y ${registros.length-5} más</td></tr>`;
+    html+='</tbody></table>';
+  }
+  previewEl.innerHTML=html;
+  if(registros.length>0){
+    statusEl.textContent=`✅ ${registros.length} usuario(s) válidos para importar`;
+    document.getElementById('import-usuarios-btn').disabled=false;
+  } else {
+    statusEl.textContent=`❌ No hay registros válidos.`;
+    document.getElementById('import-usuarios-btn').disabled=true;
+  }
+}
+
+async function ejecutarImportarUsuarios(){
+  const registros=window._importUsuariosData||[];
+  if(!registros.length) return;
+  const btn=document.getElementById('import-usuarios-btn');
+  btn.disabled=true; btn.textContent='Importando...';
+  let ok=0,fail=0;
+  for(const r of registros){
+    // Verificar si ya existe
+    if(usuarios.find(u=>u.username===r.username)){ fail++; continue; }
+    try{ await apiPost('usuarios','insert',r); usuarios.push(r); ok++; }
+    catch(e){ fail++; }
+    await new Promise(res=>setTimeout(res,200));
+  }
+  audit('CREAR','Usuarios','MASIVO',`Importación masiva: ${ok} usuarios importados`);
+  document.getElementById('import-usuarios-status').textContent=
+    `✅ ${ok} usuarios importados${fail?` | ${fail} fallaron o ya existían`:''}`;
+  btn.textContent='Importar usuarios';
+  showToast(`✅ ${ok} usuarios importados al sistema`,'success');
+  cerrarImportarUsuarios();
+  await loadFromSheets();
+}
+
 </script>
 
 <!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
@@ -3516,6 +3903,69 @@ function imprimirGrupoEtiquetas(){
   </div>
 </div>
 
+
+
+<!-- MODAL IMPORTAR ACTIVOS -->
+<div class="modal-bg" id="mod-importar-activos">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-title">
+      <span>⬆ Importar activos desde Excel / CSV</span>
+      <button class="modal-close" onclick="cerrarImportarActivos()">✕</button>
+    </div>
+    <div style="padding:4px 0 10px;font-size:12px;color:var(--text3)">
+      Importa decenas o cientos de activos de una sola vez. Descarga la plantilla, llénala y súbela aquí.
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+      <button class="btn btn-p" onclick="descargarPlantillaActivos()">⬇ Descargar plantilla CSV</button>
+      <span style="font-size:11px;color:var(--text3);align-self:center">← Descarga, llena y sube el archivo aquí abajo</span>
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Seleccionar archivo (.csv o .xlsx)</div>
+      <input type="file" id="import-activos-file" accept=".csv,.xlsx,.xls"
+             style="width:100%;padding:8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;"
+             onchange="leerArchivoActivos(this)">
+    </div>
+    <div id="import-activos-status" style="font-size:12px;color:var(--text2);margin:10px 0;min-height:20px;"></div>
+    <div id="import-activos-preview" style="max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarImportarActivos()">Cancelar</button>
+      <button class="btn btn-p" id="import-activos-btn" onclick="ejecutarImportarActivos()" disabled>
+        ⬆ Importar activos
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL IMPORTAR USUARIOS -->
+<div class="modal-bg" id="mod-importar-usuarios">
+  <div class="modal" style="max-width:640px;">
+    <div class="modal-title">
+      <span>⬆ Importar usuarios desde Excel / CSV</span>
+      <button class="modal-close" onclick="cerrarImportarUsuarios()">✕</button>
+    </div>
+    <div style="padding:4px 0 10px;font-size:12px;color:var(--text3)">
+      Importa múltiples usuarios de una sola vez. Todos deberán cambiar su contraseña en el primer acceso.
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Seleccionar archivo (.csv o .xlsx)</div>
+      <input type="file" id="import-usuarios-file" accept=".csv,.xlsx,.xls"
+             style="width:100%;padding:8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;"
+             onchange="leerArchivoUsuarios(this)">
+    </div>
+    <div style="background:var(--amber-l);border:1px solid var(--amber-m);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin:8px 0;">
+      ⚠ Columnas requeridas: username, pass_temp, rol, nombre, email, estado<br>
+      Roles válidos: admin · tecnico · inventario · consultor
+    </div>
+    <div id="import-usuarios-status" style="font-size:12px;color:var(--text2);margin:10px 0;min-height:20px;"></div>
+    <div id="import-usuarios-preview" style="max-height:200px;overflow-y:auto;margin-bottom:12px;"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="cerrarImportarUsuarios()">Cancelar</button>
+      <button class="btn btn-p" id="import-usuarios-btn" onclick="ejecutarImportarUsuarios()" disabled>
+        ⬆ Importar usuarios
+      </button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
