@@ -8,37 +8,14 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SAGAE — Sistema de Activos y Gestión Administrativa Educativa</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg3);min-height:100vh;display:flex;align-items:center;justify-content:center;}
-:root{
-  /* ── Paleta principal SAGAE Modern ── */
-  --navy:#1B3A6B;--navy-d:#0D1F3C;--navy-l:#EEF4FF;
-  --gold:#B8960C;--gold-l:#FEFBF0;
-  --bg:#FFFFFF;--bg2:#F7F9FC;--bg3:#EFF3F9;
-  --text:#0F172A;--text2:#334155;--text3:#64748B;--text4:#94A3B8;
-  --border:#E2E8F0;--border2:#CBD5E1;
-  --green:#059669;--green-l:#ECFDF5;--green-m:#6EE7B7;
-  --amber:#D97706;--amber-l:#FFFBEB;--amber-m:#FCD34D;
-  --red:#DC2626;--red-l:#FEF2F2;--red-m:#FCA5A5;
-  --blue:#2563EB;--blue-l:#EFF6FF;--blue-m:#93C5FD;
-  --purple:#7C3AED;--purple-l:#F5F3FF;--purple-m:#C4B5FD;
-  --teal:#0D9488;--teal-l:#F0FDFA;--teal-m:#5EEAD4;
-  /* ── Radios ── */
-  --r-sm:6px;--r-md:10px;--r-lg:14px;--r-xl:20px;--r-2xl:24px;
-  /* ── Sombras ── */
-  --shadow-xs:0 1px 3px rgba(15,23,42,.06),0 1px 2px rgba(15,23,42,.04);
-  --shadow-sm:0 2px 8px rgba(15,23,42,.08),0 1px 3px rgba(15,23,42,.05);
-  --shadow:0 4px 16px rgba(15,23,42,.10),0 2px 6px rgba(15,23,42,.06);
-  --shadow-lg:0 8px 32px rgba(15,23,42,.12),0 4px 12px rgba(15,23,42,.08);
-  --shadow-inner:inset 0 1px 3px rgba(15,23,42,.08);
-}
-.screen{width:100%;max-width:1360px;height:100vh;max-height:820px;background:var(--bg);border-radius:var(--r-2xl);overflow:hidden;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;position:relative;}
-.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#EEF4FF 0%,#F7F9FC 50%,#EFF3F9 100%);}
-.login-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-2xl);padding:40px 44px;width:380px;box-shadow:var(--shadow-lg);}
-.login-logo{font-size:30px;font-weight:800;color:var(--navy);letter-spacing:-.8px;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#F0F2F5;min-height:100vh;display:flex;align-items:center;justify-content:center;}
+:root{--bg:#FFFFFF;--bg2:#F8F9FA;--bg3:#F0F2F5;--text:#1A1A1A;--text2:#444444;--text3:#888888;--border:#E0E0E0;--border2:#CCCCCC;--purple:#B8960C;--purple-l:#FDF8E1;--purple-m:#D4AF37;--green-l:#EAF3DE;--green:#085041;--green-m:#9FE1CB;--amber-l:#FAEEDA;--amber:#633806;--amber-m:#FAC775;--red-l:#FCEBEB;--red:#791F1F;--red-m:#F7C1C1;--blue-l:#E6F1FB;--blue:#0C447C;--blue-m:#B5D4F4;--teal-l:#E1F5EE;--teal:#085041;--r-md:8px;--r-lg:12px;--r-xl:16px;--shadow:0 2px 16px rgba(0,0,0,.09);}
+.screen{width:100%;max-width:1200px;height:100vh;max-height:760px;background:var(--bg);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--shadow);display:flex;flex-direction:column;position:relative;}
+.login-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg3);}
+.login-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-xl);padding:36px 40px;width:360px;box-shadow:var(--shadow);}
+.login-logo{font-size:26px;font-weight:700;color:#1B3A6B;letter-spacing:-.5px;}
 .login-sub{font-size:12px;color:var(--text3);margin-top:2px;margin-bottom:6px;}
 .sheets-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-l);border:1px solid var(--green-m);border-radius:20px;padding:3px 12px;font-size:11px;color:var(--green);font-weight:600;margin-bottom:22px;}
 .sdot{width:6px;height:6px;border-radius:50%;background:#1D9E75;animation:pulse 2s infinite;}
@@ -46,8 +23,8 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 @keyframes spin{to{transform:rotate(360deg);}}
 .f-lbl{font-size:10px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
 .f-row{margin-bottom:13px;}
-.f-inp{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s,box-shadow .15s;}
-.f-inp:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(27,58,107,.08);}
+.f-inp{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s;}
+.f-inp:focus{border-color:#1B3A6B;}
 .f-inp::placeholder{color:var(--text3);}
 .f-sel{width:100%;padding:9px 12px;border-radius:var(--r-md);border:1.5px solid var(--border2);background:var(--bg);font-size:13px;font-family:inherit;color:var(--text);outline:none;cursor:pointer;}
 .btn-full{width:100%;padding:10px;border-radius:var(--r-md);background:#1B3A6B;border:none;color:#FFFFFF;font-size:14px;font-weight:600;cursor:pointer;transition:opacity .15s;margin-top:4px;}
@@ -56,26 +33,26 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .login-loading{font-size:12px;color:var(--text3);text-align:center;margin-top:10px;display:none;}
 .app{display:none;flex:1;overflow:hidden;}
 .app.visible{display:flex;}
-.sb{width:224px;flex-shrink:0;border-right:1px solid var(--border);background:var(--navy-d);display:flex;flex-direction:column;overflow-y:auto;}
-.sb-head{padding:18px 16px 14px;border-bottom:1px solid rgba(255,255,255,.08);}
-.sb-logo{font-size:18px;font-weight:800;color:#FFFFFF;letter-spacing:-.4px;}
-.sb-user{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;font-weight:500;}
-.sb-conn{font-size:10px;color:#34D399;background:rgba(52,211,153,.12);border-radius:20px;padding:2px 9px;display:inline-flex;align-items:center;gap:4px;margin-top:5px;font-weight:600;}
-.sb-role{display:inline-block;margin-top:6px;font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;}
+.sb{width:200px;flex-shrink:0;border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;}
+.sb-head{padding:14px 16px;border-bottom:1px solid var(--border);}
+.sb-logo{font-size:16px;font-weight:700;color:#1B3A6B;}
+.sb-user{font-size:11px;color:var(--text3);margin-top:2px;}
+.sb-conn{font-size:10px;color:var(--green);background:var(--green-l);border-radius:20px;padding:2px 8px;display:inline-block;margin-top:4px;font-weight:600;}
+.sb-role{display:inline-block;margin-top:5px;font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;}
 .role-admin{background:#E8F0FB;color:#1B3A6B;}
 .role-tecnico{background:var(--blue-l);color:var(--blue);}
 .role-consultor{background:var(--green-l);color:var(--green);}
 .role-inventario{background:var(--amber-l);color:var(--amber);}
-.sb-sec{font-size:9px;font-weight:700;letter-spacing:.12em;color:rgba(255,255,255,.3);text-transform:uppercase;padding:14px 16px 4px;}
-.sb-item{display:flex;align-items:center;gap:9px;padding:8px 12px;margin:1px 8px;font-size:12.5px;color:rgba(255,255,255,.55);cursor:pointer;border-radius:var(--r-md);transition:all .15s;user-select:none;font-weight:500;}
-.sb-item:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9);}
-.sb-item.on{background:rgba(255,255,255,.14);color:#FFFFFF;font-weight:600;}
-.sb-item.locked{opacity:.22;cursor:not-allowed;pointer-events:none;}
-.sb-avatar{width:32px;height:32px;border-radius:50%;background:rgba(184,150,12,.2);border:1.5px solid rgba(184,150,12,.5);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#FCD34D;flex-shrink:0;}
-.sb-profile{padding:12px 14px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .15s;}
-.sb-profile:hover{background:rgba(255,255,255,.06);}
-.sb-profile-name{font-size:11.5px;font-weight:600;color:rgba(255,255,255,.9);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.sb-profile-role{font-size:10px;color:rgba(255,255,255,.4);}
+.sb-sec{font-size:9px;font-weight:700;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;padding:12px 16px 3px;}
+.sb-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:12px;color:var(--text2);cursor:pointer;border-left:2px solid transparent;transition:all .1s;user-select:none;}
+.sb-item:hover{background:var(--bg);color:var(--text);}
+.sb-item.on{background:var(--bg);color:#1B3A6B;border-left-color:#1B3A6B;font-weight:600;}
+.sb-item.locked{opacity:.3;cursor:not-allowed;pointer-events:none;}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:#E8F0FB;border:1px solid #A8C0D8;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#1B3A6B;flex-shrink:0;}
+.sb-profile{padding:10px 14px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;}
+.sb-profile:hover{background:var(--bg);}
+.sb-profile-name{font-size:11px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sb-profile-role{font-size:10px;color:var(--text3);}
 .sb-logout{padding:8px 14px;border-top:1px solid var(--border);}
 .btn-logout{width:100%;padding:6px;border-radius:var(--r-md);border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;transition:all .15s;}
 .btn-logout:hover{background:var(--red-l);color:var(--red);border-color:var(--red-m);}
@@ -94,149 +71,20 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .content{flex:1;overflow-y:auto;padding:16px;}
 .pnl{display:none;}
 .pnl.on{display:block;}
-.metrics{display:none}
-:root{
-  --db:#071929; --dp:#0C2340; --dp2:#0F2D50; --dborder:rgba(255,255,255,.07);
-  --dt:#DFF0FF; --dt2:rgba(223,240,255,.55); --dt3:rgba(223,240,255,.28);
-  --dcyan:#00D4FF; --dteal:#00F5D4; --damber:#FFB300; --dred:#FF4060;
-  --dgreen:#00E896; --dpurple:#A78BFA; --dblue:#4AA8FF; --dorange:#FF8C42;
-}
-#pnl-dashboard{
-  background:var(--db);padding:12px 14px;min-height:100%;
-  overflow-y:auto;box-sizing:border-box;
-}
-/* TOP BAR */
-.db-topbar{display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:11px;padding-bottom:9px;border-bottom:1px solid var(--dborder);}
-.db-title{font-size:16px;font-weight:900;color:var(--dcyan);
-  letter-spacing:-.5px;text-transform:uppercase;}
-.db-sub{font-size:10px;color:var(--dt3);margin-top:2px;}
-.db-topbar-r{display:flex;gap:7px;align-items:center;}
-.db-chip{background:var(--dp);border:1px solid var(--dborder);
-  color:var(--dt2);font-size:10px;padding:3px 11px;border-radius:16px;cursor:pointer;}
-.db-chip:hover,.db-chip.on{border-color:var(--dcyan);color:var(--dcyan);}
-/* LAYOUT */
-.db-r1{display:grid;grid-template-columns:200px 1fr 1.4fr;gap:9px;margin-bottom:9px;}
-.db-r2{display:grid;grid-template-columns:1.2fr 1fr;gap:9px;margin-bottom:9px;}
-.db-r3{display:grid;grid-template-columns:1fr;gap:9px;}
-/* PANEL */
-.dbp{background:var(--dp);border:1px solid var(--dborder);
-  border-radius:7px;padding:11px 13px;position:relative;overflow:hidden;}
-.dbp-t{font-size:9px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
-  color:var(--dt3);margin-bottom:9px;display:flex;align-items:center;gap:5px;}
-.dbp-t .d{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
-/* KPI STACK */
-.db-kpi-stack{display:flex;flex-direction:column;gap:7px;height:100%;}
-.db-kpi{background:var(--dp2);border-radius:5px;padding:9px 11px;
-  border-left:3px solid var(--db-kc,var(--dcyan));}
-.db-kpi-v{font-size:24px;font-weight:900;color:var(--db-kc,var(--dcyan));
-  letter-spacing:-1.5px;line-height:1;}
-.db-kpi-l{font-size:9px;color:var(--dt3);margin-top:2px;
-  text-transform:uppercase;letter-spacing:.07em;font-weight:600;}
-.db-kpi-s{font-size:9px;color:var(--dt2);margin-top:3px;}
-/* DONUT */
-.db-donut-w{display:flex;align-items:center;gap:11px;height:calc(100% - 24px);}
-.db-leg{flex:1;display:flex;flex-direction:column;gap:4px;overflow:hidden;}
-.db-leg-r{display:flex;align-items:center;justify-content:space-between;gap:4px;}
-.db-leg-l{display:flex;align-items:center;gap:4px;font-size:9.5px;
-  color:var(--dt2);overflow:hidden;min-width:0;}
-.db-leg-d{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
-.db-leg-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.db-leg-r2{display:flex;gap:5px;flex-shrink:0;}
-.db-leg-v{font-size:10.5px;font-weight:700;color:var(--dt);}
-.db-leg-p{font-size:8.5px;color:var(--dt3);}
-/* HBAR */
-.db-hbar{display:flex;align-items:center;gap:6px;margin-bottom:5px;}
-.db-hbar-l{font-size:9.5px;color:var(--dt2);width:70px;flex-shrink:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.db-hbar-bg{flex:1;height:7px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
-.db-hbar-f{height:100%;border-radius:2px;transition:width .6s;}
-.db-hbar-v{font-size:10px;font-weight:700;color:var(--dt);width:24px;text-align:right;flex-shrink:0;}
-/* DOUBLE BAR (técnicos) */
-.db-dbar{display:flex;align-items:center;gap:7px;margin-bottom:5px;}
-.db-dbar-n{font-size:9.5px;color:var(--dt2);width:82px;flex-shrink:0;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.db-dbar-col{flex:1;display:flex;flex-direction:column;gap:2px;}
-.db-dbar-track{height:6px;background:rgba(255,255,255,.06);border-radius:2px;overflow:hidden;}
-.db-dbar-f1{height:100%;border-radius:2px;background:var(--dcyan);}
-.db-dbar-f2{height:100%;border-radius:2px;background:var(--damber);}
-.db-dbar-vs{width:50px;flex-shrink:0;text-align:right;}
-.db-dbar-v1{font-size:9px;font-weight:700;color:var(--dcyan);}
-.db-dbar-v2{font-size:9px;color:var(--damber);}
-/* HORA HEATMAP / BAR */
-.db-hr-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:3px;margin-top:4px;}
-.db-hr-col{display:flex;flex-direction:column;align-items:center;gap:2px;}
-.db-hr-bar{width:100%;border-radius:2px 2px 0 0;transition:height .5s;}
-.db-hr-lbl{font-size:7.5px;color:var(--dt3);writing-mode:vertical-rl;
-  transform:rotate(180deg);height:28px;display:flex;align-items:center;}
-/* TABLE PBI */
-.db-tbl{width:100%;border-collapse:collapse;font-size:10px;}
-.db-tbl th{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
-  color:var(--dt3);padding:4px 7px;text-align:left;
-  border-bottom:1px solid var(--dborder);white-space:nowrap;}
-.db-tbl td{padding:5px 7px;border-bottom:1px solid rgba(255,255,255,.03);
-  color:var(--dt2);vertical-align:middle;}
-.db-tbl tr:hover td{background:rgba(255,255,255,.04);}
-.db-tbl tr:last-child td{border-bottom:none;}
-.db-tbl .bold{font-weight:700;color:var(--dt);}
-.db-tbl .mono{font-family:monospace;font-size:9px;color:var(--dt3);}
-/* BADGES PBI */
-.db-b{display:inline-flex;align-items:center;padding:1.5px 6px;
-  border-radius:10px;font-size:8.5px;font-weight:700;}
-.db-b-activo{background:rgba(0,232,150,.12);color:#00E896;}
-.db-b-mantenimiento,.db-b-progreso,.db-b-importante{background:rgba(255,179,0,.12);color:#FFB300;}
-.db-b-baja,.db-b-urgente,.db-b-eliminado{background:rgba(255,64,96,.12);color:#FF4060;}
-.db-b-abierto,.db-b-revision{background:rgba(74,168,255,.12);color:#4AA8FF;}
-.db-b-cerrado,.db-b-normal{background:rgba(0,232,150,.12);color:#00E896;}
-/* CANVAS CHART */
-.db-canvas-w{position:relative;width:100%;}
-/* PROGRESS */
-.db-prog{display:flex;align-items:center;gap:5px;}
-.db-prog-bg{flex:1;height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
-.db-prog-f{height:100%;border-radius:2px;}
-.db-prog-t{font-size:8.5px;color:var(--dt3);width:24px;text-align:right;flex-shrink:0;}
-/* OLD COMPAT */
-.charts{display:none;}.ccard{display:none;}
-.bar-row,.bar-lbl,.bar-bg,.bar-f,.bar-v{display:none;}
-.empty-c{text-align:center;padding:16px 0;color:var(--dt3);font-size:11px;}
-/* ── ETIQUETAS DE CÓDIGO DE BARRAS — FORMATO ZEBRA ──────────────── */
-#modal-etiqueta{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;}
-#modal-etiqueta.open{display:flex;}
-.etiqueta-wrap{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 24px 64px rgba(0,0,0,0.45);max-width:480px;width:100%;}
-.etiqueta-titulo{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;border-bottom:2px solid var(--navy);padding-bottom:8px;display:flex;align-items:center;gap:6px;}
-/* Preview en pantalla — muestra cómo quedará la etiqueta */
-.etiqueta-preview{
-  border:2px dashed #CCC;border-radius:6px;padding:10px;background:#FAFAFA;
-  margin-bottom:14px;
-  /* Proporción Zebra 2.25" × 1.25" */
-  width:100%;max-width:360px;margin-left:auto;margin-right:auto;
-}
-.etiqueta-preview-inner{
-  background:#fff;border:1px solid #DDD;border-radius:3px;
-  padding:8px 10px;
-  display:flex;align-items:center;gap:10px;
-  font-family:Arial,Helvetica,sans-serif;
-}
-.etiqueta-barcode-col{flex:1;text-align:center;}
-
-.etiqueta-nombre-print{font-size:10px;font-weight:700;color:#000;line-height:1.2;text-align:left;margin-bottom:4px;max-width:220px;word-break:break-word;}
-.etiqueta-codigo-print{font-size:9px;color:#333;text-align:center;margin-top:3px;letter-spacing:0.5px;}
-.etiqueta-barcode-svg{width:200px;height:50px;}
-
-.etiqueta-acciones{display:flex;gap:8px;justify-content:space-between;align-items:center;}
-.etiqueta-info{font-size:10px;color:#888;}
-/* Barcode en Detalle del activo */
-.det-barcode-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;text-align:center;}
-.det-barcode-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
-.det-barcode-row{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
-.det-barcode-item{text-align:center;}
-.det-barcode-label{font-size:10px;color:var(--text3);margin-top:4px;}
-#det-barcode-svg{max-width:200px;height:55px;}
-
-/* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
-/* SOLO aplica cuando se está imprimiendo una etiqueta (clase en body) */
-
-
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
+.met{background:var(--bg2);border-radius:var(--r-md);padding:12px 14px;border:1px solid var(--border);}
+.met-v{font-size:22px;font-weight:700;color:var(--text);}
+.met-l{font-size:10px;color:var(--text3);margin-top:2px;}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
+.ccard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;}
+.ctitle{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
+.bar-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.bar-lbl{font-size:10px;color:var(--text2);width:72px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;}
+.bar-f{height:100%;border-radius:4px;}
+.bar-v{font-size:10px;color:var(--text3);width:28px;text-align:right;flex-shrink:0;}
+.empty-c{font-size:11px;color:var(--text3);text-align:center;padding:16px 0;}
+.tbl-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;font-size:11px;}
 thead th{background:var(--bg2);padding:7px 9px;text-align:left;font-weight:600;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
 tbody td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
@@ -378,13 +226,6 @@ tbody tr.clickable{cursor:pointer;}
 
 /* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
 /* SOLO aplica cuando se está imprimiendo una etiqueta (clase en body) */
-
-.tbl-wrap{overflow-x:auto;}
-.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-.bar-lbl{font-size:10.5px;color:var(--text2);width:80px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;}
-.bar-f{height:100%;border-radius:3px;transition:width .6s ease;}
-.bar-v{font-size:10.5px;font-weight:700;color:var(--text);min-width:20px;text-align:right;}
 @media print{
   body.printing-label *{visibility:hidden!important;}
   body.printing-label #print-etiqueta-area,
@@ -741,25 +582,6 @@ tbody tr.clickable{cursor:pointer;}
 /* Autocomplete datalist */
 .f-inp[list]::-webkit-calendar-picker-indicator{opacity:0.5;}
 
-
-/* ── MODALES ─────────────────────────────────────────────────── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
-  z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
-.modal-bg.open{display:flex;}
-.modal{background:var(--bg);border-radius:var(--r-xl);padding:22px 24px;
-  width:100%;max-width:560px;max-height:90vh;overflow-y:auto;
-  box-shadow:0 24px 64px rgba(0,0,0,.4);
-  animation:_mIn .18s ease;}
-@keyframes _mIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
-.modal-title{display:flex;align-items:center;justify-content:space-between;
-  font-size:15px;font-weight:700;color:var(--text);
-  margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);}
-.modal-close{background:none;border:none;cursor:pointer;font-size:18px;
-  color:var(--text3);padding:2px 6px;border-radius:4px;transition:background .15s;}
-.modal-close:hover{background:var(--bg2);color:var(--text);}
-.modal-actions{display:flex;justify-content:flex-end;gap:8px;
-  margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
-
 </style>
   <!-- CÓDIGOS DE BARRA — JsBarcode (Code128) + QRCode.js -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
@@ -838,147 +660,18 @@ tbody tr.clickable{cursor:pointer;}
     </div>
     <div class="content">
       <div class="pnl on" id="pnl-dashboard">
-  <!-- TOP BAR -->
-  <div class="db-topbar">
-    <div>
-      <div class="db-title">SAGAE — Control Tecnológico Institucional</div>
-      <div class="db-sub" id="dash-sub">Cargando datos...</div>
-    </div>
-    <div class="db-topbar-r">
-      <span class="db-chip on" onclick="renderDash()">↻ Actualizar</span>
-      <span class="db-chip" id="dash-fecha">—</span>
-    </div>
-  </div>
-
-  <!-- ROW 1: KPIs | Donut tipos | Barras dobles técnicos -->
-  <div class="db-r1">
-
-    <!-- KPIs apilados -->
-    <div class="dbp">
-      <div class="dbp-t"><span class="d" style="background:var(--dcyan)"></span>Indicadores</div>
-      <div class="db-kpi-stack">
-        <div class="db-kpi" style="--db-kc:var(--dcyan)">
-          <div class="db-kpi-v" id="d-act">0</div>
-          <div class="db-kpi-l">Total activos</div>
-          <div class="db-kpi-s" id="d-act-s">—</div>
+        <div class="metrics">
+          <div class="met"><div class="met-v" id="d-act">0</div><div class="met-l">Activos registrados</div></div>
+          <div class="met"><div class="met-v" id="d-tkt" style="color:#185FA5">0</div><div class="met-l">Tickets abiertos</div></div>
+          <div class="met"><div class="met-v" id="d-mnt" style="color:#BA7517">0</div><div class="met-l">En mantenimiento</div></div>
+          <div class="met"><div class="met-v" id="d-val" style="color:#3B6D11">$0</div><div class="met-l">Valor inventario</div></div>
         </div>
-        <div class="db-kpi" style="--db-kc:var(--damber)">
-          <div class="db-kpi-v" id="d-tkt">0</div>
-          <div class="db-kpi-l">Tickets abiertos</div>
-          <div class="db-kpi-s" id="d-tkt-s">—</div>
+        <div class="charts">
+          <div class="ccard"><div class="ctitle">Activos por tipo</div><div id="ch-tipos"><div class="empty-c">Sin activos</div></div></div>
+          <div class="ccard"><div class="ctitle">Tickets por estado</div><div id="ch-est"><div class="empty-c">Sin tickets</div></div></div>
         </div>
-        <div class="db-kpi" style="--db-kc:var(--dred)">
-          <div class="db-kpi-v" id="d-mnt">0</div>
-          <div class="db-kpi-l">En mantenimiento</div>
-          <div class="db-kpi-s" id="d-mnt-s">—</div>
-        </div>
-        <div class="db-kpi" style="--db-kc:var(--dgreen)">
-          <div class="db-kpi-v" id="d-val" style="font-size:17px">$0</div>
-          <div class="db-kpi-l">Valor inventario</div>
-          <div class="db-kpi-s">depreciado total</div>
-        </div>
+        <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Sin actividad</div></div></div>
       </div>
-    </div>
-
-    <!-- DONUT: Activos por tipo -->
-    <div class="dbp">
-      <div class="dbp-t"><span class="d" style="background:var(--dteal)"></span>Activos por tipo</div>
-      <div class="db-donut-w">
-        <svg id="db-donut" width="100" height="100" viewBox="0 0 100 100" style="flex-shrink:0"></svg>
-        <div class="db-leg" id="db-leg-tipos"><div class="empty-c">Sin datos</div></div>
-      </div>
-    </div>
-
-    <!-- BARRA DOBLE: Técnicos — tickets + horas estimadas -->
-    <div class="dbp">
-      <div class="dbp-t">
-        <span class="d" style="background:var(--dcyan)"></span>
-        Técnicos — Tickets asignados &amp; horas estimadas
-        <span style="margin-left:auto;display:flex;gap:8px">
-          <span style="display:flex;align-items:center;gap:3px;font-size:8.5px;color:var(--dt3)">
-            <span style="width:8px;height:4px;border-radius:1px;background:var(--dcyan);display:inline-block"></span>Tickets
-          </span>
-          <span style="display:flex;align-items:center;gap:3px;font-size:8.5px;color:var(--dt3)">
-            <span style="width:8px;height:4px;border-radius:1px;background:var(--damber);display:inline-block"></span>Hrs est.
-          </span>
-        </span>
-      </div>
-      <div id="db-tecnicos"><div class="empty-c">Sin tickets asignados</div></div>
-    </div>
-  </div>
-
-  <!-- ROW 2: Hora de entrada tickets (canvas) | Tabla tickets activos -->
-  <div class="db-r2">
-
-    <!-- GRÁFICA: Tickets por hora del día + estado/prioridad lateral -->
-    <div class="dbp">
-      <div class="dbp-t"><span class="d" style="background:var(--damber)"></span>
-        Tickets por hora de registro — pico de demanda
-      </div>
-      <!-- Canvas bar chart horas -->
-      <div class="db-canvas-w" style="height:120px">
-        <canvas id="db-hora-canvas" style="width:100%;height:100%"></canvas>
-      </div>
-      <!-- Sub-grids estado + prioridad -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
-        <div>
-          <div style="font-size:8.5px;color:var(--dt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Por estado</div>
-          <div id="db-est"></div>
-        </div>
-        <div>
-          <div style="font-size:8.5px;color:var(--dt3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px">Por prioridad</div>
-          <div id="db-prior"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TABLA: Tickets urgentes / abiertos -->
-    <div class="dbp">
-      <div class="dbp-t"><span class="d" style="background:var(--dred)"></span>
-        Tickets activos — ordenados por urgencia
-      </div>
-      <div style="overflow-y:auto;max-height:280px">
-        <table class="db-tbl">
-          <thead><tr>
-            <th>Cód.</th><th>Título</th><th>Técnico</th>
-            <th>Prior.</th><th>Estado</th><th>Avance</th>
-          </tr></thead>
-          <tbody id="db-tbl-tkt"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ROW 3: Activos por depto (barras H) + Tabla últimos activos -->
-  <div class="db-r2" style="margin-bottom:0">
-
-    <!-- BARRAS H: Activos por departamento -->
-    <div class="dbp">
-      <div class="dbp-t"><span class="d" style="background:var(--dpurple)"></span>
-        Activos por departamento / área
-      </div>
-      <div id="db-deptos"><div class="empty-c">Sin datos</div></div>
-    </div>
-
-    <!-- TABLA: Últimos activos ingresados -->
-    <div class="dbp">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-        <div class="dbp-t" style="margin-bottom:0"><span class="d" style="background:var(--dblue)"></span>Últimos activos ingresados</div>
-        <span style="font-size:9px;color:var(--dt3)" id="db-total-act">—</span>
-      </div>
-      <div style="overflow-y:auto;max-height:230px">
-        <table class="db-tbl">
-          <thead><tr>
-            <th>Código</th><th>Nombre</th><th>Tipo</th>
-            <th>Asignado</th><th>Estado</th><th>Valor act.</th>
-          </tr></thead>
-          <tbody id="db-tbl-act"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-
       <div class="pnl" id="pnl-activos">
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:6px;">
   ℹ️ <strong>Valor depreciado:</strong> calculado automáticamente según precio de compra, fecha y vida útil del equipo. El valor original nunca cambia.
@@ -1346,30 +1039,17 @@ async function apiPost(sheet,action,payload){
 }
 async function apiGet(sheet){
   try{
+    // Timeout de 15 segundos por llamada
     const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 20000);
-    const url = API+'?sheet='+sheet+'&t='+Date.now();
-    const r = await fetch(url, {mode:'cors', signal:controller.signal});
+    const timer = setTimeout(()=>controller.abort(), 15000);
+    const r = await fetch(API+'?sheet='+sheet, {mode:'cors', signal:controller.signal});
     clearTimeout(timer);
-    if(!r.ok){
-      console.error('[SAGAE] apiGet '+sheet+' HTTP error:', r.status);
-      return [];
-    }
-    const text = await r.text();
-    try{
-      const d = JSON.parse(text);
-      return Array.isArray(d) ? d : [];
-    }catch(pe){
-      console.error('[SAGAE] apiGet '+sheet+' JSON parse error:', text.substring(0,200));
-      return [];
-    }
+    if(!r.ok) return [];
+    const d = await r.json();
+    return Array.isArray(d) ? d : [];
   }
   catch(e){
-    if(e.name==='AbortError'){
-      console.error('[SAGAE] Timeout (20s) cargando hoja:', sheet);
-    } else {
-      console.error('[SAGAE] apiGet error en hoja '+sheet+':', e.message);
-    }
+    if(e.name==='AbortError') console.warn('Timeout cargando '+sheet);
     return [];
   }
 }
@@ -1562,59 +1242,38 @@ function activarModoEscaneo(){
 
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
-  const showLogin=()=>{
-    document.getElementById('loading-overlay').style.display='none';
-    document.getElementById('login-screen').style.display='flex';
-  };
   try{
-    lt.textContent='Conectando a Google Sheets...';
-    ls.textContent='Verificando acceso al API...';
-
-    // ── Carga secuencial con feedback visible ─────────────────
-    lt.textContent='Cargando usuarios...';
-    const rawU = await apiGet('usuarios');
-    usuarios = rawU.map(r=>({...r}));
-    ls.textContent=`✅ ${usuarios.length} usuarios`;
-
-    lt.textContent='Cargando activos...';
-    const rawA = await apiGet('activos');
-    activos = rawA.map(r=>({...r,id:r.codigo,
-      valor:parseFloat(r.valor)||0,
-      vida:parseInt(r.vida)||3,
-      historial:parseHist(r.historial)}));
-    cntActivos = activos.length;
-    ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos`;
-
-    lt.textContent='Cargando tickets...';
-    const rawT = await apiGet('tickets');
-    tickets = rawT.map(r=>({...r,id:r.codigo,
-      avance:parseInt(r.avance)||0,
-      historial:parseHist(r.historial)}));
-    cntTickets = tickets.length;
-    ls.textContent=`✅ ${activos.length} activos · ${tickets.length} tickets`;
-
-    lt.textContent='Cargando auditoría...';
-    const rawAud = await apiGet('auditoria');
-    auditLog = rawAud.slice().reverse();
-
-    // ── Si no hay usuarios avisar pero dejar entrar ───────────
-    if(!usuarios.length){
-      ls.textContent='⚠ Sin usuarios en Sheets — verifica la hoja "Usuarios"';
-      lt.textContent='Datos cargados con advertencias';
-    } else {
-      ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets · ${auditLog.length} registros`;
-      lt.textContent='¡Sistema listo!';
-    }
-    setSyncStatus(true,'Conectado a Google Sheets · '+new Date().toLocaleTimeString('es-PA'));
-    setTimeout(showLogin, 600);
-
+  // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
+  lt.textContent='Conectando a Google Sheets...';
+  ls.textContent='Cargando datos en paralelo...';
+  const [rawU, rawA, rawT, rawAud] = await Promise.all([
+    apiGet('usuarios'),
+    apiGet('activos'),
+    apiGet('tickets'),
+    apiGet('auditoria')
+  ]);
+  lt.textContent='Procesando datos...';
+  usuarios = rawU.map(r=>({...r}));
+  activos  = rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
+  cntActivos = activos.length;
+  tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
+  cntTickets = tickets.length;
+  auditLog = rawAud.slice().reverse();
+  // NOTA: No se crea admin automáticamente para evitar duplicados
+  // Si no hay usuarios, mostrar aviso y dejar entrar igual
+  ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
+  lt.textContent='¡Sistema listo!';
+  setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
   }catch(err){
-    console.error('[SAGAE] Error cargando datos:', err);
-    lt.textContent='⚠ Error de conexión';
-    ls.textContent='No se pudo conectar a Google Sheets. Verifica tu internet.';
-    setSyncStatus(false,'Sin conexión');
-    // Dejar entrar igual después de 4 segundos
-    setTimeout(showLogin, 4000);
+    // Si la carga falla — mostrar error y dejar entrar de todas formas
+    console.error('Error cargando datos:',err);
+    lt.textContent='⚠️ Error de conexión';
+    ls.textContent='Reintentando en 5 segundos...';
+    setTimeout(()=>{
+      document.getElementById('loading-overlay').style.display='none';
+      document.getElementById('login-screen').style.display='flex';
+      setSyncStatus(false,'Error de conexión');
+    },3000);
   }
 }
 
@@ -1661,7 +1320,7 @@ function doLogin(){
     document.getElementById('sb-profile-name').textContent=usuario.nombre;
     document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
-    applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();renderActivos();renderTickets();populateSuggestions();
+    applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
     resetInactivityTimer();
     // ── SESIÓN ÚNICA — generar token PRIMERO, luego iniciar monitoreo ──
     // El token debe estar en session.token ANTES de llamar iniciarControlSesionUnica
@@ -2626,231 +2285,20 @@ function renderAudit(){
 }
 
 function renderDash(){
-  const hoy=new Date();
   const av=activos.filter(a=>a.estado!=='eliminado');
-  const cntAct=av.length;
-  const tktVivos=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado');
-  const cntTkt=tktVivos.length;
-  const cntMnt=activos.filter(a=>a.estado==='mantenimiento').length;
-  const cntBaja=activos.filter(a=>a.estado==='baja').length;
-  const cntOk=activos.filter(a=>a.estado==='activo').length;
-  const cntUrg=tktVivos.filter(t=>t.prior==='urgente').length;
-  const valTot=av.reduce((s,a)=>s+calcDepre(a),0);
-
-  // Actualizar sub y fecha
-  const subEl=document.getElementById('dash-sub');
-  if(subEl) subEl.textContent='Actualizado: '+ts()+' · '+cntAct+' activos · '+cntTkt+' tickets activos';
-  const fechaEl=document.getElementById('dash-fecha');
-  if(fechaEl) fechaEl.textContent=hoy.toLocaleDateString('es-PA',{day:'2-digit',month:'short',year:'numeric'});
-
-  // KPIs
-  const el=id=>document.getElementById(id);
-  el('d-act').textContent=cntAct;
-  el('d-tkt').textContent=cntTkt;
-  el('d-mnt').textContent=cntMnt;
-  el('d-val').textContent='$'+valTot.toLocaleString();
-  el('d-act-s').textContent=cntOk+' operativos · '+cntBaja+' en baja';
-  el('d-tkt-s').textContent=cntUrg+' urgentes';
-  el('d-mnt-s').textContent=cntBaja+' en baja';
-  const totalActEl=el('db-total-act');
-  if(totalActEl) totalActEl.textContent='Total: '+cntAct;
-
-  const C=['#00D4FF','#00F5D4','#FFB300','#FF4060','#00E896','#A78BFA','#4AA8FF','#FF8C42','#F472B6','#34D399'];
-
-  // ── DONUT: Activos por tipo ───────────────────────────────────
-  const tm={};av.forEach(a=>{const t=a.tipo||'Otro';tm[t]=(tm[t]||0)+1;});
-  const tmE=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,9);
-  const totD=tmE.reduce((s,[,v])=>s+v,0)||1;
-  const svg=el('db-donut');
-  if(svg&&tmE.length){
-    let ang=-Math.PI/2,p='';const cx=50,cy=50,ro=44,ri=28;
-    tmE.forEach(([,v],i)=>{
-      const sw=2*Math.PI*v/totD,g=0.022;
-      const a1=ang+g,a2=ang+sw-g;
-      const px1=cx+ro*Math.cos(a1),py1=cy+ro*Math.sin(a1);
-      const px2=cx+ro*Math.cos(a2),py2=cy+ro*Math.sin(a2);
-      const xi1=cx+ri*Math.cos(a1),yi1=cy+ri*Math.sin(a1);
-      const xi2=cx+ri*Math.cos(a2),yi2=cy+ri*Math.sin(a2);
-      const lg=sw>Math.PI?1:0;
-      p+=`<path d="M${xi1.toFixed(1)},${yi1.toFixed(1)} L${px1.toFixed(1)},${py1.toFixed(1)} A${ro},${ro} 0 ${lg},1 ${px2.toFixed(1)},${py2.toFixed(1)} L${xi2.toFixed(1)},${yi2.toFixed(1)} A${ri},${ri} 0 ${lg},0 ${xi1.toFixed(1)},${yi1.toFixed(1)} Z" fill="${C[i]}"/>`;
-      ang+=sw;
-    });
-    svg.innerHTML=p
-      +`<text x="50" y="47" text-anchor="middle" fill="#DFF0FF" font-size="15" font-weight="900">${totD}</text>`
-      +`<text x="50" y="58" text-anchor="middle" fill="rgba(223,240,255,.38)" font-size="8">activos</text>`;
-  } else if(svg) svg.innerHTML='';
-  const legEl=el('db-leg-tipos');
-  if(legEl) legEl.innerHTML=tmE.length
-    ? tmE.map(([t,v],i)=>`<div class="db-leg-r">
-        <div class="db-leg-l"><div class="db-leg-d" style="background:${C[i]}"></div>
-          <span class="db-leg-n">${t}</span></div>
-        <div class="db-leg-r2"><span class="db-leg-v">${v}</span>
-          <span class="db-leg-p">${Math.round(v/totD*100)}%</span></div>
-      </div>`).join('')
-    : '<div class="empty-c">Sin activos</div>';
-
-  // ── DOBLE BARRA: Técnicos ─────────────────────────────────────
-  const tecD={};
-  tickets.filter(t=>t.resp&&t.resp!=='—'&&t.estado!=='cerrado'&&t.estado!=='eliminado').forEach(t=>{
-    const r=t.resp;if(!tecD[r])tecD[r]={tkt:0,hrs:0};
-    tecD[r].tkt++;tecD[r].hrs+=(t.prior==='urgente'?4:t.prior==='importante'?3:2);
-  });
-  const tecE=Object.entries(tecD).sort((a,b)=>b[1].tkt-a[1].tkt).slice(0,8);
-  const mxT=tecE.length?Math.max(...tecE.map(([,d])=>d.tkt)):1;
-  const mxH=tecE.length?Math.max(...tecE.map(([,d])=>d.hrs)):1;
-  const tecEl=el('db-tecnicos');
-  if(tecEl) tecEl.innerHTML=tecE.length
-    ? tecE.map(([n,d])=>`<div class="db-dbar">
-        <div class="db-dbar-n" title="${n}">${n.split(' ')[0]}</div>
-        <div class="db-dbar-col">
-          <div class="db-dbar-track"><div class="db-dbar-f1" style="width:${Math.round(d.tkt/mxT*100)}%"></div></div>
-          <div class="db-dbar-track"><div class="db-dbar-f2" style="width:${Math.round(d.hrs/mxH*100)}%"></div></div>
-        </div>
-        <div class="db-dbar-vs">
-          <div class="db-dbar-v1">${d.tkt} tkt</div>
-          <div class="db-dbar-v2">${d.hrs}h</div>
-        </div>
-      </div>`).join('')
-    : '<div class="empty-c">Sin tickets asignados</div>';
-
-  // ── CANVAS: Tickets por hora del día ─────────────────────────
-  // Extraer hora de fechaCreacion de cada ticket
-  const horas=new Array(24).fill(0);
-  tickets.filter(t=>t.fechaCreacion&&t.estado!=='eliminado').forEach(t=>{
-    const m=String(t.fechaCreacion).match(/(\d{1,2}):(\d{2})/);
-    if(m){const h=parseInt(m[1]);if(h>=0&&h<24)horas[h]++;}
-  });
-  // Agrupar en bloques de 2 horas para mayor legibilidad
-  const horasGroup=[];
-  const horasLabels=[];
-  for(let i=0;i<24;i+=2){
-    horasGroup.push(horas[i]+(horas[i+1]||0));
-    horasLabels.push(`${String(i).padStart(2,'0')}h`);
-  }
-  dbDrawHoraBars('db-hora-canvas', horasGroup, horasLabels);
-
-  // ── BARRAS: Tickets por estado ────────────────────────────────
-  const ests=[['abierto','#4AA8FF'],['progreso','#FFB300'],['revision','#A78BFA'],['cerrado','#00E896']];
-  const mxE=Math.max(1,...ests.map(([e])=>tickets.filter(t=>t.estado===e).length));
-  const estEl=el('db-est');
-  if(estEl) estEl.innerHTML=ests.map(([e,c])=>{
-    const v=tickets.filter(t=>t.estado===e).length;
-    return`<div class="db-hbar">
-      <div class="db-hbar-l">${e}</div>
-      <div class="db-hbar-bg"><div class="db-hbar-f" style="width:${Math.round(v/mxE*100)}%;background:${c}"></div></div>
-      <div class="db-hbar-v">${v}</div></div>`;}).join('');
-
-  // ── BARRAS: Tickets por prioridad ─────────────────────────────
-  const prios=[['urgente','#FF4060'],['importante','#FFB300'],['normal','#00E896']];
-  const mxP=Math.max(1,...prios.map(([p])=>tickets.filter(t=>t.prior===p&&t.estado!=='eliminado').length));
-  const prEl=el('db-prior');
-  if(prEl) prEl.innerHTML=prios.map(([p,c])=>{
-    const v=tickets.filter(t=>t.prior===p&&t.estado!=='eliminado').length;
-    return`<div class="db-hbar">
-      <div class="db-hbar-l">${p}</div>
-      <div class="db-hbar-bg"><div class="db-hbar-f" style="width:${Math.round(v/mxP*100)}%;background:${c}"></div></div>
-      <div class="db-hbar-v">${v}</div></div>`;}).join('');
-
-  // ── BARRAS: Activos por departamento ──────────────────────────
-  const dm={};av.forEach(a=>{const d=a.depto||'Sin depto';dm[d]=(dm[d]||0)+1;});
-  const dE=Object.entries(dm).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const mxD=dE.length?dE[0][1]||1:1;
-  const dEl=el('db-deptos');
-  if(dEl) dEl.innerHTML=dE.length
-    ? dE.map(([d,v],i)=>`<div class="db-hbar">
-        <div class="db-hbar-l" title="${d}">${d.substring(0,10)}</div>
-        <div class="db-hbar-bg"><div class="db-hbar-f" style="width:${Math.round(v/mxD*100)}%;background:${C[i%C.length]}"></div></div>
-        <div class="db-hbar-v">${v}</div></div>`).join('')
-    : '<div class="empty-c">Sin datos</div>';
-
-  // ── TABLA: Tickets activos por urgencia ───────────────────────
-  const tktSorted=tickets
-    .filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado')
-    .sort((a,b)=>{const o={urgente:0,importante:1,normal:2};return(o[a.prior]||2)-(o[b.prior]||2);})
-    .slice(0,14);
-  const tktEl=el('db-tbl-tkt');
-  if(tktEl) tktEl.innerHTML=tktSorted.length
-    ? tktSorted.map(t=>`<tr>
-        <td class="mono">${t.codigo}</td>
-        <td class="bold" style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.titulo}</td>
-        <td style="font-size:9.5px">${(t.resp||'—').split(' ')[0]}</td>
-        <td><span class="db-b db-b-${t.prior}">${t.prior}</span></td>
-        <td><span class="db-b db-b-${t.estado}">${t.estado}</span></td>
-        <td>
-          <div class="db-prog">
-            <div class="db-prog-bg"><div class="db-prog-f" style="width:${t.avance||0}%;background:${t.avance>=80?'#00E896':t.avance>=40?'#FFB300':'#4AA8FF'}"></div></div>
-            <span class="db-prog-t">${t.avance||0}%</span>
-          </div>
-        </td></tr>`).join('')
-    : '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--dt3)">Sin tickets activos</td></tr>';
-
-  // ── TABLA: Últimos activos ────────────────────────────────────
-  const ultA=av.slice(-12).reverse();
-  const actEl=el('db-tbl-act');
-  if(actEl) actEl.innerHTML=ultA.length
-    ? ultA.map(a=>`<tr>
-        <td class="mono">${a.codigo}</td>
-        <td class="bold">${a.nombre}</td>
-        <td style="font-size:9.5px;color:var(--dt3)">${a.tipo}</td>
-        <td style="font-size:9.5px">${(a.asignado||'—').substring(0,16)}</td>
-        <td><span class="db-b db-b-${a.estado}">${a.estado}</span></td>
-        <td style="font-weight:700;color:#00E896;font-size:10px">$${calcDepre(a).toLocaleString()}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="6" style="text-align:center;padding:18px;color:var(--dt3)">Sin activos</td></tr>';
+  document.getElementById('d-act').textContent=av.length;
+  document.getElementById('d-tkt').textContent=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado').length;
+  document.getElementById('d-mnt').textContent=activos.filter(a=>a.estado==='mantenimiento').length;
+  document.getElementById('d-val').textContent='$'+av.reduce((s,a)=>s+calcDepre(a),0).toLocaleString();
+  const tm={};av.forEach(a=>{tm[a.tipo]=(tm[a.tipo]||0)+1;});const maxT=Math.max(1,...Object.values(tm));
+  const cols=['#D4AF37','#1D9E75','#BA7517','#185FA5','#D85A30','#639922'];
+  document.getElementById('ch-tipos').innerHTML=Object.keys(tm).length?Object.entries(tm).map(([t,v],i)=>`<div class="bar-row"><span class="bar-lbl">${t}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxT*100)}%;background:${cols[i%cols.length]}"></div></div><span class="bar-v">${v}</span></div>`).join(''):'<div class="empty-c">Sin activos</div>';
+  const ests=['abierto','progreso','revision','cerrado'],ec={abierto:'#BA7517',progreso:'#185FA5',revision:'#B8960C',cerrado:'#3B6D11'};
+  const maxE=Math.max(1,...ests.map(e=>tickets.filter(t=>t.estado===e).length));
+  document.getElementById('ch-est').innerHTML=tickets.length?ests.map(e=>{const v=tickets.filter(t=>t.estado===e).length;return`<div class="bar-row"><span class="bar-lbl">${e}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxE*100)}%;background:${ec[e]}"></div></div><span class="bar-v">${v}</span></div>`;}).join(''):'<div class="empty-c">Sin tickets</div>';
+  const rec=[...activos.map(a=>({txt:a.codigo+': '+a.nombre,sub:'Activo · '+(a.asignado||'—')})),...tickets.map(t=>({txt:t.codigo+': '+t.titulo,sub:'Ticket · '+(t.resp||'—')}))].slice(-6).reverse();
+  document.getElementById('ch-rec').innerHTML=rec.length?rec.map(r=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:7px;height:7px;border-radius:50%;background:#1B3A6B;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:500">${r.txt}</div><div style="font-size:10px;color:var(--text3)">${r.sub}</div></div></div>`).join(''):'<div class="empty-c">Sin actividad</div>';
 }
-
-// ── CANVAS: Gráfica de barras horas ──────────────────────────────
-function dbDrawHoraBars(canvasId, data, labels){
-  const canvas=document.getElementById(canvasId);
-  if(!canvas) return;
-  const parent=canvas.parentElement;
-  const W=parent?parent.offsetWidth:400;
-  const H=120;
-  canvas.width=W; canvas.height=H;
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,W,H);
-  if(!data||!data.length) return;
-  const max=Math.max(...data,1);
-  const n=data.length;
-  const padL=6,padR=6,padT=8,padB=28;
-  const barW=Math.floor((W-padL-padR)/n*0.7);
-  const gap=Math.floor((W-padL-padR)/n*0.3);
-  // Find peak hour
-  const peakIdx=data.indexOf(Math.max(...data));
-  data.forEach((v,i)=>{
-    const x=padL+i*((W-padL-padR)/n);
-    const bh=v>0?Math.max(4,Math.round((v/max)*(H-padT-padB))):0;
-    const y=H-padB-bh;
-    // Color: peak = amber, high = cyan, rest = blue dim
-    const isPeak=i===peakIdx;
-    const isHigh=v>max*0.6;
-    const col=isPeak?'#FFB300':isHigh?'#00D4FF':'#1B4F7A';
-    ctx.fillStyle=col;
-    ctx.beginPath();
-    ctx.roundRect(x+gap/2,y,barW,bh,2);
-    ctx.fill();
-    // Value on top for peak and high
-    if(v>0&&(isPeak||isHigh)){
-      ctx.fillStyle=isPeak?'#FFB300':'#00D4FF';
-      ctx.font=`bold 9px Arial`;
-      ctx.textAlign='center';
-      ctx.fillText(v,x+gap/2+barW/2,y-2);
-    }
-    // Labels
-    ctx.fillStyle='rgba(223,240,255,.35)';
-    ctx.font='8px Arial';
-    ctx.textAlign='center';
-    ctx.fillText(labels[i],x+gap/2+barW/2,H-6);
-  });
-  // Horizontal grid lines
-  ctx.strokeStyle='rgba(255,255,255,.06)';
-  ctx.lineWidth=0.5;
-  [0.25,0.5,0.75,1].forEach(f=>{
-    const y=H-padB-Math.round(f*(H-padT-padB));
-    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
-  });
-}
-
 
 function filterA(f,el){filtroA=f;document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
 function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
@@ -4284,27 +3732,6 @@ async function ejecutarImportarUsuarios(){
   await loadFromSheets();
 }
 
-
-// ── TOAST NOTIFICATIONS ─────────────────────────────────────────────
-function showToast(msg, tipo){
-  let t = document.getElementById('_sagae_toast');
-  if(!t){
-    t = document.createElement('div');
-    t.id = '_sagae_toast';
-    t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9999;'+
-      'padding:10px 18px;border-radius:8px;font-size:12px;font-weight:500;'+
-      'box-shadow:0 4px 20px rgba(0,0,0,.3);opacity:0;transform:translateY(8px);'+
-      'transition:opacity .25s,transform .25s;pointer-events:none;color:#fff;'+
-      'max-width:320px;line-height:1.4;';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.background = tipo==='success'?'#0D6E3F':tipo==='error'?'#8B1A1A':'#1B3A6B';
-  clearTimeout(t._tmr);
-  t.style.opacity='1'; t.style.transform='translateY(0)';
-  t._tmr = setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(8px)';}, 3200);
-}
-
 </script>
 
 <!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
@@ -4627,6 +4054,7 @@ function showToast(msg, tipo){
 
 </body>
 </html>
+
 
 
 
