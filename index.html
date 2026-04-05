@@ -1928,6 +1928,69 @@ async function saveActivo(){
   closeModals();renderAll();if(isEdit&&activoActual)showDetalle(activoActual.codigo);
 }
 
+
+// ════════════════════════════════════════════════════════════════════
+// TOMAR TICKET — técnico se auto-asigna desde web o mobile
+// El Apps Script detecta el cambio de resp y dispara:
+//   notificarCambioResponsable → admins + técnico nuevo + técnico anterior + reportador (portal)
+// ════════════════════════════════════════════════════════════════════
+async function tomarTicket(codigo){
+  const t = tickets.find(x=>x.codigo===codigo);
+  if(!t) return;
+
+  // Validaciones previas
+  if(t.estado==='cerrado'||t.estado==='eliminado'){
+    showToast('Este ticket ya está '+t.estado+' — no puede ser tomado','error');
+    return;
+  }
+  if(t.resp===session.nombre){
+    showToast('Ya eres el responsable de este ticket','');
+    return;
+  }
+
+  const respAnterior = t.resp || '—';
+  const esSinAsignar = respAnterior==='—';
+  const msg = esSinAsignar
+    ? `¿Tomar el ticket ${codigo}?\n\n"${t.titulo}"\n\nQuedarás como responsable y se notificará a todos los técnicos.`
+    : `¿Tomar el ticket ${codigo}?\n\n"${t.titulo}"\n\nEl responsable actual es: ${respAnterior}\nQuedarás tú como nuevo responsable y se notificará a todos.`;
+  if(!confirm(msg)) return;
+
+  const ahora = ts();
+
+  // Guardar estado anterior para el historial
+  const estadoAntes = t.estado;
+
+  // Actualizar datos del ticket
+  t.resp   = session.nombre;
+  t.estado = (t.estado === 'abierto') ? 'progreso' : t.estado;
+  t.historial = t.historial || [];
+
+  // Evento de historial completo — visible para todos
+  t.historial.push({
+    tipo:    '📋 Ticket tomado',
+    desc:    `${session.nombre} (${session.rol}) se asignó este ticket.`
+           + (esSinAsignar ? ' Estaba sin asignar.' : ` Responsable anterior: ${respAnterior}.`)
+           + (estadoAntes!==t.estado ? ` Estado: ${estadoAntes} → ${t.estado}.` : ''),
+    fecha:   ahora,
+    usuario: session.nombre,
+    color:   'blue'
+  });
+
+  // Guardar en Sheets → Apps Script detecta cambio de resp → dispara notificarCambioResponsable
+  const ok = await apiPost('tickets','update',t);
+  audit('EDITAR','Ticket',codigo,
+    `Ticket tomado por ${session.nombre}. Resp. anterior: ${respAnterior}. Estado: ${estadoAntes}→${t.estado}`);
+
+  if(ok){
+    renderAll();
+    // Refrescar detalle si está abierto
+    if(activoActual) showDetalle(activoActual.codigo);
+    showToast('✅ Ticket '+codigo+' asignado a ti. Se notificó a todos los técnicos.','success');
+  } else {
+    showToast('⚠ No se pudo guardar. Verifica tu conexión.','error');
+  }
+}
+
 function openTicket(id){
   const isEdit=id!=null;
   document.getElementById('mod-ticket-title').textContent=isEdit?'Editar ticket':'Nuevo ticket';
@@ -1961,12 +2024,27 @@ async function saveTicket(){
     const motivo=document.getElementById('et-motivo').value.trim();if(!motivo){alert('El motivo es obligatorio.');return;}
     const t=tickets.find(x=>x.codigo===editId);if(!t)return;
     const cambios=[];const nResp=document.getElementById('et-resp').value||'—';
+    // Capturar valores ANTES del cambio para el historial
+    const estadoAnteriorTicket = t.estado;
+    const avanceAnteriorTicket = t.avance||0;
+    const respAnteriorTicket   = t.resp||'—';
     if(t.titulo!==titulo)cambios.push(`Título:"${t.titulo}"→"${titulo}"`);if(t.resp!==nResp)cambios.push(`Responsable:"${t.resp}"→"${nResp}"`);
     t.titulo=titulo;t.resp=nResp;t.tipo=document.getElementById('et-tipo').value;t.prior=document.getElementById('et-prior').value;
     t.estado=document.getElementById('et-estado').value;t.avance=Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0));
     t.dead=document.getElementById('et-dead').value||'—';t.proy=document.getElementById('et-proy').value.trim()||'—';t.desc=document.getElementById('et-desc').value.trim();
     const det=`Motivo: ${motivo}. ${cambios.length?'Cambios: '+cambios.join('; '):''}`;
-    t.historial=t.historial||[];t.historial.push({tipo:'Edición',desc:det,fecha:ts(),usuario:session.nombre,color:'amber'});
+    t.historial=t.historial||[];
+    // Evento de historial detallado — visible para técnicos, consultores y usuario
+    const eventosDetalle = [];
+    if(t.estado !== estadoAnteriorTicket) eventosDetalle.push('Estado: '+estadoAnteriorTicket+' → '+t.estado);
+    if(t.avance !== avanceAnteriorTicket)  eventosDetalle.push('Avance: '+avanceAnteriorTicket+'% → '+t.avance+'%');
+    if(t.resp !== respAnteriorTicket)      eventosDetalle.push('Responsable: '+respAnteriorTicket+' → '+t.resp);
+    const colorEvento = t.estado==='cerrado'?'green':t.estado==='progreso'?'blue':'amber';
+    t.historial.push({
+      tipo: t.estado==='cerrado'?'✅ Ticket cerrado':t.estado==='progreso'?'🔧 En progreso':'📝 Actualización',
+      desc: det+(eventosDetalle.length?' | '+eventosDetalle.join(' · '):''),
+      fecha:ts(),usuario:session.nombre,color:colorEvento
+    });
     await apiPost('tickets','update',t);audit('EDITAR','Ticket',t.codigo,det);
   }else{
     // Consultar Sheets en tiempo real para obtener el siguiente consecutivo
@@ -2505,11 +2583,19 @@ function renderTickets(){
   tb.innerHTML=list.map(t=>`<tr class="${t.estado==='eliminado'?'del-row':''}">
     <td class="code-cell">${t.codigo}</td>
     <td><div style="font-weight:600;font-size:12px">${t.titulo}</div><div style="font-size:10px;color:var(--text3)">${t.tipo} · ${t.proy||'—'}</div></td>
-    <td style="font-size:11px">${t.activoNombre||'—'}</td><td>${t.resp||'—'}</td>
+    <td style="font-size:11px">${t.activoNombre||'—'}</td>
+    <td>
+      ${t.resp&&t.resp!=='—'
+        ? `<span style="font-size:11px;font-weight:${t.resp===session.nombre?'700':'400'};color:${t.resp===session.nombre?'#1A7A4A':'var(--text)'}">${t.resp}</span>`
+        : '<span style="font-size:10px;background:#FEF3C7;color:#92400E;padding:2px 6px;border-radius:3px;font-weight:600">Sin asignar</span>'}
+    </td>
     <td><span class="badge s-${t.prior}">${t.prior}</span></td><td><span class="badge s-${t.estado}">${t.estado}</span></td>
     <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
     <td style="font-size:11px;color:var(--text3)">${renderDead(t.dead)}</td>
-    <td>
+    <td style="white-space:nowrap">
+      ${(t.estado!=='cerrado'&&t.estado!=='eliminado'&&['admin','tecnico'].includes(session.rol)&&t.resp!==session.nombre)?
+        `<button class="act-btn" style="background:#1B3A6B;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600" onclick="tomarTicket('${t.codigo}')">Tomar</button>`:
+        (t.resp===session.nombre&&t.estado!=='cerrado'?`<span style="font-size:9px;color:#1A7A4A;font-weight:600">✓ Tuyo</span>`:'')}
       ${per.edit&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openTicket('${t.codigo}')">✎</button>`:''}
       ${per.delete&&t.estado!=='eliminado'?`<button class="act-btn" onclick="openDelete('ticket','${t.codigo}')" style="color:var(--red)">×</button>`:''}
     </td></tr>`).join('');
@@ -2522,8 +2608,14 @@ function renderKanban(){
       <div class="code-cell" style="font-size:9px;margin-bottom:3px">${t.codigo}</div>
       <div class="k-card-t">${t.titulo}</div>
       <div class="k-card-m"><span>${t.activoNombre&&t.activoNombre!=='—'?t.activoNombre:t.proy||'—'}</span><span class="badge s-${t.prior}" style="font-size:9px">${t.prior}</span></div>
-      <div class="k-card-m"><span>${t.resp||'—'}</span><span>${renderDead(t.dead)}</span></div>
+      <div class="k-card-m">
+        <span style="${t.resp===session.nombre?'color:#1A7A4A;font-weight:600':''}">${t.resp||'Sin asignar'}</span>
+        <span>${renderDead(t.dead)}</span>
+      </div>
       <div class="k-prog"><div class="k-pf" style="width:${t.avance||0}%"></div></div>
+      ${(col!=='cerrado'&&col!=='eliminado'&&['admin','tecnico'].includes(session.rol)&&t.resp!==session.nombre)?
+        `<div style="margin-top:6px"><button onclick="tomarTicket('${t.codigo}')" style="width:100%;background:#1B3A6B;color:#fff;border:none;border-radius:4px;padding:4px;font-size:10px;font-weight:600;cursor:pointer">▶ Tomar este ticket</button></div>`:
+        (t.resp===session.nombre&&col!=='cerrado'?`<div style="margin-top:4px;font-size:9px;color:#1A7A4A;font-weight:600;text-align:center">✓ Asignado a ti</div>`:'')}
     </div>`).join(''):'<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">Vacío</div>';
   });
 }
