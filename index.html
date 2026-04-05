@@ -1196,17 +1196,30 @@ async function apiPost(sheet,action,payload){
 }
 async function apiGet(sheet){
   try{
-    // Timeout de 15 segundos por llamada
     const controller = new AbortController();
-    const timer = setTimeout(()=>controller.abort(), 15000);
-    const r = await fetch(API+'?sheet='+sheet, {mode:'cors', signal:controller.signal});
+    const timer = setTimeout(()=>controller.abort(), 20000);
+    const url = API+'?sheet='+sheet+'&t='+Date.now();
+    const r = await fetch(url, {mode:'cors', signal:controller.signal});
     clearTimeout(timer);
-    if(!r.ok) return [];
-    const d = await r.json();
-    return Array.isArray(d) ? d : [];
+    if(!r.ok){
+      console.error('[SAGAE] apiGet '+sheet+' HTTP error:', r.status);
+      return [];
+    }
+    const text = await r.text();
+    try{
+      const d = JSON.parse(text);
+      return Array.isArray(d) ? d : [];
+    }catch(pe){
+      console.error('[SAGAE] apiGet '+sheet+' JSON parse error:', text.substring(0,200));
+      return [];
+    }
   }
   catch(e){
-    if(e.name==='AbortError') console.warn('Timeout cargando '+sheet);
+    if(e.name==='AbortError'){
+      console.error('[SAGAE] Timeout (20s) cargando hoja:', sheet);
+    } else {
+      console.error('[SAGAE] apiGet error en hoja '+sheet+':', e.message);
+    }
     return [];
   }
 }
@@ -1399,38 +1412,59 @@ function activarModoEscaneo(){
 
 async function loadFromSheets(){
   const lt=document.getElementById('loading-text'),ls=document.getElementById('loading-sub');
+  const showLogin=()=>{
+    document.getElementById('loading-overlay').style.display='none';
+    document.getElementById('login-screen').style.display='flex';
+  };
   try{
-  // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
-  lt.textContent='Conectando a Google Sheets...';
-  ls.textContent='Cargando datos en paralelo...';
-  const [rawU, rawA, rawT, rawAud] = await Promise.all([
-    apiGet('usuarios'),
-    apiGet('activos'),
-    apiGet('tickets'),
-    apiGet('auditoria')
-  ]);
-  lt.textContent='Procesando datos...';
-  usuarios = rawU.map(r=>({...r}));
-  activos  = rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
-  cntActivos = activos.length;
-  tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
-  cntTickets = tickets.length;
-  auditLog = rawAud.slice().reverse();
-  // NOTA: No se crea admin automáticamente para evitar duplicados
-  // Si no hay usuarios, mostrar aviso y dejar entrar igual
-  ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
-  lt.textContent='¡Sistema listo!';
-  setTimeout(()=>{document.getElementById('loading-overlay').style.display='none';document.getElementById('login-screen').style.display='flex';setSyncStatus(true,'Conectado a Google Sheets');},500);
+    lt.textContent='Conectando a Google Sheets...';
+    ls.textContent='Verificando acceso al API...';
+
+    // ── Carga secuencial con feedback visible ─────────────────
+    lt.textContent='Cargando usuarios...';
+    const rawU = await apiGet('usuarios');
+    usuarios = rawU.map(r=>({...r}));
+    ls.textContent=`✅ ${usuarios.length} usuarios`;
+
+    lt.textContent='Cargando activos...';
+    const rawA = await apiGet('activos');
+    activos = rawA.map(r=>({...r,id:r.codigo,
+      valor:parseFloat(r.valor)||0,
+      vida:parseInt(r.vida)||3,
+      historial:parseHist(r.historial)}));
+    cntActivos = activos.length;
+    ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos`;
+
+    lt.textContent='Cargando tickets...';
+    const rawT = await apiGet('tickets');
+    tickets = rawT.map(r=>({...r,id:r.codigo,
+      avance:parseInt(r.avance)||0,
+      historial:parseHist(r.historial)}));
+    cntTickets = tickets.length;
+    ls.textContent=`✅ ${activos.length} activos · ${tickets.length} tickets`;
+
+    lt.textContent='Cargando auditoría...';
+    const rawAud = await apiGet('auditoria');
+    auditLog = rawAud.slice().reverse();
+
+    // ── Si no hay usuarios avisar pero dejar entrar ───────────
+    if(!usuarios.length){
+      ls.textContent='⚠ Sin usuarios en Sheets — verifica la hoja "Usuarios"';
+      lt.textContent='Datos cargados con advertencias';
+    } else {
+      ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets · ${auditLog.length} registros`;
+      lt.textContent='¡Sistema listo!';
+    }
+    setSyncStatus(true,'Conectado a Google Sheets · '+new Date().toLocaleTimeString('es-PA'));
+    setTimeout(showLogin, 600);
+
   }catch(err){
-    // Si la carga falla — mostrar error y dejar entrar de todas formas
-    console.error('Error cargando datos:',err);
-    lt.textContent='⚠️ Error de conexión';
-    ls.textContent='Reintentando en 5 segundos...';
-    setTimeout(()=>{
-      document.getElementById('loading-overlay').style.display='none';
-      document.getElementById('login-screen').style.display='flex';
-      setSyncStatus(false,'Error de conexión');
-    },3000);
+    console.error('[SAGAE] Error cargando datos:', err);
+    lt.textContent='⚠ Error de conexión';
+    ls.textContent='No se pudo conectar a Google Sheets. Verifica tu internet.';
+    setSyncStatus(false,'Sin conexión');
+    // Dejar entrar igual después de 4 segundos
+    setTimeout(showLogin, 4000);
   }
 }
 
@@ -1477,7 +1511,7 @@ function doLogin(){
     document.getElementById('sb-profile-name').textContent=usuario.nombre;
     document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
-    applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
+    applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();renderActivos();renderTickets();populateSuggestions();
     resetInactivityTimer();
     // ── SESIÓN ÚNICA — generar token PRIMERO, luego iniciar monitoreo ──
     // El token debe estar en session.token ANTES de llamar iniciarControlSesionUnica
