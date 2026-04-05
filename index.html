@@ -71,20 +71,168 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
 .content{flex:1;overflow-y:auto;padding:16px;}
 .pnl{display:none;}
 .pnl.on{display:block;}
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;}
-.met{background:var(--bg2);border-radius:var(--r-md);padding:12px 14px;border:1px solid var(--border);}
-.met-v{font-size:22px;font-weight:700;color:var(--text);}
-.met-l{font-size:10px;color:var(--text3);margin-top:2px;}
-.charts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.ccard{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;}
-.ctitle{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;}
-.bar-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
-.bar-lbl{font-size:10px;color:var(--text2);width:72px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.bar-bg{flex:1;height:7px;background:var(--bg3);border-radius:4px;overflow:hidden;}
-.bar-f{height:100%;border-radius:4px;}
-.bar-v{font-size:10px;color:var(--text3);width:28px;text-align:right;flex-shrink:0;}
-.empty-c{font-size:11px;color:var(--text3);text-align:center;padding:16px 0;}
-.tbl-wrap{overflow-x:auto;}
+.metrics{display:none}/* replaced */
+/* ══ POWER BI DASHBOARD — todo encapsulado bajo #pnl-dashboard ═══════ */
+#pnl-dashboard{
+  background:#F3F4F6;padding:14px 16px;
+  min-height:100%;overflow-y:auto;box-sizing:border-box;
+  font-family:'Segoe UI',Arial,sans-serif;
+}
+/* Variables PBI */
+#pnl-dashboard{
+  --pbi-bg:#F3F4F6;--pbi-card:#FFFFFF;--pbi-border:#E5E7EB;
+  --pbi-text:#111827;--pbi-text2:#6B7280;--pbi-text3:#9CA3AF;
+  --pbi-teal:#00B4B4;--pbi-navy:#1B3A6B;--pbi-orange:#E07B39;
+  --pbi-gold:#E8A800;--pbi-red:#D04040;--pbi-green:#1A7A4A;
+  --pbi-purple:#6B48CC;--pbi-blue:#2563EB;--pbi-gray:#4B5563;
+}
+/* Top KPI bar */
+#pnl-dashboard .pbi-kpi-bar{
+  display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:12px;
+}
+#pnl-dashboard .pbi-kpi-card{
+  background:var(--pbi-card);border:1px solid var(--pbi-border);
+  border-radius:4px;padding:12px 16px;position:relative;
+  box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+#pnl-dashboard .pbi-kpi-label{font-size:10.5px;font-weight:600;color:var(--pbi-text2);
+  text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+#pnl-dashboard .pbi-kpi-value{font-size:28px;font-weight:700;color:var(--pbi-text);
+  letter-spacing:-1px;line-height:1;}
+#pnl-dashboard .pbi-kpi-sub{font-size:10px;color:var(--pbi-text3);margin-top:4px;
+  display:flex;align-items:center;gap:4px;}
+#pnl-dashboard .pbi-kpi-bar-accent{
+  position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 4px 4px;}
+/* Grid layouts */
+#pnl-dashboard .pbi-row1{display:grid;grid-template-columns:220px 1fr 1.2fr;gap:10px;margin-bottom:10px;}
+#pnl-dashboard .pbi-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
+#pnl-dashboard .pbi-row3{display:grid;grid-template-columns:1.3fr 1fr;gap:10px;}
+/* Card base */
+#pnl-dashboard .pbi-card{
+  background:var(--pbi-card);border:1px solid var(--pbi-border);
+  border-radius:4px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);
+}
+#pnl-dashboard .pbi-card-title{
+  font-size:11px;font-weight:700;color:var(--pbi-text);
+  text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;
+  border-bottom:2px solid var(--pbi-border);padding-bottom:8px;
+}
+/* Donut */
+#pnl-dashboard .pbi-donut-wrap{display:flex;align-items:center;gap:14px;}
+#pnl-dashboard .pbi-donut-legend{flex:1;display:flex;flex-direction:column;gap:6px;}
+#pnl-dashboard .pbi-donut-leg-row{display:flex;align-items:center;justify-content:space-between;}
+#pnl-dashboard .pbi-donut-leg-left{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--pbi-text);}
+#pnl-dashboard .pbi-donut-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+#pnl-dashboard .pbi-donut-leg-val{font-size:11px;font-weight:700;color:var(--pbi-text);}
+#pnl-dashboard .pbi-donut-leg-pct{font-size:9.5px;color:var(--pbi-text3);margin-left:4px;}
+/* Horizontal bars PBI style */
+#pnl-dashboard .pbi-hbar-row{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+#pnl-dashboard .pbi-hbar-label{font-size:10.5px;color:var(--pbi-text);width:90px;
+  flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+#pnl-dashboard .pbi-hbar-track{flex:1;height:18px;background:#F3F4F6;
+  border-radius:2px;overflow:hidden;position:relative;}
+#pnl-dashboard .pbi-hbar-fill{height:100%;border-radius:2px;
+  display:flex;align-items:center;padding-left:6px;transition:width .5s;}
+#pnl-dashboard .pbi-hbar-fill-label{font-size:9.5px;font-weight:700;color:#fff;
+  white-space:nowrap;overflow:hidden;}
+#pnl-dashboard .pbi-hbar-val{font-size:11px;font-weight:700;color:var(--pbi-text);
+  width:28px;text-align:right;flex-shrink:0;}
+/* Table PBI */
+#pnl-dashboard .pbi-tbl{width:100%;border-collapse:collapse;font-size:10.5px;}
+#pnl-dashboard .pbi-tbl th{
+  font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;
+  color:var(--pbi-text2);padding:5px 8px;text-align:left;
+  border-bottom:2px solid var(--pbi-border);white-space:nowrap;background:#F9FAFB;}
+#pnl-dashboard .pbi-tbl td{
+  padding:6px 8px;border-bottom:1px solid #F3F4F6;
+  color:var(--pbi-text);vertical-align:middle;}
+#pnl-dashboard .pbi-tbl tr:hover td{background:#F9FAFB;}
+#pnl-dashboard .pbi-tbl tr:last-child td{border-bottom:none;}
+#pnl-dashboard .pbi-tbl .bold{font-weight:700;}
+#pnl-dashboard .pbi-tbl .mono{font-family:monospace;font-size:9.5px;color:var(--pbi-text2);}
+/* Badges PBI */
+#pnl-dashboard .pbi-b{display:inline-flex;align-items:center;padding:2px 8px;
+  border-radius:3px;font-size:9px;font-weight:700;border:1px solid transparent;}
+#pnl-dashboard .pbi-b-activo{background:#DCFCE7;color:#166534;border-color:#BBF7D0;}
+#pnl-dashboard .pbi-b-mantenimiento{background:#FEF9C3;color:#854D0E;border-color:#FDE68A;}
+#pnl-dashboard .pbi-b-baja{background:#FEE2E2;color:#991B1B;border-color:#FECACA;}
+#pnl-dashboard .pbi-b-abierto{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
+#pnl-dashboard .pbi-b-progreso{background:#FEF3C7;color:#92400E;border-color:#FDE68A;}
+#pnl-dashboard .pbi-b-revision{background:#EDE9FE;color:#5B21B6;border-color:#DDD6FE;}
+#pnl-dashboard .pbi-b-cerrado{background:#DCFCE7;color:#166534;border-color:#BBF7D0;}
+#pnl-dashboard .pbi-b-urgente{background:#FEE2E2;color:#991B1B;border-color:#FECACA;}
+#pnl-dashboard .pbi-b-importante{background:#FEF3C7;color:#92400E;border-color:#FDE68A;}
+#pnl-dashboard .pbi-b-normal{background:#DCFCE7;color:#166534;border-color:#BBF7D0;}
+/* Progress bar inline */
+#pnl-dashboard .pbi-prog{display:flex;align-items:center;gap:5px;}
+#pnl-dashboard .pbi-prog-bg{flex:1;height:5px;background:#E5E7EB;border-radius:3px;overflow:hidden;}
+#pnl-dashboard .pbi-prog-f{height:100%;border-radius:3px;transition:width .4s;}
+#pnl-dashboard .pbi-prog-t{font-size:9.5px;color:var(--pbi-text3);width:26px;text-align:right;flex-shrink:0;}
+/* Canvas area */
+#pnl-dashboard .pbi-canvas-wrap{width:100%;position:relative;}
+/* Legend row */
+#pnl-dashboard .pbi-legend{display:flex;gap:14px;margin-bottom:8px;flex-wrap:wrap;}
+#pnl-dashboard .pbi-leg-item{display:flex;align-items:center;gap:4px;
+  font-size:10px;color:var(--pbi-text2);}
+#pnl-dashboard .pbi-leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+/* Empty */
+#pnl-dashboard .pbi-empty{text-align:center;padding:20px;
+  font-size:11px;color:var(--pbi-text3);}
+/* ── ETIQUETAS DE CÓDIGO DE BARRAS — FORMATO ZEBRA ──────────────── */
+#modal-etiqueta{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;}
+#modal-etiqueta.open{display:flex;}
+.etiqueta-wrap{background:#fff;border-radius:10px;padding:20px 24px;box-shadow:0 24px 64px rgba(0,0,0,0.45);max-width:480px;width:100%;}
+.etiqueta-titulo{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;border-bottom:2px solid var(--navy);padding-bottom:8px;display:flex;align-items:center;gap:6px;}
+/* Preview en pantalla — muestra cómo quedará la etiqueta */
+.etiqueta-preview{
+  border:2px dashed #CCC;border-radius:6px;padding:10px;background:#FAFAFA;
+  margin-bottom:14px;
+  /* Proporción Zebra 2.25" × 1.25" */
+  width:100%;max-width:360px;margin-left:auto;margin-right:auto;
+}
+.etiqueta-preview-inner{
+  background:#fff;border:1px solid #DDD;border-radius:3px;
+  padding:8px 10px;
+  display:flex;align-items:center;gap:10px;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.etiqueta-barcode-col{flex:1;text-align:center;}
+
+.etiqueta-nombre-print{font-size:10px;font-weight:700;color:#000;line-height:1.2;text-align:left;margin-bottom:4px;max-width:220px;word-break:break-word;}
+.etiqueta-codigo-print{font-size:9px;color:#333;text-align:center;margin-top:3px;letter-spacing:0.5px;}
+.etiqueta-barcode-svg{width:200px;height:50px;}
+
+.etiqueta-acciones{display:flex;gap:8px;justify-content:space-between;align-items:center;}
+.etiqueta-info{font-size:10px;color:#888;}
+/* Barcode en Detalle del activo */
+.det-barcode-section{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:12px;text-align:center;}
+.det-barcode-title{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.det-barcode-row{display:flex;align-items:center;justify-content:center;gap:20px;flex-wrap:wrap;}
+.det-barcode-item{text-align:center;}
+.det-barcode-label{font-size:10px;color:var(--text3);margin-top:4px;}
+#det-barcode-svg{max-width:200px;height:55px;}
+
+/* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
+/* SOLO aplica cuando se está imprimiendo una etiqueta (clase en body) */
+
+/* ── MODALES ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);
+  z-index:2000;align-items:center;justify-content:center;backdrop-filter:blur(3px);}
+.modal-bg.open{display:flex;}
+.modal{background:var(--bg);border-radius:var(--r-xl);padding:22px 24px;
+  width:100%;max-width:560px;max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 64px rgba(0,0,0,.35);animation:_mIn .18s ease;}
+@keyframes _mIn{from{opacity:0;transform:translateY(-10px) scale(.97)}to{opacity:1;transform:none}}
+.modal-title{display:flex;align-items:center;justify-content:space-between;
+  font-size:15px;font-weight:700;color:var(--text);
+  margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+.modal-close{background:none;border:none;cursor:pointer;font-size:18px;
+  color:var(--text3);padding:2px 6px;border-radius:4px;}
+.modal-close:hover{background:var(--bg2);}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;
+  margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+
+
 table{width:100%;border-collapse:collapse;font-size:11px;}
 thead th{background:var(--bg2);padding:7px 9px;text-align:left;font-weight:600;font-size:10px;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;text-transform:uppercase;letter-spacing:.04em;}
 tbody td{padding:8px 9px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
@@ -224,8 +372,6 @@ tbody tr.clickable{cursor:pointer;}
 .det-barcode-label{font-size:10px;color:var(--text3);margin-top:4px;}
 #det-barcode-svg{max-width:200px;height:55px;}
 
-/* ── IMPRESIÓN DE ETIQUETA 5×3 cm ────────────────────────────────── */
-/* SOLO aplica cuando se está imprimiendo una etiqueta (clase en body) */
 @media print{
   body.printing-label *{visibility:hidden!important;}
   body.printing-label #print-etiqueta-area,
@@ -660,17 +806,127 @@ tbody tr.clickable{cursor:pointer;}
     </div>
     <div class="content">
       <div class="pnl on" id="pnl-dashboard">
-        <div class="metrics">
-          <div class="met"><div class="met-v" id="d-act">0</div><div class="met-l">Activos registrados</div></div>
-          <div class="met"><div class="met-v" id="d-tkt" style="color:#185FA5">0</div><div class="met-l">Tickets abiertos</div></div>
-          <div class="met"><div class="met-v" id="d-mnt" style="color:#BA7517">0</div><div class="met-l">En mantenimiento</div></div>
-          <div class="met"><div class="met-v" id="d-val" style="color:#3B6D11">$0</div><div class="met-l">Valor inventario</div></div>
+
+  <!-- ── KPI TOP BAR (5 métricas estilo Power BI) ── -->
+  <div class="pbi-kpi-bar">
+    <div class="pbi-kpi-card">
+      <div class="pbi-kpi-label">Total Activos</div>
+      <div class="pbi-kpi-value" id="d-act">0</div>
+      <div class="pbi-kpi-sub" id="d-act-s"><span style="color:#1A7A4A">▲</span> <span id="d-act-ok">0</span> operativos</div>
+      <div class="pbi-kpi-bar-accent" style="background:#00B4B4"></div>
+    </div>
+    <div class="pbi-kpi-card">
+      <div class="pbi-kpi-label">Tickets Abiertos</div>
+      <div class="pbi-kpi-value" style="color:#E07B39" id="d-tkt">0</div>
+      <div class="pbi-kpi-sub"><span style="color:#D04040">▲</span> <span id="d-tkt-urg">0</span> urgentes</div>
+      <div class="pbi-kpi-bar-accent" style="background:#E07B39"></div>
+    </div>
+    <div class="pbi-kpi-card">
+      <div class="pbi-kpi-label">En Mantenimiento</div>
+      <div class="pbi-kpi-value" style="color:#E8A800" id="d-mnt">0</div>
+      <div class="pbi-kpi-sub"><span style="color:#6B7280">▼</span> <span id="d-mnt-baja">0</span> en baja</div>
+      <div class="pbi-kpi-bar-accent" style="background:#E8A800"></div>
+    </div>
+    <div class="pbi-kpi-card">
+      <div class="pbi-kpi-label">Valor Inventario</div>
+      <div class="pbi-kpi-value" style="font-size:20px;color:#1A7A4A" id="d-val">$0</div>
+      <div class="pbi-kpi-sub">valor depreciado total</div>
+      <div class="pbi-kpi-bar-accent" style="background:#1A7A4A"></div>
+    </div>
+    <div class="pbi-kpi-card">
+      <div class="pbi-kpi-label">Tickets Cerrados</div>
+      <div class="pbi-kpi-value" style="color:#6B48CC" id="d-cerrados">0</div>
+      <div class="pbi-kpi-sub"><span id="d-resolucion">0%</span> tasa de resolución</div>
+      <div class="pbi-kpi-bar-accent" style="background:#6B48CC"></div>
+    </div>
+  </div>
+
+  <!-- ── ROW 1: Donut tipos | Barras H por depto | Tabla top técnicos ── -->
+  <div class="pbi-row1">
+
+    <!-- Donut: activos por tipo -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Activos por Tipo</div>
+      <div class="pbi-donut-wrap">
+        <svg id="pbi-donut" width="90" height="90" viewBox="0 0 90 90" style="flex-shrink:0"></svg>
+        <div class="pbi-donut-legend" id="pbi-leg-tipos"><div class="pbi-empty">Sin datos</div></div>
+      </div>
+    </div>
+
+    <!-- Barras H: activos por departamento -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Activos por Departamento / Área</div>
+      <div id="pbi-deptos"><div class="pbi-empty">Sin datos</div></div>
+    </div>
+
+    <!-- Tabla: Top técnicos por tickets resueltos -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Top Técnicos — Tickets &amp; Resolución</div>
+      <table class="pbi-tbl">
+        <thead><tr><th>Técnico</th><th>Asignados</th><th>Cerrados</th><th>Resolución</th></tr></thead>
+        <tbody id="pbi-tbl-tec"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ROW 2: Gráfica horas pico | Tabla tickets activos ── -->
+  <div class="pbi-row2">
+
+    <!-- Canvas: tickets por hora + usuario (gráfica clave) -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Incidencias por Hora del Día — Horas pico y usuario que más genera</div>
+      <div class="pbi-legend" id="pbi-hora-legend"></div>
+      <div class="pbi-canvas-wrap" style="height:140px">
+        <canvas id="pbi-hora-canvas" style="width:100%;height:100%"></canvas>
+      </div>
+      <!-- Sub tabla: top usuarios generadores -->
+      <div style="margin-top:10px;border-top:1px solid #E5E7EB;padding-top:10px">
+        <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">
+          Top usuarios que más tickets generan
         </div>
-        <div class="charts">
-          <div class="ccard"><div class="ctitle">Activos por tipo</div><div id="ch-tipos"><div class="empty-c">Sin activos</div></div></div>
-          <div class="ccard"><div class="ctitle">Tickets por estado</div><div id="ch-est"><div class="empty-c">Sin tickets</div></div></div>
-        </div>
-        <div class="ccard"><div class="ctitle">Actividad reciente</div><div id="ch-rec"><div class="empty-c">Sin actividad</div></div></div>
+        <div id="pbi-top-usuarios"></div>
+      </div>
+    </div>
+
+    <!-- Tabla: tickets activos ordenados por urgencia -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Tickets Activos — por Urgencia</div>
+      <div style="overflow-y:auto;max-height:300px">
+        <table class="pbi-tbl">
+          <thead><tr><th>Código</th><th>Título</th><th>Técnico</th><th>Prior.</th><th>Estado</th><th>%</th></tr></thead>
+          <tbody id="pbi-tbl-tkt"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── ROW 3: Estado tickets (barras agrupadas canvas) | Últimos activos ── -->
+  <div class="pbi-row3">
+
+    <!-- Canvas: tickets por estado y prioridad lado a lado -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">Distribución de Tickets por Estado y Prioridad</div>
+      <div class="pbi-legend" id="pbi-dist-legend"></div>
+      <div class="pbi-canvas-wrap" style="height:140px">
+        <canvas id="pbi-dist-canvas" style="width:100%;height:100%"></canvas>
+      </div>
+    </div>
+
+    <!-- Tabla: últimos activos ingresados -->
+    <div class="pbi-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;border-bottom:2px solid #E5E7EB;padding-bottom:8px">
+        <div class="pbi-card-title" style="margin-bottom:0;border-bottom:none;padding-bottom:0">Últimos Activos Registrados</div>
+        <span style="font-size:9.5px;color:#6B7280" id="pbi-total-act">—</span>
+      </div>
+      <div style="overflow-y:auto;max-height:220px">
+        <table class="pbi-tbl">
+          <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Estado</th><th>Valor</th></tr></thead>
+          <tbody id="pbi-tbl-act"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
       </div>
       <div class="pnl" id="pnl-activos">
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:6px;">
@@ -2285,20 +2541,322 @@ function renderAudit(){
 }
 
 function renderDash(){
+  const hoy=new Date();
   const av=activos.filter(a=>a.estado!=='eliminado');
-  document.getElementById('d-act').textContent=av.length;
-  document.getElementById('d-tkt').textContent=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado').length;
-  document.getElementById('d-mnt').textContent=activos.filter(a=>a.estado==='mantenimiento').length;
-  document.getElementById('d-val').textContent='$'+av.reduce((s,a)=>s+calcDepre(a),0).toLocaleString();
-  const tm={};av.forEach(a=>{tm[a.tipo]=(tm[a.tipo]||0)+1;});const maxT=Math.max(1,...Object.values(tm));
-  const cols=['#D4AF37','#1D9E75','#BA7517','#185FA5','#D85A30','#639922'];
-  document.getElementById('ch-tipos').innerHTML=Object.keys(tm).length?Object.entries(tm).map(([t,v],i)=>`<div class="bar-row"><span class="bar-lbl">${t}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxT*100)}%;background:${cols[i%cols.length]}"></div></div><span class="bar-v">${v}</span></div>`).join(''):'<div class="empty-c">Sin activos</div>';
-  const ests=['abierto','progreso','revision','cerrado'],ec={abierto:'#BA7517',progreso:'#185FA5',revision:'#B8960C',cerrado:'#3B6D11'};
-  const maxE=Math.max(1,...ests.map(e=>tickets.filter(t=>t.estado===e).length));
-  document.getElementById('ch-est').innerHTML=tickets.length?ests.map(e=>{const v=tickets.filter(t=>t.estado===e).length;return`<div class="bar-row"><span class="bar-lbl">${e}</span><div class="bar-bg"><div class="bar-f" style="width:${Math.round(v/maxE*100)}%;background:${ec[e]}"></div></div><span class="bar-v">${v}</span></div>`;}).join(''):'<div class="empty-c">Sin tickets</div>';
-  const rec=[...activos.map(a=>({txt:a.codigo+': '+a.nombre,sub:'Activo · '+(a.asignado||'—')})),...tickets.map(t=>({txt:t.codigo+': '+t.titulo,sub:'Ticket · '+(t.resp||'—')}))].slice(-6).reverse();
-  document.getElementById('ch-rec').innerHTML=rec.length?rec.map(r=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);align-items:center"><div style="width:7px;height:7px;border-radius:50%;background:#1B3A6B;flex-shrink:0"></div><div><div style="font-size:12px;font-weight:500">${r.txt}</div><div style="font-size:10px;color:var(--text3)">${r.sub}</div></div></div>`).join(''):'<div class="empty-c">Sin actividad</div>';
+  const tktV=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado');
+  const tktC=tickets.filter(t=>t.estado==='cerrado');
+  const cntAct=av.length, cntTkt=tktV.length;
+  const cntMnt=activos.filter(a=>a.estado==='mantenimiento').length;
+  const cntBaja=activos.filter(a=>a.estado==='baja').length;
+  const cntOk=activos.filter(a=>a.estado==='activo'||a.estado==='asignado').length;
+  const cntUrg=tktV.filter(t=>t.prior==='urgente').length;
+  const cntCerr=tktC.length;
+  const valTot=av.reduce((s,a)=>s+calcDepre(a),0);
+  const resolucion=tickets.length?Math.round(tktC.length/tickets.filter(t=>t.estado!=='eliminado').length*100):0;
+  const el=id=>document.getElementById(id);
+
+  // KPIs
+  if(el('d-act'))    el('d-act').textContent=cntAct;
+  if(el('d-tkt'))    el('d-tkt').textContent=cntTkt;
+  if(el('d-mnt'))    el('d-mnt').textContent=cntMnt;
+  if(el('d-val'))    el('d-val').textContent='$'+valTot.toLocaleString();
+  if(el('d-cerrados'))el('d-cerrados').textContent=cntCerr;
+  if(el('d-act-ok')) el('d-act-ok').textContent=cntOk;
+  if(el('d-tkt-urg'))el('d-tkt-urg').textContent=cntUrg;
+  if(el('d-mnt-baja'))el('d-mnt-baja').textContent=cntBaja;
+  if(el('d-resolucion'))el('d-resolucion').textContent=resolucion+'%';
+  if(el('pbi-total-act'))el('pbi-total-act').textContent='Total: '+cntAct+' activos';
+
+  const C=['#00B4B4','#1B3A6B','#E07B39','#E8A800','#6B48CC','#1A7A4A','#D04040','#2563EB','#9CA3AF','#059669'];
+
+  // ── DONUT tipos ──────────────────────────────────────────────
+  const tm={};av.forEach(a=>{const t=a.tipo||'Otro';tm[t]=(tm[t]||0)+1;});
+  const tmE=Object.entries(tm).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const totD=tmE.reduce((s,[,v])=>s+v,0)||1;
+  const svg=el('pbi-donut');
+  if(svg&&tmE.length){
+    let ang=-Math.PI/2,p='';const cx=45,cy=45,ro=40,ri=24;
+    tmE.forEach(([,v],i)=>{
+      const sw=2*Math.PI*v/totD,g=0.018;
+      const a1=ang+g,a2=ang+sw-g;
+      const f=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+      const [x1,y1]=f(ro,a1),[x2,y2]=f(ro,a2);
+      const [xi1,yi1]=f(ri,a1),[xi2,yi2]=f(ri,a2);
+      const lg=sw>Math.PI?1:0;
+      p+=`<path d="M${xi1.toFixed(1)},${yi1.toFixed(1)} L${x1.toFixed(1)},${y1.toFixed(1)} A${ro},${ro} 0 ${lg},1 ${x2.toFixed(1)},${y2.toFixed(1)} L${xi2.toFixed(1)},${yi2.toFixed(1)} A${ri},${ri} 0 ${lg},0 ${xi1.toFixed(1)},${yi1.toFixed(1)} Z" fill="${C[i]}"/>`;
+      ang+=sw;
+    });
+    svg.innerHTML=p+`<text x="45" y="43" text-anchor="middle" fill="#111827" font-size="14" font-weight="800">${totD}</text><text x="45" y="54" text-anchor="middle" fill="#9CA3AF" font-size="8">activos</text>`;
+  } else if(svg) svg.innerHTML='';
+  const legEl=el('pbi-leg-tipos');
+  if(legEl) legEl.innerHTML=tmE.length
+    ? tmE.map(([t,v],i)=>`<div class="pbi-donut-leg-row"><div class="pbi-donut-leg-left"><div class="pbi-donut-leg-dot" style="background:${C[i]}"></div>${t}</div><div><span class="pbi-donut-leg-val">${v}</span><span class="pbi-donut-leg-pct">${Math.round(v/totD*100)}%</span></div></div>`).join('')
+    : '<div class="pbi-empty">Sin activos</div>';
+
+  // ── BARRAS H departamentos ──────────────────────────────────
+  const dm={};av.forEach(a=>{const d=a.depto||'Sin depto';dm[d]=(dm[d]||0)+1;});
+  const dE=Object.entries(dm).sort((a,b)=>b[1]-a[1]).slice(0,7);
+  const mxD=dE.length?dE[0][1]||1:1;
+  const dEl=el('pbi-deptos');
+  if(dEl) dEl.innerHTML=dE.length
+    ? dE.map(([d,v],i)=>`<div class="pbi-hbar-row">
+        <div class="pbi-hbar-label" title="${d}">${d.substring(0,14)}</div>
+        <div class="pbi-hbar-track">
+          <div class="pbi-hbar-fill" style="width:${Math.round(v/mxD*100)}%;background:${C[i%C.length]}">
+            <span class="pbi-hbar-fill-label">${v>1?v:''}</span>
+          </div>
+        </div>
+        <div class="pbi-hbar-val">${v}</div>
+      </div>`).join('')
+    : '<div class="pbi-empty">Sin datos</div>';
+
+  // ── TABLA técnicos ──────────────────────────────────────────
+  const tecMap={};
+  tickets.filter(t=>t.resp&&t.resp!=='—'&&t.estado!=='eliminado').forEach(t=>{
+    if(!tecMap[t.resp])tecMap[t.resp]={total:0,cerrados:0};
+    tecMap[t.resp].total++;
+    if(t.estado==='cerrado')tecMap[t.resp].cerrados++;
+  });
+  const tecE=Object.entries(tecMap).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+  const tecEl=el('pbi-tbl-tec');
+  if(tecEl) tecEl.innerHTML=tecE.length
+    ? tecE.map(([n,d],i)=>{
+        const pct=d.total?Math.round(d.cerrados/d.total*100):0;
+        const color=pct>=80?'#1A7A4A':pct>=50?'#E8A800':'#D04040';
+        return`<tr>
+          <td class="bold">${n.substring(0,20)}</td>
+          <td style="text-align:center;font-weight:700">${d.total}</td>
+          <td style="text-align:center;color:#1A7A4A;font-weight:700">${d.cerrados}</td>
+          <td>
+            <div class="pbi-prog">
+              <div class="pbi-prog-bg"><div class="pbi-prog-f" style="width:${pct}%;background:${color}"></div></div>
+              <span class="pbi-prog-t" style="color:${color};font-weight:700">${pct}%</span>
+            </div>
+          </td>
+        </tr>`;}).join('')
+    : '<tr><td colspan="4" class="pbi-empty">Sin tickets</td></tr>';
+
+  // ── CANVAS: tickets por hora + usuario ──────────────────────
+  // Contar tickets por hora
+  const horasCount=new Array(24).fill(0);
+  // Por usuario (top 3)
+  const userHoras={};
+  tickets.filter(t=>t.fechaCreacion&&t.estado!=='eliminado').forEach(t=>{
+    const m=String(t.fechaCreacion).match(/(\d{1,2}):(\d{2})/);
+    if(m){
+      const h=parseInt(m[1]);
+      if(h>=0&&h<24){
+        horasCount[h]++;
+        // Track by user (from audit or from resp field - use quien creó = primer historial)
+        const creator=t.historial&&t.historial.length?t.historial[0].usuario:t.resp||'Sistema';
+        if(!userHoras[creator])userHoras[creator]=new Array(24).fill(0);
+        userHoras[creator][h]++;
+      }
+    }
+  });
+  // Agrupar en bloques de 2h para mejor visibilidad
+  const hG=[], hL=[];
+  for(let i=0;i<24;i+=2){
+    hG.push(horasCount[i]+(horasCount[i+1]||0));
+    hL.push(String(i).padStart(2,'0')+'h');
+  }
+  // Top 3 usuarios
+  const topUsers=Object.entries(userHoras)
+    .map(([u,arr])=>({u, total:arr.reduce((s,v)=>s+v,0), horas:arr}))
+    .sort((a,b)=>b.total-a.total).slice(0,3);
+  const userColors=['#1B3A6B','#E07B39','#00B4B4'];
+  // Legend
+  const legendEl=el('pbi-hora-legend');
+  if(legendEl) legendEl.innerHTML=
+    `<div class="pbi-leg-item"><div class="pbi-leg-dot" style="background:#E5E7EB"></div>Total tickets</div>`+
+    topUsers.map((u,i)=>`<div class="pbi-leg-item"><div class="pbi-leg-dot" style="background:${userColors[i]}"></div>${u.u.split(' ')[0]}</div>`).join('');
+  // Draw
+  pbiDrawHoras('pbi-hora-canvas', hG, hL, topUsers, userColors);
+
+  // Top usuarios tabla mini
+  const topUsrEl=el('pbi-top-usuarios');
+  if(topUsrEl){
+    const allUsers=Object.entries(userHoras)
+      .map(([u,arr])=>({u,total:arr.reduce((s,v)=>s+v,0)}))
+      .sort((a,b)=>b.total-a.total).slice(0,5);
+    const mxU=allUsers.length?allUsers[0].total||1:1;
+    topUsrEl.innerHTML=allUsers.length
+      ? allUsers.map(({u,total},i)=>`<div class="pbi-hbar-row" style="margin-bottom:4px">
+          <div class="pbi-hbar-label" style="width:110px;font-size:10px">${u.substring(0,16)}</div>
+          <div class="pbi-hbar-track" style="height:14px">
+            <div class="pbi-hbar-fill" style="width:${Math.round(total/mxU*100)}%;background:${userColors[i]||'#9CA3AF'}">
+              <span class="pbi-hbar-fill-label">${total>1?total:''}</span>
+            </div>
+          </div>
+          <div class="pbi-hbar-val">${total}</div>
+        </div>`).join('')
+      : '<div class="pbi-empty">Sin datos de creadores</div>';
+  }
+
+  // ── TABLA tickets activos ────────────────────────────────────
+  const tktS=tickets.filter(t=>t.estado!=='cerrado'&&t.estado!=='eliminado')
+    .sort((a,b)=>{const o={urgente:0,importante:1,normal:2};return(o[a.prior]||2)-(o[b.prior]||2);})
+    .slice(0,14);
+  const tktEl=el('pbi-tbl-tkt');
+  if(tktEl) tktEl.innerHTML=tktS.length
+    ? tktS.map(t=>`<tr>
+        <td class="mono">${t.codigo}</td>
+        <td class="bold" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${t.titulo}</td>
+        <td style="font-size:9.5px">${(t.resp||'—').split(' ')[0]}</td>
+        <td><span class="pbi-b pbi-b-${t.prior}">${t.prior}</span></td>
+        <td><span class="pbi-b pbi-b-${t.estado}">${t.estado}</span></td>
+        <td>
+          <div class="pbi-prog">
+            <div class="pbi-prog-bg"><div class="pbi-prog-f" style="width:${t.avance||0}%;background:${(t.avance||0)>=80?'#1A7A4A':(t.avance||0)>=40?'#E8A800':'#00B4B4'}"></div></div>
+            <span class="pbi-prog-t">${t.avance||0}%</span>
+          </div>
+        </td>
+      </tr>`).join('')
+    : '<tr><td colspan="6" class="pbi-empty">Sin tickets activos</td></tr>';
+
+  // ── CANVAS distribución tickets agrupado ─────────────────────
+  const distLegEl=el('pbi-dist-legend');
+  const cats=['abierto','progreso','revision','cerrado'];
+  const catColors=['#2563EB','#E8A800','#6B48CC','#1A7A4A'];
+  const prios2=['urgente','importante','normal'];
+  const prioColors=['#D04040','#E07B39','#00B4B4'];
+  if(distLegEl) distLegEl.innerHTML=
+    catColors.map((c,i)=>`<div class="pbi-leg-item"><div class="pbi-leg-dot" style="background:${c}"></div>${cats[i]}</div>`).join('')+
+    '<span style="margin:0 8px;color:#E5E7EB">|</span>'+
+    prioColors.map((c,i)=>`<div class="pbi-leg-item"><div class="pbi-leg-dot" style="background:${c};border-radius:50%"></div>${prios2[i]}</div>`).join('');
+  pbiDrawDist('pbi-dist-canvas', cats, catColors, prios2, prioColors);
+
+  // ── TABLA últimos activos ────────────────────────────────────
+  const ultA=av.slice(-10).reverse();
+  const actEl=el('pbi-tbl-act');
+  if(actEl) actEl.innerHTML=ultA.length
+    ? ultA.map(a=>`<tr>
+        <td class="mono">${a.codigo}</td>
+        <td class="bold">${a.nombre}</td>
+        <td style="font-size:9.5px;color:#6B7280">${a.tipo}</td>
+        <td><span class="pbi-b pbi-b-${a.estado}">${a.estado}</span></td>
+        <td style="font-weight:700;color:#1A7A4A">$${calcDepre(a).toLocaleString()}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="5" class="pbi-empty">Sin activos</td></tr>';
 }
+
+// ── Canvas: barras horas con líneas por usuario ──────────────
+function pbiDrawHoras(id, data, labels, topUsers, uColors){
+  const canvas=document.getElementById(id);if(!canvas)return;
+  const W=canvas.parentElement?canvas.parentElement.offsetWidth:500,H=140;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
+  if(!data||!data.length)return;
+  const max=Math.max(...data,...(topUsers.flatMap(u=>{const g=[];for(let i=0;i<24;i+=2)g.push(u.horas[i]+(u.horas[i+1]||0));return g;})),1);
+  const n=data.length;
+  const padL=8,padR=8,padT=10,padB=20;
+  const slotW=(W-padL-padR)/n;
+  const barW=Math.max(6,slotW*.55);
+  const getY=v=>H-padB-Math.round((v/max)*(H-padT-padB));
+  // Grid lines
+  ctx.strokeStyle='#E5E7EB';ctx.lineWidth=.7;
+  [.25,.5,.75,1].forEach(f=>{
+    const y=H-padB-Math.round(f*(H-padT-padB));
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+    ctx.fillStyle='#9CA3AF';ctx.font='8px Arial';ctx.textAlign='right';
+    ctx.fillText(Math.round(f*max),padL-1,y+3);
+  });
+  // Bars (total)
+  const peakIdx=data.indexOf(Math.max(...data));
+  data.forEach((v,i)=>{
+    if(!v)return;
+    const x=padL+i*slotW+(slotW-barW)/2;
+    const bh=Math.max(2,Math.round((v/max)*(H-padT-padB)));
+    const y=H-padB-bh;
+    ctx.fillStyle=i===peakIdx?'#1B3A6B':'#D1D5DB';
+    ctx.fillRect(x,y,barW,bh);
+    if(i===peakIdx&&v>0){
+      ctx.fillStyle='#1B3A6B';ctx.font='bold 9px Arial';ctx.textAlign='center';
+      ctx.fillText(v,x+barW/2,y-2);
+    }
+  });
+  // Lines per top user
+  topUsers.forEach((u,ui)=>{
+    const userG=[];for(let i=0;i<24;i+=2)userG.push(u.horas[i]+(u.horas[i+1]||0));
+    ctx.strokeStyle=uColors[ui];ctx.lineWidth=2;ctx.setLineDash([]);
+    ctx.beginPath();let started=false;
+    userG.forEach((v,i)=>{
+      const x=padL+i*slotW+slotW/2;
+      const y=getY(v);
+      if(!started){ctx.moveTo(x,y);started=true;}else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // Dots
+    userG.forEach((v,i)=>{
+      if(!v)return;
+      const x=padL+i*slotW+slotW/2;
+      ctx.beginPath();ctx.arc(x,getY(v),3,0,Math.PI*2);
+      ctx.fillStyle=uColors[ui];ctx.fill();
+    });
+  });
+  // Labels
+  data.forEach((v,i)=>{
+    const x=padL+i*slotW+slotW/2;
+    ctx.fillStyle='#9CA3AF';ctx.font='8px Arial';ctx.textAlign='center';
+    ctx.fillText(labels[i],x,H-4);
+  });
+}
+
+// ── Canvas: distribución barras agrupadas ────────────────────
+function pbiDrawDist(id, cats, catColors, prios, prioColors){
+  const canvas=document.getElementById(id);if(!canvas)return;
+  const W=canvas.parentElement?canvas.parentElement.offsetWidth:500,H=140;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');ctx.clearRect(0,0,W,H);
+  const padL=8,padR=8,padT=10,padB=22;
+  // Two groups: estados + prioridades
+  const vals1=cats.map(e=>tickets.filter(t=>t.estado===e).length);
+  const vals2=prios.map(p=>tickets.filter(t=>t.prior===p&&t.estado!=='eliminado').length);
+  const allVals=[...vals1,...vals2];
+  const max=Math.max(...allVals,1);
+  const getY=v=>H-padB-Math.round((v/max)*(H-padT-padB));
+  // Grid
+  ctx.strokeStyle='#E5E7EB';ctx.lineWidth=.7;
+  [.5,1].forEach(f=>{
+    const y=H-padB-Math.round(f*(H-padT-padB));
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
+  });
+  const totalBars=cats.length+prios.length+1;// +1 gap
+  const barW=Math.max(14,((W-padL-padR)/totalBars)*.8);
+  const gap=(W-padL-padR)/totalBars;
+  // Group 1: estados
+  cats.forEach((e,i)=>{
+    const v=vals1[i];
+    const x=padL+i*gap;
+    const bh=Math.max(2,Math.round((v/max)*(H-padT-padB)));
+    const y=H-padB-bh;
+    ctx.fillStyle=catColors[i];
+    ctx.fillRect(x,y,barW,bh);
+    ctx.fillStyle='#374151';ctx.font='bold 9px Arial';ctx.textAlign='center';
+    if(v>0)ctx.fillText(v,x+barW/2,y-2);
+    ctx.fillStyle='#9CA3AF';ctx.font='8px Arial';
+    ctx.fillText(e.substring(0,7),x+barW/2,H-5);
+  });
+  // Gap separator
+  const gapX=padL+cats.length*gap+gap*.4;
+  ctx.strokeStyle='#E5E7EB';ctx.setLineDash([3,3]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(gapX,padT);ctx.lineTo(gapX,H-padB);ctx.stroke();
+  ctx.setLineDash([]);
+  // Group 2: prioridades
+  prios.forEach((p,i)=>{
+    const v=vals2[i];
+    const x=padL+(cats.length+1+i)*gap;
+    const bh=Math.max(2,Math.round((v/max)*(H-padT-padB)));
+    const y=H-padB-bh;
+    ctx.fillStyle=prioColors[i];
+    ctx.fillRect(x,y,barW,bh);
+    ctx.fillStyle='#374151';ctx.font='bold 9px Arial';ctx.textAlign='center';
+    if(v>0)ctx.fillText(v,x+barW/2,y-2);
+    ctx.fillStyle='#9CA3AF';ctx.font='8px Arial';
+    ctx.fillText(p.substring(0,7),x+barW/2,H-5);
+  });
+}
+
 
 function filterA(f,el){filtroA=f;document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
 function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
@@ -3732,6 +4290,19 @@ async function ejecutarImportarUsuarios(){
   await loadFromSheets();
 }
 
+
+function showToast(msg,tipo){
+  let t=document.getElementById('_toast');
+  if(!t){t=document.createElement('div');t.id='_toast';
+    t.style.cssText='position:fixed;bottom:20px;right:20px;z-index:9999;padding:10px 18px;border-radius:8px;font-size:12px;font-weight:500;box-shadow:0 4px 20px rgba(0,0,0,.25);opacity:0;transform:translateY(8px);transition:opacity .25s,transform .25s;pointer-events:none;color:#fff;max-width:320px;';
+    document.body.appendChild(t);}
+  t.textContent=msg;
+  t.style.background=tipo==='success'?'#1A7A4A':tipo==='error'?'#991B1B':'#1B3A6B';
+  clearTimeout(t._tmr);
+  t.style.opacity='1';t.style.transform='translateY(0)';
+  t._tmr=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(8px)';},3200);
+}
+
 </script>
 
 <!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
@@ -4054,6 +4625,7 @@ async function ejecutarImportarUsuarios(){
 
 </body>
 </html>
+
 
 
 
