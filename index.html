@@ -155,7 +155,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;ba
   border-radius:3px;font-size:9px;font-weight:700;border:1px solid transparent;}
 #pnl-dashboard .pbi-b-activo{background:#DCFCE7;color:#166534;border-color:#BBF7D0;}
 #pnl-dashboard .pbi-b-mantenimiento{background:#FEF9C3;color:#854D0E;border-color:#FDE68A;}
-#pnl-dashboard .pbi-b-baja{background:#FEE2E2;color:#991B1B;border-color:#FECACA;}
+#pnl-dashboard .pbi-b-descarte{background:#FEE2E2;color:#991B1B;border-color:#FECACA;}
 #pnl-dashboard .pbi-b-abierto{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
 #pnl-dashboard .pbi-b-progreso{background:#FEF3C7;color:#92400E;border-color:#FDE68A;}
 #pnl-dashboard .pbi-b-revision{background:#EDE9FE;color:#5B21B6;border-color:#DDD6FE;}
@@ -244,7 +244,7 @@ tbody tr.clickable{cursor:pointer;}
 .s-asignado,.s-LOGIN,.s-progreso,.s-tecnico{background:var(--blue-l);color:var(--blue);}
 .s-disponible,.s-LOGOUT,.s-revision,.s-consultor{background:var(--teal-l);color:var(--teal);}
 .s-mantenimiento,.s-EDITAR,.s-abierto,.s-importante,.s-inventario{background:var(--amber-l);color:var(--amber);}
-.s-baja,.s-eliminado,.s-ELIMINAR,.s-urgente,.s-LOGIN_FAIL,.s-inactivo{background:var(--red-l);color:var(--red);}
+.s-descarte,.s-eliminado,.s-ELIMINAR,.s-urgente,.s-LOGIN_FAIL,.s-inactivo{background:var(--red-l);color:var(--red);}
 .s-admin{background:#E8F0FB;color:#1B3A6B;}
 .code-cell{font-family:'Courier New',monospace;font-size:10px;color:var(--text3);}
 .act-btn{background:none;border:none;font-size:13px;cursor:pointer;color:var(--text3);padding:2px 5px;border-radius:4px;}
@@ -824,7 +824,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="pbi-kpi-card">
       <div class="pbi-kpi-label">En Mantenimiento</div>
       <div class="pbi-kpi-value" style="color:#E8A800" id="d-mnt">0</div>
-      <div class="pbi-kpi-sub"><span style="color:#6B7280">▼</span> <span id="d-mnt-baja">0</span> en baja</div>
+      <div class="pbi-kpi-sub"><span style="color:#6B7280">▼</span> <span id="d-mnt-descarte">0</span> en descarte</div>
       <div class="pbi-kpi-bar-accent" style="background:#E8A800"></div>
     </div>
     <div class="pbi-kpi-card">
@@ -938,7 +938,7 @@ tbody tr.clickable{cursor:pointer;}
   <button class="tab-btn" onclick="filterA('activo',this)">Activos</button>
   <button class="tab-btn" onclick="filterA('asignado',this)">Asignados</button>
   <button class="tab-btn" onclick="filterA('mantenimiento',this)">Mantenimiento</button>
-  <button class="tab-btn" onclick="filterA('baja',this)">Baja</button>
+  <button class="tab-btn" onclick="filterA('descarte',this)">Descarte</button>
   <button class="tab-btn" onclick="filterA('eliminado',this)">Eliminados</button>
 </div>
 <div id="filter-row-tipo" class="tab-row" style="flex-wrap:wrap;gap:4px;border-top:1px solid var(--border);padding-top:6px;">
@@ -993,7 +993,7 @@ tbody tr.clickable{cursor:pointer;}
             <option value="hojavida">Hoja de vida individual por activo</option>
             <option value="tickets">Tickets por período / responsable</option>
             <option value="mantenimientos">Mantenimientos y costos</option>
-            <option value="danos">Reporte de daños / bajas</option>
+            <option value="danos">Reporte de daños / descartes</option>
             <option value="trazabilidad">Trazabilidad por persona asignada</option>
           </select>
           <div id="rep-filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
@@ -1078,7 +1078,7 @@ tbody tr.clickable{cursor:pointer;}
     <option>Otro</option>
   </optgroup>
 </select></div>
-    <div class="f-row"><div class="f-lbl">Estado *</div><select class="f-inp f-sel" id="ea-estado"><option value="activo">Activo</option><option value="asignado">Asignado</option><option value="disponible">Disponible</option><option value="mantenimiento">Mantenimiento</option><option value="baja">Baja</option></select></div>
+    <div class="f-row"><div class="f-lbl">Estado *</div><select class="f-inp f-sel" id="ea-estado"><option value="activo">Activo</option><option value="asignado">Asignado</option><option value="disponible">Disponible</option><option value="mantenimiento">Mantenimiento</option><option value="descarte">Descarte</option></select></div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Marca</div><input class="f-inp" id="ea-marca" list="dl-marcas" autocomplete="off" placeholder="Dell, HP..."></div>
@@ -1977,15 +1977,29 @@ async function saveActivo(){
     await apiPost('activos','update',a);audit('EDITAR','Activo',a.codigo,det);
   }else{
     // Consultar Sheets para el consecutivo real de activos
+    // Protección anti-duplicados activos — igual que tickets
+    if(window._savingActivo){
+      showToast('Ya hay un activo guardándose, espera un momento...','');
+      return;
+    }
+    window._savingActivo = true;
+    // Código provisional único — el servidor asigna el real con LockService
+    const _asfx = Date.now().toString(36).toUpperCase().slice(-4)
+                + Math.random().toString(36).toUpperCase().slice(2,4);
+    const code = 'ACT-P' + _asfx;
     let cntActReal = 0;
     try{
       const _ra = await apiGet('activos');
       cntActReal = Array.isArray(_ra) ? _ra.length : cntActivos;
       if(cntActReal >= cntActivos) cntActivos = cntActReal;
     }catch(e){ cntActReal = cntActivos; }
-    const code=genCode('ACT',cntActReal);cntActivos=cntActReal+1;
+    cntActivos = cntActReal + 1;
     const a={id:code,codigo:code,nombre,tipo:document.getElementById('ea-tipo').value,estado:document.getElementById('ea-estado').value,marca:document.getElementById('ea-marca').value.trim()||'—',modelo:document.getElementById('ea-modelo').value.trim()||'—',serial:document.getElementById('ea-serial').value.trim()||'—',ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',asignado:document.getElementById('ea-asignado').value.trim()||'—',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
-    activos.push(a);await apiPost('activos','insert',a);audit('CREAR','Activo',code,'Registrado: '+nombre);
+    activos.push(a);
+    const _aOk = await apiPost('activos','insert',a);
+    window._savingActivo = false;
+    if(!_aOk){ showToast('⚠ Error guardando activo, reintenta','error'); return; }
+    audit('CREAR','Activo',code,'Registrado: '+nombre);
   }
   closeModals();renderAll();if(isEdit&&activoActual)showDetalle(activoActual.codigo);
 }
@@ -2754,7 +2768,7 @@ function renderDash(){
   const tktC=tickets.filter(t=>t.estado==='cerrado');
   const cntAct=av.length, cntTkt=tktV.length;
   const cntMnt=activos.filter(a=>a.estado==='mantenimiento').length;
-  const cntBaja=activos.filter(a=>a.estado==='baja').length;
+  const cntDescarte=activos.filter(a=>a.estado==='descarte').length;
   const cntOk=activos.filter(a=>a.estado==='activo'||a.estado==='asignado').length;
   const cntUrg=tktV.filter(t=>t.prior==='urgente').length;
   const cntCerr=tktC.length;
@@ -2770,7 +2784,7 @@ function renderDash(){
   if(el('d-cerrados'))el('d-cerrados').textContent=cntCerr;
   if(el('d-act-ok')) el('d-act-ok').textContent=cntOk;
   if(el('d-tkt-urg'))el('d-tkt-urg').textContent=cntUrg;
-  if(el('d-mnt-baja'))el('d-mnt-baja').textContent=cntBaja;
+  if(el('d-mnt-descarte'))el('d-mnt-descarte').textContent=cntDescarte;
   if(el('d-resolucion'))el('d-resolucion').textContent=resolucion+'%';
   if(el('pbi-total-act'))el('pbi-total-act').textContent='Total: '+cntAct+' activos';
 
@@ -3214,7 +3228,7 @@ function repInventarioGeneral(el, ts){
       <div class="rep-kpi-card"><div class="rep-kpi-v">${lista.length}</div><div class="rep-kpi-l">Total activos</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#3B6D11">$${valTotal.toLocaleString()}</div><div class="rep-kpi-l">Valor depreciado total</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#BA7517">${porEstado('mantenimiento')}</div><div class="rep-kpi-l">En mantenimiento</div></div>
-      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#791F1F">${porEstado('baja')}</div><div class="rep-kpi-l">En baja</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#791F1F">${porEstado('baja')}</div><div class="rep-kpi-l">En descarte</div></div>
     </div>
     <div class="rep-section">
       <div class="rep-sec-title">Detalle de activos</div>
@@ -3632,21 +3646,21 @@ function repMantenimientos(el, ts){
 
 // ── REPORTE 7: DAÑOS / BAJAS ───────────────────────────────────────
 function repDanos(el, ts){
-  const danos=activos.filter(a=>a.estado==='baja'||a.estado==='eliminado');
+  const danos=activos.filter(a=>a.estado==='descarte'||a.estado==='eliminado');
   const ticketsDano=tickets.filter(t=>t.tipo==='incidencia'&&t.estado!=='eliminado');
   repDatosActuales=danos;
   el.innerHTML=`
     <div class="rep-header">
-      <div><div class="rep-title">Reporte de daños y bajas</div><div class="rep-meta">Generado: ${ts}</div></div>
+      <div><div class="rep-title">Reporte de daños y descartes</div><div class="rep-meta">Generado: ${ts}</div></div>
     </div>
     <div class="rep-kpi">
-      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#791F1F">${activos.filter(a=>a.estado==='baja').length}</div><div class="rep-kpi-l">Activos en baja</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#791F1F">${activos.filter(a=>a.estado==='descarte').length}</div><div class="rep-kpi-l">Activos en descarte</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#5F5E5A">${activos.filter(a=>a.estado==='eliminado').length}</div><div class="rep-kpi-l">Activos eliminados</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#BA7517">${ticketsDano.length}</div><div class="rep-kpi-l">Incidencias registradas</div></div>
       <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#791F1F">$${danos.reduce((s,a)=>s+(a.valor||0),0).toLocaleString()}</div><div class="rep-kpi-l">Valor original perdido</div></div>
     </div>
     <div class="rep-section" style="margin-bottom:12px">
-      <div class="rep-sec-title">Activos dados de baja o eliminados (${danos.length})</div>
+      <div class="rep-sec-title">Activos en descarte o eliminados (${danos.length})</div>
       ${danos.length?`<div class="tbl-wrap"><table>
         <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Depto</th><th>Estado</th><th>Valor original</th><th>Motivo / Último evento</th></tr></thead>
         <tbody>${danos.map(a=>{
@@ -3660,7 +3674,7 @@ function repDanos(el, ts){
             <td style="font-weight:600;color:#791F1F">$${(a.valor||0).toLocaleString()}</td>
             <td style="font-size:11px;max-width:200px">${ult?ult.desc:'—'}</td>
           </tr>`;}).join('')}</tbody>
-      </table></div>`:'<div class="empty-c">No hay activos en baja o eliminados.</div>'}
+      </table></div>`:'<div class="empty-c">No hay activos en descarte o eliminados.</div>'}
     </div>
     <div class="rep-section">
       <div class="rep-sec-title">Incidencias registradas (${ticketsDano.length})</div>
@@ -4134,9 +4148,9 @@ function descargarPlantillaActivos(){
     // ESTADO — columna D (index 3), filas 5-204
     wsData['!dataValidation'].push({
       type:'list', sqref:'D5:D204', allowBlank:true,
-      formula1:'"activo,mantenimiento,baja"',
+      formula1:'"activo,mantenimiento,descarte"',
       showDropDown:false, showErrorMessage:true,
-      errorTitle:'Estado inválido', error:'Use: activo, mantenimiento o baja'
+      errorTitle:'Estado inválido', error:'Use: activo, mantenimiento o descarte'
     });
 
     XLSX.utils.book_append_sheet(wb, wsData, '📥 DATOS ACTIVOS');
@@ -4220,7 +4234,7 @@ function procesarCSVActivos(csvText){
   }
 
   const TIPOS_VALIDOS = ['laptop','computadora','impresora','monitor','proyector','tablet','teléfono','telefono','servidor','switch','router','cámara','camara','ups','escáner','escaner','otro'];
-  const ESTADOS_VALIDOS = ['activo','mantenimiento','baja'];
+  const ESTADOS_VALIDOS = ['activo','mantenimiento','descarte'];
 
   let registros = [], errores = [], filaNum = 2;
 
@@ -5009,6 +5023,7 @@ document.addEventListener('visibilitychange', ()=>{
 
 </body>
 </html>
+
 
 
 
