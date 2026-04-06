@@ -2008,31 +2008,35 @@ async function saveActivo(){
 
 // ── API POST con respuesta legible — para tomar tickets ──────────
 async function apiPostConRespuesta(sheet, action, payload){
+  // Para tomar tickets: verificar ANTES vía GET si sigue sin asignar
+  if(payload && payload._isTakeTicket){
+    try{
+      const freshData = await apiGet('tickets');
+      if(Array.isArray(freshData)){
+        const tFresh = freshData.find(x => x.codigo === payload.codigo);
+        if(tFresh){
+          const respActual = String(tFresh.resp||'').trim();
+          const sinAsignar = respActual==='' || respActual==='—' ||
+                             respActual.toLowerCase()==='sin asignar';
+          if(!sinAsignar){
+            return {ok: false, error: 'TICKET_ALREADY_TAKEN', takenBy: respActual};
+          }
+        }
+      }
+    }catch(e){ /* si falla el check, continuar */ }
+  }
+  // POST siempre con no-cors (Apps Script no soporta CORS preflight en POST)
   try{
     const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
-    const resp = await fetch(API, {
+    await fetch(API, {
       method: 'POST',
-      mode: 'cors',
+      mode: 'no-cors',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({sheet, action, payload: securePayload})
     });
-    if(!resp.ok) return {ok: false, error: 'HTTP_ERROR'};
-    const data = await resp.json();
-    return data;
+    return {ok: true};
   } catch(e){
-    // Fallback a no-cors si cors falla
-    try{
-      const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
-      await fetch(API, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({sheet, action, payload: securePayload})
-      });
-      return {ok: true};
-    } catch(e2){
-      return {ok: false, error: e2.message};
-    }
+    return {ok: false, error: e.message};
   }
 }
 
@@ -5023,6 +5027,7 @@ document.addEventListener('visibilitychange', ()=>{
 
 </body>
 </html>
+
 
 
 
