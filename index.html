@@ -1262,7 +1262,10 @@ tbody tr.clickable{cursor:pointer;}
 
 </div>
 <script>
-const API="https://script.google.com/macros/s/AKfycbxl0l0Y45cy0bbyi7xCVb5e-i4gh2aZfJQLnmFwCiLru002-hTAJ9ljWvmDh5WfiZShxQ/exec";
+const API="https://script.google.com/macros/s/AKfycbxl0l0Y45cy0bbyi7xCVb5e-i4gh2aZfJQLnmFwCiLru002-hTAJ9ljWvmDh5WfiZShxQ/exec"
+// ── TOKEN DE API — debe coincidir con SAGAE_API_TOKEN en Script Properties ──
+// Cambiar este valor y configurar el mismo en Apps Script > Propiedades del proyecto
+const API_TOKEN = "SAGAE-DDAB838CDF2A9BDE7EDB2FF38669F09C"; // ← CAMBIAR por token secreto único por cliente;
 const ROL_LABELS={admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
 const ROL_CLASS={admin:'s-admin',tecnico:'s-tecnico',consultor:'s-consultor',inventario:'s-inventario'};
 const TIPO_ICON={
@@ -1285,13 +1288,61 @@ function ts(){return new Date().toLocaleString('es-PA',{dateStyle:'short',timeSt
 function genCode(pre,n){return pre+'-'+String(n+1).padStart(4,'0');}
 function parseHist(v){if(Array.isArray(v))return v;if(typeof v==='string'&&v.startsWith('['))try{return JSON.parse(v);}catch(e){}return[];}
 function initials(n){if(!n)return '?';const p=n.trim().split(' ');return(p[0][0]+(p[1]?p[1][0]:'')).toUpperCase();}
-function hashPass(p){let h=0;for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;}return 'H'+Math.abs(h).toString(16);}
+// ════════════════════════════════════════════════════════════════
+// HASH SEGURO — SHA-256 con salt via Web Crypto API
+// Formato: 'S2$' + salt_hex + '$' + hash_hex
+// Compatible con hash legacy 'H...' durante migración
+// ════════════════════════════════════════════════════════════════
+async function hashPassSeguro(password){
+  // Generar salt aleatorio de 16 bytes
+  const saltBytes = crypto.getRandomValues(new Uint8Array(16));
+  const saltHex   = Array.from(saltBytes).map(b=>b.toString(16).padStart(2,'0')).join('');
+  // SHA-256(salt + password)
+  const encoder = new TextEncoder();
+  const data     = encoder.encode(saltHex + password);
+  const hashBuf  = await crypto.subtle.digest('SHA-256', data);
+  const hashHex  = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+  return 'S2$' + saltHex + '$' + hashHex;
+}
+
+async function verificarPassword(inputPassword, storedHash){
+  if(!storedHash) return false;
+  // Hash nuevo formato S2$salt$hash
+  if(storedHash.startsWith('S2$')){
+    const parts = storedHash.split('$');
+    if(parts.length !== 3) return false;
+    const saltHex = parts[1];
+    const encoder = new TextEncoder();
+    const data    = encoder.encode(saltHex + inputPassword);
+    const hashBuf = await crypto.subtle.digest('SHA-256', data);
+    const hashHex = Array.from(new Uint8Array(hashBuf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+    return hashHex === parts[2];
+  }
+  // Hash legacy — comparación directa (migración automática al login)
+  return storedHash === hashPassLegacy(inputPassword) || storedHash === inputPassword;
+}
+
+// Hash legacy — solo para verificar cuentas antiguas durante migración
+function hashPassLegacy(p){
+  let h=0;
+  for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;}
+  return 'H'+Math.abs(h).toString(16);
+}
+
+// Mantener hashPass como alias sincrónico legacy para formularios
+// de creación donde no hay await (se migrará próxima vez que haga login)
+function hashPass(p){ return hashPassLegacy(p); }
 function togglePass(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
 function setSyncStatus(ok,msg){const b=document.getElementById('sync-bar'),d=document.getElementById('sync-dot');b.className='sync-bar'+(ok?'':' err');d.className='sync-dot'+(ok?'':' err');document.getElementById('sync-msg').textContent=msg;}
 
 async function apiPost(sheet,action,payload){
-  try{await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({sheet,action,payload})});setSyncStatus(true,'Guardado · '+ts());return true;}
-  catch(e){setSyncStatus(false,'Error al guardar');return false;}
+  try{
+    // Incluir token de autenticación en cada request
+    const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
+    await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sheet,action,payload:securePayload})});
+    setSyncStatus(true,'Guardado · '+ts());return true;
+  }catch(e){setSyncStatus(false,'Error al guardar');return false;}
 }
 async function apiGet(sheet){
   try{
@@ -1536,7 +1587,7 @@ async function loadFromSheets(){
 // Rate limiting — máximo 5 intentos, bloqueo de 5 minutos
 const _loginAttempts = {count:0, blockedUntil:0};
 
-function doLogin(){
+async function doLogin(){
   const ahora = Date.now();
   // Verificar si está bloqueado
   if(_loginAttempts.blockedUntil > ahora){
@@ -1557,8 +1608,14 @@ function doLogin(){
     String(x.username||'').trim().toLowerCase()===u.toLowerCase() &&
     x.estado!=='inactivo'
   );
-  const passOk=usuario&&(usuario.passHash===hashPass(p)||usuario.pass===p);
+  // Verificar con hash seguro (SHA-256) o legacy (migración automática)
+  const passOk = usuario && await verificarPassword(p, usuario.passHash||usuario.pass||'');
   if(passOk){
+    // Auto-migrar hash legacy a SHA-256 al primer login exitoso
+    if(usuario.passHash && !usuario.passHash.startsWith('S2$')){
+      usuario.passHash = await hashPassSeguro(p);
+      apiPost('usuarios','update',usuario);
+    }
     ll.style.display='none';
     usuario.ultimoAcceso=ts();
     apiPost('usuarios','update',usuario);
@@ -1706,7 +1763,7 @@ async function saveUsuario(){
   if(pass&&pass.length<6){alert('La contraseña debe tener al menos 6 caracteres.');return;}
   if(!isEdit&&usuarios.find(x=>x.username===username)){alert('Ya existe un usuario con ese nombre.');return;}
   const u={username,rol:document.getElementById('eu-rol').value,nombre,email:document.getElementById('eu-email').value.trim(),tel:document.getElementById('eu-tel').value.trim(),depto:document.getElementById('eu-depto').value.trim(),cargo:document.getElementById('eu-cargo').value.trim(),estado:document.getElementById('eu-estado').value};
-  if(pass)u.passHash=hashPass(pass);
+  if(pass)u.passHash=await hashPassSeguro(pass);
   if(isEdit){
     const idx=usuarios.findIndex(x=>x.username===username);
     if(idx>=0){if(!pass)u.passHash=usuarios[idx].passHash;u.fechaCreacion=usuarios[idx].fechaCreacion;u.ultimoAcceso=usuarios[idx].ultimoAcceso;usuarios[idx]={...usuarios[idx],...u};}
@@ -1781,7 +1838,7 @@ async function cambiarMiPass(){
   if(!p1||p1.length<6){alert('Mínimo 6 caracteres.');return;}
   if(p1!==p2){alert('Las contraseñas no coinciden.');return;}
   const u=usuarios.find(x=>x.username===session.username);if(!u)return;
-  u.passHash=hashPass(p1);await apiPost('usuarios','update',u);
+  u.passHash=await hashPassSeguro(p1);await apiPost('usuarios','update',u);
   audit('EDITAR','Usuario',session.username,'Cambio de contraseña propio');
   alert('Contraseña actualizada.');document.getElementById('perfil-pass').value='';document.getElementById('perfil-pass2').value='';
 }
@@ -1869,7 +1926,7 @@ async function saveActivo(){
     if(_asignadoAntes !== _asignadoNuevo){
       a.historial.push({
         tipo:'Reasignación',
-        desc:`Equipo reasignado de "${_asignadoAntes}" → "${_asignadoNuevo}". Dpto anterior: ${_deptoAntes}. Dpto nuevo: ${a.depto||'—'}. Motivo: ${motivo}.`,
+        desc:`Equipo reasignado de "${_asignadoAntes}" → "${_asignadoNuevo}". Dpto anterior: ${_deptoAntes}. Dpto nuevo: ${sanitizeHTML(a.depto||'—')}. Motivo: ${motivo}.`,
         asignadoAntes:_asignadoAntes,
         asignadoNuevo:_asignadoNuevo,
         deptoAntes:_deptoAntes,
@@ -2003,7 +2060,7 @@ function openTicket(id){
   document.getElementById('et-motivo-wrap').style.display=isEdit?'block':'none';
   document.getElementById('et-motivo').value='';document.getElementById('et-id').value=id||'';
   const sel=document.getElementById('et-activo');
-  sel.innerHTML='<option value="">— Sin activo —</option>'+activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${a.nombre}</option>`).join('');
+  sel.innerHTML='<option value="">— Sin activo —</option>'+activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${sanitizeHTML(a.nombre||'')}</option>`).join('');
   // Poblar select de responsables con usuarios activos
   const respSel=document.getElementById('et-resp');
   const usuariosActivos=usuarios.filter(u=>u.estado==='activo'||u.estado!=='inactivo');
@@ -2582,9 +2639,9 @@ function renderActivos(){
   if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin activos${filtroA!=='todos'?' en este estado':'. Usa "+ Nuevo activo"'}.</td></tr>`;return;}
   tb.innerHTML=list.map(a=>`<tr class="clickable ${a.estado==='eliminado'?'del-row':''}" onclick="showDetalle('${a.codigo}')">
     <td class="code-cell">${a.codigo}</td>
-    <td><div style="font-weight:600;font-size:12px">${a.nombre}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
-    <td>${a.tipo}</td><td><div>${a.asignado||'—'}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
-    <td style="font-size:11px">${a.ubicacion||'—'}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
+    <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(a.nombre||'')}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${sanitizeHTML(a.modelo||'')}</div></td>
+    <td>${a.tipo}</td><td><div>${sanitizeHTML(a.asignado||'—')}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
+    <td style="font-size:11px">${sanitizeHTML(a.ubicacion||'—')}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
     <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td>
       <div style="font-size:10px;color:var(--text3)">Original: $${(a.valor||0).toLocaleString()}</div>
       <div style="font-weight:700;color:#3B6D11;font-size:13px">$${calcDepre(a).toLocaleString()}</div>
@@ -2600,9 +2657,9 @@ function renderTickets(){
   const tb=document.getElementById('tb-tickets'),list=filtroT==='todos'?tickets:tickets.filter(t=>t.estado===filtroT),per=PERMS[session.rol]||{};
   if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin tickets.</td></tr>`;return;}
   tb.innerHTML=list.map(t=>`<tr class="${t.estado==='eliminado'?'del-row':''}">
-    <td class="code-cell">${t.codigo}</td>
-    <td><div style="font-weight:600;font-size:12px">${t.titulo}</div><div style="font-size:10px;color:var(--text3)">${t.tipo} · ${t.proy||'—'}</div></td>
-    <td style="font-size:11px">${t.activoNombre||'—'}</td>
+    <td class="code-cell">${sanitizeHTML(t.codigo)}</td>
+    <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(t.titulo)}</div><div style="font-size:10px;color:var(--text3)">${sanitizeHTML(t.tipo||'')} · ${sanitizeHTML(t.proy||'—')}</div></td>
+    <td style="font-size:11px">${sanitizeHTML(t.activoNombre||'—')}</td>
     <td>
       ${t.resp&&t.resp!=='—'
         ? `<span style="font-size:11px;font-weight:${t.resp===session.nombre?'700':'400'};color:${t.resp===session.nombre?'#1A7A4A':'var(--text)'}">${t.resp}</span>`
@@ -2843,7 +2900,7 @@ function renderDash(){
   if(actEl) actEl.innerHTML=ultA.length
     ? ultA.map(a=>`<tr>
         <td class="mono">${a.codigo}</td>
-        <td class="bold">${a.nombre}</td>
+        <td class="bold">${sanitizeHTML(a.nombre||'')}</td>
         <td style="font-size:9.5px;color:#6B7280">${a.tipo}</td>
         <td><span class="pbi-b pbi-b-${a.estado}">${a.estado}</span></td>
         <td style="font-weight:700;color:#1A7A4A">$${calcDepre(a).toLocaleString()}</td>
@@ -3025,7 +3082,7 @@ function cambiarReporte(tipo){
     filtros.innerHTML=`<select class="f-sel" id="fil-depto" onchange="generarReporte()" style="max-width:200px"><option value="">Todos los departamentos</option>${deptos.map(d=>`<option>${d}</option>`).join('')}</select>`;
   }
   if(tipo==='hojavida'){
-    const opts=activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${a.nombre}</option>`).join('');
+    const opts=activos.filter(a=>a.estado!=='eliminado').map(a=>`<option value="${a.codigo}">${a.codigo} — ${sanitizeHTML(a.nombre||'')}</option>`).join('');
     filtros.innerHTML=`<select class="f-sel" id="fil-activo" onchange="generarReporte()" style="max-width:280px"><option value="">— Selecciona un activo —</option>${opts}</select>`;
   }
   if(tipo==='tickets'){
@@ -3126,13 +3183,13 @@ function repInventarioGeneral(el, ts){
         <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Marca / Modelo</th><th>S/N</th><th>Asignado a</th><th>Departamento</th><th>Ubicación</th><th>Estado</th><th>Compra</th><th>Garantía</th><th>Valor original</th><th>Valor actual</th></tr></thead>
         <tbody>${lista.map(a=>`<tr>
           <td class="code-cell">${a.codigo}</td>
-          <td style="font-weight:600">${a.nombre}</td>
+          <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td>
           <td>${a.tipo}</td>
-          <td>${a.marca||'—'} ${a.modelo||''}</td>
-          <td class="code-cell">${a.serial||'—'}</td>
-          <td>${a.asignado||'—'}</td>
-          <td>${a.depto||'—'}</td>
-          <td>${a.ubicacion||'—'}</td>
+          <td>${sanitizeHTML(a.marca||'—')} ${sanitizeHTML(a.modelo||'')}</td>
+          <td class="code-cell">${sanitizeHTML(a.serial||'—')}</td>
+          <td>${sanitizeHTML(a.asignado||'—')}</td>
+          <td>${sanitizeHTML(a.depto||'—')}</td>
+          <td>${sanitizeHTML(a.ubicacion||'—')}</td>
           <td><span class="badge s-${a.estado}">${a.estado}</span></td>
           <td style="font-size:10px">${fmtFecha(a.compra)}</td>
           <td style="font-size:10px;color:${garantiaColor(a.garantia)}">${fmtFecha(a.garantia)}</td>
@@ -3171,9 +3228,9 @@ function repPorDepartamento(el, ts){
           <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Estado</th><th>Garantía</th><th>Valor actual</th></tr></thead>
           <tbody>${items.map(a=>`<tr>
             <td class="code-cell">${a.codigo}</td>
-            <td style="font-weight:600">${a.nombre}</td>
+            <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td>
             <td>${a.tipo}</td>
-            <td>${a.asignado||'—'}</td>
+            <td>${sanitizeHTML(a.asignado||'—')}</td>
             <td><span class="badge s-${a.estado}">${a.estado}</span></td>
             <td style="color:${garantiaColor(a.garantia)};font-size:10px">${fmtFecha(a.garantia)}</td>
             <td>
@@ -3215,8 +3272,8 @@ function repGarantias(el, ts){
       <div class="tbl-wrap"><table>
         <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Depto</th><th>Garantía venció</th><th>Días vencida</th></tr></thead>
         <tbody>${vencidas.map(a=>{const dias=Math.floor((hoy-new Date(a.garantia))/(24*3600*1000));return`<tr>
-          <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${a.nombre}</td><td>${a.tipo}</td>
-          <td>${a.asignado||'—'}</td><td>${a.depto||'—'}</td>
+          <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td><td>${a.tipo}</td>
+          <td>${sanitizeHTML(a.asignado||'—')}</td><td>${sanitizeHTML(a.depto||'—')}</td>
           <td style="color:#791F1F;font-weight:600">${fmtFecha(a.garantia)}</td>
           <td style="color:#791F1F">Hace ${dias} días</td>
         </tr>`;}).join('')}</tbody>
@@ -3227,8 +3284,8 @@ function repGarantias(el, ts){
       ${lista.length?`<div class="tbl-wrap"><table>
         <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Depto</th><th>Garantía hasta</th><th>Días restantes</th></tr></thead>
         <tbody>${lista.map(a=>{const dr=Math.floor((new Date(a.garantia)-hoy)/(24*3600*1000));return`<tr>
-          <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${a.nombre}</td><td>${a.tipo}</td>
-          <td>${a.asignado||'—'}</td><td>${a.depto||'—'}</td>
+          <td class="code-cell">${a.codigo}</td><td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td><td>${a.tipo}</td>
+          <td>${sanitizeHTML(a.asignado||'—')}</td><td>${sanitizeHTML(a.depto||'—')}</td>
           <td style="color:#BA7517;font-weight:600">${fmtFecha(a.garantia)}</td>
           <td style="color:${dr<=30?'#791F1F':'#BA7517'};font-weight:600">${dr} días</td>
         </tr>`;}).join('')}</tbody>
@@ -3248,7 +3305,7 @@ function repHojaVida(el, ts){
   repDatosActuales=[a];
   el.innerHTML=`
     <div class="rep-header">
-      <div><div class="rep-title">Hoja de vida — ${a.codigo}: ${a.nombre}</div><div class="rep-meta">Generado: ${ts} · ${a.tipo} · ${a.marca||''} ${a.modelo||''}</div></div>
+      <div><div class="rep-title">Hoja de vida — ${a.codigo}: ${sanitizeHTML(a.nombre||'')}</div><div class="rep-meta">Generado: ${ts} · ${a.tipo} · ${a.marca||''} ${sanitizeHTML(a.modelo||'')}</div></div>
       <span class="badge s-${a.estado}" style="font-size:12px;padding:4px 12px">${a.estado}</span>
     </div>
     <div class="rep-kpi">
@@ -3287,8 +3344,8 @@ function repHojaVida(el, ts){
         ${(a.historial||[]).map(h=>`<div class="vida-event">
           <div class="vida-dot ${h.color||'purple'}"></div>
           <div style="flex:1">
-            <div style="font-size:12px;font-weight:600;color:var(--text)">${h.tipo}</div>
-            <div style="font-size:12px;color:var(--text2);margin-top:2px">${h.desc}</div>
+            <div style="font-size:12px;font-weight:600;color:var(--text)">${sanitizeHTML(h.tipo||"")}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">${sanitizeHTML(h.desc||"")}</div>
             <div style="font-size:10px;color:var(--text3);margin-top:2px">${h.fecha||''} · ${h.usuario||'—'}${h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:''}${h.costo?' · Costo: $'+h.costo:''}</div>
           </div>
         </div>`).join('')}
@@ -3414,9 +3471,9 @@ function repTrazabilidad(el, ts){
 
     return `<tr style="${esActual?'background:#F0FDF4':''}">
       <td class="code-cell">${a.codigo}</td>
-      <td style="font-weight:600">${a.nombre}<div style="font-size:10px;color:var(--text3)">${a.marca||''} ${a.modelo||''}</div></td>
+      <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}<div style="font-size:10px;color:var(--text3)">${a.marca||''} ${sanitizeHTML(a.modelo||'')}</div></td>
       <td>${TIPO_ICON[a.tipo]||'📦'} ${a.tipo}</td>
-      <td>${a.depto||'—'}</td>
+      <td>${sanitizeHTML(a.depto||'—')}</td>
       <td style="text-align:center">
         <span class="badge s-${a.estado}">${a.estado}</span>
         ${esActual?'<div style="font-size:9px;color:#1D9E75;margin-top:2px">✓ Actual</div>':'<div style="font-size:9px;color:var(--text3);margin-top:2px">Histórico</div>'}
@@ -3557,9 +3614,9 @@ function repDanos(el, ts){
           const ult=(a.historial||[]).slice(-1)[0];
           return`<tr>
             <td class="code-cell">${a.codigo}</td>
-            <td style="font-weight:600">${a.nombre}</td>
+            <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td>
             <td>${a.tipo}</td>
-            <td>${a.depto||'—'}</td>
+            <td>${sanitizeHTML(a.depto||'—')}</td>
             <td><span class="badge s-${a.estado}">${a.estado}</span></td>
             <td style="font-weight:600;color:#791F1F">$${(a.valor||0).toLocaleString()}</td>
             <td style="font-size:11px;max-width:200px">${ult?ult.desc:'—'}</td>
@@ -3695,7 +3752,7 @@ function globalSearch(q) {
     html += matchActivos.map(a => `
       <div class="sr-item" onclick="searchGoActivo('${a.codigo}')">
         <span class="sr-code">${a.codigo}</span>
-        <span class="sr-name">${a.nombre}</span>
+        <span class="sr-name">${sanitizeHTML(a.nombre||'')}</span>
         <span class="sr-badge s-${a.estado}">${a.estado}</span>
       </div>`).join('');
   }
