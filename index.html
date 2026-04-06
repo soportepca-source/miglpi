@@ -1991,6 +1991,37 @@ async function saveActivo(){
 }
 
 
+
+// ── API POST con respuesta legible — para tomar tickets ──────────
+async function apiPostConRespuesta(sheet, action, payload){
+  try{
+    const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
+    const resp = await fetch(API, {
+      method: 'POST',
+      mode: 'cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sheet, action, payload: securePayload})
+    });
+    if(!resp.ok) return {ok: false, error: 'HTTP_ERROR'};
+    const data = await resp.json();
+    return data;
+  } catch(e){
+    // Fallback a no-cors si cors falla
+    try{
+      const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
+      await fetch(API, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({sheet, action, payload: securePayload})
+      });
+      return {ok: true};
+    } catch(e2){
+      return {ok: false, error: e2.message};
+    }
+  }
+}
+
 // ════════════════════════════════════════════════════════════════════
 // TOMAR TICKET — técnico se auto-asigna desde web o mobile
 // El Apps Script detecta el cambio de resp y dispara:
@@ -2038,16 +2069,24 @@ async function tomarTicket(codigo){
     color:   'blue'
   });
 
-  // Guardar en Sheets → Apps Script detecta cambio de resp → dispara notificarCambioResponsable
-  const ok = await apiPost('tickets','update',t);
+  // Marcar como operación de tomar ticket para que el servidor valide
+  t._isTakeTicket = true;
+
+  // Usar POST con respuesta para detectar si alguien llegó primero
+  const resultado = await apiPostConRespuesta('tickets','update',t);
   audit('EDITAR','Ticket',codigo,
     `Ticket tomado por ${session.nombre}. Resp. anterior: ${respAnterior}. Estado: ${estadoAntes}→${t.estado}`);
 
-  if(ok){
+  if(resultado.ok !== false){
     renderAll();
-    // Refrescar detalle si está abierto
     if(activoActual) showDetalle(activoActual.codigo);
     showToast('✅ Ticket '+codigo+' asignado a ti. Se notificó a todos los técnicos.','success');
+  } else if(resultado.error === 'TICKET_ALREADY_TAKEN'){
+    // Revertir cambio local — alguien más llegó primero
+    t.resp = respAnterior;
+    t.estado = estadoAntes;
+    renderAll();
+    showToast('⚠ '+resultado.takenBy+' tomó este ticket justo antes que tú.','error');
   } else {
     showToast('⚠ No se pudo guardar. Verifica tu conexión.','error');
   }
@@ -4970,6 +5009,7 @@ document.addEventListener('visibilitychange', ()=>{
 
 </body>
 </html>
+
 
 
 
