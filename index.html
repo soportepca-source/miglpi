@@ -1166,7 +1166,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-lbl">Motivo de la edición *</div>
     <input class="f-inp" id="et-motivo" placeholder="Ej: Corrección de responsable...">
   </div>
-  <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" id="et-save-btn" onclick="saveTicket()">Guardar ticket</button></div>
+  <div class="modal-actions"><button class="btn" onclick="closeModals()">Cancelar</button><button class="btn btn-p" id="et-save-btn" onclick="if(!window._savingTicket)saveTicket()">Guardar ticket</button></div>
 </div></div>
 
 <!-- MODAL USUARIO -->
@@ -2047,21 +2047,35 @@ async function saveTicket(){
     });
     await apiPost('tickets','update',t);audit('EDITAR','Ticket',t.codigo,det);
   }else{
-    // Consultar Sheets en tiempo real para obtener el siguiente consecutivo
+    // ── PROTECCIÓN ANTI-DUPLICADOS ────────────────────────────────
+    // 1. Generar código provisional con timestamp+random (único por definición)
+    // 2. El Apps Script lo sobreescribirá con el código real usando LockService
+    // 3. Esto evita race conditions si dos usuarios envían al mismo tiempo
+    if(window._savingTicket){
+      showToast('Ya hay un ticket guardándose, espera un momento...','');
+      return;
+    }
+    window._savingTicket = true;
+    const _tsuffix = Date.now().toString(36).toUpperCase().slice(-4)
+                   + Math.random().toString(36).toUpperCase().slice(2,4);
+    const code = 'TKT-P' + _tsuffix; // código provisional — el servidor asigna el real
+    // Actualizar contador local como respaldo
     let cntReal = 0;
     try{
       const _r = await apiGet('tickets');
       cntReal = Array.isArray(_r) ? _r.length : cntTickets;
-      // Actualizar el contador local también
       if(cntReal >= cntTickets) cntTickets = cntReal;
     }catch(e){ cntReal = cntTickets; }
-    const code=genCode('TKT',cntReal);cntTickets=cntReal+1;
+    cntTickets = cntReal + 1;
     const aId=document.getElementById('et-activo').value;
     const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
     const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     tickets.push(t);
     if(aId){const act=activos.find(a=>a.codigo===aId);if(act){act.historial=act.historial||[];act.historial.push({tipo:'Ticket vinculado',desc:code+': '+titulo,fecha:ts(),usuario:session.nombre,color:'blue'});await apiPost('activos','update',act);if(t.tipo==='mantenimiento')act.estado='mantenimiento';}}
-    await apiPost('tickets','insert',t);audit('CREAR','Ticket',code,'Creado: '+titulo);
+    const insertOk = await apiPost('tickets','insert',t);
+    window._savingTicket = false;
+    if(!insertOk){ showToast('⚠ Error guardando ticket, reintenta','error'); return; }
+    audit('CREAR','Ticket',code,'Creado: '+titulo);
   }
   closeModals();renderAll();
 }
