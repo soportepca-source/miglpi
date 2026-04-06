@@ -1577,6 +1577,7 @@ function doLogin(){
     document.getElementById('sb-profile-role').textContent=ROL_LABELS[usuario.rol]||usuario.rol;
     const rb=document.getElementById('sb-role-badge');rb.textContent=ROL_LABELS[usuario.rol]||usuario.rol;rb.className='sb-role role-'+usuario.rol;
     applyPerms();audit('LOGIN','Sistema','—','Inicio de sesión exitoso');renderDash();
+    _pollingPanel='dashboard'; iniciarPolling(); _pedirPermisosNotif();
     resetInactivityTimer();
     // ── SESIÓN ÚNICA — generar token PRIMERO, luego iniciar monitoreo ──
     // El token debe estar en session.token ANTES de llamar iniciarControlSesionUnica
@@ -1619,6 +1620,7 @@ function doLogout(){
   audit('LOGOUT','Sistema','—','Cierre de sesión');session=null;activoActual=null;
   clearTimeout(_inactivityTimer);
   document.getElementById('app-screen').classList.remove('visible');document.getElementById('login-screen').style.display='flex';
+  detenerPolling();
   document.getElementById('l-user').value='';document.getElementById('l-pass').value='';
   document.querySelectorAll('.pnl').forEach(p=>p.classList.remove('on'));document.getElementById('pnl-dashboard').classList.add('on');
   document.querySelectorAll('.sb-item').forEach(i=>i.classList.remove('on'));document.getElementById('nav-dashboard').classList.add('on');
@@ -1638,6 +1640,9 @@ function go(panel,el){
   document.querySelectorAll('.pnl').forEach(i=>i.classList.remove('on'));
   if(el&&!el.classList.contains('locked'))el.classList.add('on');
   document.getElementById('pnl-'+panel).classList.add('on');
+  // Smart polling — actualizar panel activo y limpiar badge
+  _pollingPanel = panel;
+  if(panel==='tickets'||panel==='kanban') _limpiarBadgeNav();
   const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',usuarios:'Gestión de usuarios',auditoria:'Registro de auditoría',miperfil:'Mi perfil',reportes:'Reportes'};
   document.getElementById('tb-title').textContent=titles[panel]||panel;
   renderTopbarBtns(panel);
@@ -4409,6 +4414,183 @@ function showToast(msg,tipo){
   t._tmr=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateY(8px)';},3200);
 }
 
+
+// ════════════════════════════════════════════════════════════════════
+// SMART POLLING — actualización en vivo de tickets
+// Solo consulta en los paneles relevantes y cuando el documento es visible
+// ════════════════════════════════════════════════════════════════════
+let _pollingTimer      = null;
+let _pollingPanel      = '';      // panel activo al momento de iniciar
+let _lastTicketCount   = 0;       // cantidad de tickets al último poll
+let _lastTicketHash    = '';      // hash simple para detectar cambios
+let _pollingActive     = false;
+
+// Paneles donde vale la pena actualizar
+const _POLLING_PANELS  = ['tickets','kanban','dashboard'];
+// Intervalo según panel
+const _POLL_INTERVAL   = { tickets:20000, kanban:20000, dashboard:60000, default:60000 };
+
+function _ticketHash(tktArr){
+  // Hash simple: cantidad + códigos + estados concatenados
+  return tktArr.length + '|' + tktArr.map(t=>t.codigo+t.estado+t.resp+(t.avance||0)).join(',');
+}
+
+function iniciarPolling(){
+  if(_pollingActive) return;
+  _pollingActive = true;
+  _lastTicketCount = tickets.length;
+  _lastTicketHash  = _ticketHash(tickets);
+  _programarSiguientePoll();
+}
+
+function detenerPolling(){
+  _pollingActive = false;
+  if(_pollingTimer){ clearTimeout(_pollingTimer); _pollingTimer = null; }
+}
+
+function _programarSiguientePoll(){
+  if(!_pollingActive) return;
+  const interval = _POLL_INTERVAL[_pollingPanel] || _POLL_INTERVAL.default;
+  _pollingTimer = setTimeout(_ejecutarPoll, interval);
+}
+
+async function _ejecutarPoll(){
+  if(!_pollingActive || !session) return;
+  // No consultar si la pestaña está oculta o en paneles no relevantes
+  if(document.hidden){ _programarSiguientePoll(); return; }
+  if(!_POLLING_PANELS.includes(_pollingPanel)){ _programarSiguientePoll(); return; }
+
+  try{
+    // Solo consultar tickets — es el dato más dinámico
+    const rawT = await apiGet('tickets');
+    if(!Array.isArray(rawT) || !rawT.length){ _programarSiguientePoll(); return; }
+
+    const newHash = _ticketHash(rawT);
+    if(newHash === _lastTicketHash){
+      // Sin cambios — reprogramar
+      _programarSiguientePoll();
+      return;
+    }
+
+    // ── HAY CAMBIOS ──────────────────────────────────────────────
+    const newTickets = rawT.map(r=>({...r, id:r.codigo,
+      avance:parseInt(r.avance)||0, historial:parseHist(r.historial)}));
+
+    // Detectar tickets verdaderamente nuevos (no en la lista actual)
+    const codigosActuales = new Set(tickets.map(t=>t.codigo));
+    const nuevos = newTickets.filter(t=>!codigosActuales.has(t.codigo)
+      && t.estado!=='eliminado');
+
+    // Detectar tickets actualizados (estado o responsable cambió)
+    const actualizados = newTickets.filter(t=>{
+      const anterior = tickets.find(x=>x.codigo===t.codigo);
+      if(!anterior) return false;
+      return anterior.estado!==t.estado || anterior.resp!==t.resp || anterior.avance!==t.avance;
+    });
+
+    // Actualizar arrays en memoria
+    tickets = newTickets;
+    _lastTicketHash  = newHash;
+    _lastTicketCount = newTickets.length;
+
+    // Re-renderizar el panel activo sin interrumpir al usuario
+    if(_pollingPanel==='tickets')  renderTickets();
+    if(_pollingPanel==='kanban')   renderKanban();
+    if(_pollingPanel==='dashboard') renderDash();
+
+    // Notificar según el tipo de cambio
+    if(nuevos.length > 0){
+      const urgentes = nuevos.filter(t=>t.prior==='urgente').length;
+      const msg = nuevos.length===1
+        ? '🎫 Nuevo ticket: ' + nuevos[0].titulo.substring(0,40)
+        : '🎫 ' + nuevos.length + ' tickets nuevos';
+      const tipo = urgentes > 0 ? 'error' : 'success';
+      showToast(msg + (urgentes?' — ⚠ '+urgentes+' URGENTE':''), tipo);
+      // Actualizar badge en nav
+      _actualizarBadgeNav(nuevos.length);
+      // Notificación del navegador si está permitida
+      _notifNavegador(nuevos);
+    } else if(actualizados.length > 0){
+      // Cambios silenciosos — solo actualizar la pantalla, sin toast
+      // a menos que el responsable sea el usuario actual
+      const misCambios = actualizados.filter(t=>t.resp===session.nombre);
+      if(misCambios.length > 0){
+        const t = misCambios[0];
+        showToast('🔄 Ticket '+t.codigo+' actualizado: '+t.estado, '');
+      }
+    }
+
+    setSyncStatus(true, 'Actualizado · ' + new Date().toLocaleTimeString('es-PA',{hour:'2-digit',minute:'2-digit'}));
+
+  } catch(e){
+    // Error silencioso — no molestar al usuario, solo registrar
+    console.warn('[SAGAE Polling] Error:', e.message);
+  }
+
+  _programarSiguientePoll();
+}
+
+// Badge visual en el nav de tickets
+function _actualizarBadgeNav(count){
+  const navEl = document.getElementById('nav-tickets');
+  if(!navEl) return;
+  let badge = navEl.querySelector('._poll-badge');
+  if(!badge){
+    badge = document.createElement('span');
+    badge.className = '_poll-badge';
+    badge.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;'
+      +'background:#D04040;color:#fff;border-radius:50%;width:16px;height:16px;'
+      +'font-size:9px;font-weight:700;margin-left:6px;flex-shrink:0;';
+    navEl.appendChild(badge);
+  }
+  badge.textContent = count > 9 ? '9+' : count;
+  badge.style.display = 'inline-flex';
+  // Auto-ocultar al navegar a tickets
+}
+
+function _limpiarBadgeNav(){
+  const badge = document.getElementById('nav-tickets')?.querySelector('._poll-badge');
+  if(badge) badge.style.display = 'none';
+}
+
+// Notificación del navegador (si el usuario dio permiso)
+function _notifNavegador(nuevos){
+  if(!('Notification' in window) || Notification.permission !== 'granted') return;
+  nuevos.slice(0,3).forEach(t=>{
+    try{
+      new Notification('SAGAE — Nuevo ticket', {
+        body: t.titulo + (t.prior==='urgente'?' 🔴 URGENTE':''),
+        icon: '/favicon.ico',
+        tag:  t.codigo
+      });
+    }catch(e){}
+  });
+}
+
+// Solicitar permiso de notificaciones del navegador (una sola vez)
+function _pedirPermisosNotif(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    setTimeout(()=>{
+      Notification.requestPermission().then(perm=>{
+        if(perm==='granted'){
+          showToast('🔔 Notificaciones activadas — recibirás alertas de tickets nuevos','success');
+        }
+      });
+    }, 3000); // pedir 3 segundos después del login
+  }
+}
+
+// Pausar/reanudar cuando la pestaña se oculta/muestra
+document.addEventListener('visibilitychange', ()=>{
+  if(!session || !_pollingActive) return;
+  if(!document.hidden && _POLLING_PANELS.includes(_pollingPanel)){
+    // Al volver a la pestaña, ejecutar poll inmediato
+    clearTimeout(_pollingTimer);
+    _ejecutarPoll();
+  }
+});
+
 </script>
 
 <!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
@@ -4731,6 +4913,7 @@ function showToast(msg,tipo){
 
 </body>
 </html>
+
 
 
 
