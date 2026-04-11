@@ -768,9 +768,14 @@ tbody tr.clickable{cursor:pointer;}
     </div>
     <div class="sb-sec">General</div>
     <div class="sb-item on" id="nav-dashboard" onclick="go('dashboard',this)">◈ Dashboard</div>
+    <div class="sb-sec">Personas y Espacios</div>
+    <div class="sb-item" id="nav-personas" onclick="go('personas',this)">👤 Personas</div>
+    <div class="sb-item" id="nav-espacios" onclick="go('espacios',this)">🏫 Espacios</div>
     <div class="sb-sec">Activos</div>
     <div class="sb-item" id="nav-activos" onclick="go('activos',this)">▤ Inventario</div>
     <div class="sb-item" id="nav-detalle" style="display:none;" onclick="go('detalle',this)">◉ Detalle activo</div>
+    <div class="sb-sec">Mobiliario</div>
+    <div class="sb-item" id="nav-mobiliario" onclick="go('mobiliario',this)">🪑 Mobiliario</div>
     <div class="sb-sec">Tickets</div>
     <div class="sb-item" id="nav-tickets" onclick="go('tickets',this)">◉ Tickets</div>
     <div class="sb-item" id="nav-kanban" onclick="go('kanban',this)">▦ Kanban</div>
@@ -969,7 +974,320 @@ tbody tr.clickable{cursor:pointer;}
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
       </div>
       <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
-      <div class="pnl" id="pnl-tickets">
+      <!-- ═══ PANEL PERSONAS ═══ -->
+  <div class="pnl" id="pnl-personas">
+    <div class="pnl-header">
+      <h2 class="pnl-title">👤 Personas y Beneficiarios</h2>
+      <p class="pnl-sub">Personas que tienen equipos asignados o son responsables de un espacio. No necesitan acceso al sistema.</p>
+    </div>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:10px;">
+      ℹ️ <strong>Diferencia con Usuarios:</strong> Los <em>Usuarios</em> tienen login al sistema. Las <em>Personas</em> son beneficiarios (docentes, personal) que tienen equipos asignados pero no entran al sistema.
+    </div>
+    <!-- Búsqueda -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <input class="f-inp" id="fil-per-q" placeholder="Buscar por nombre, correo o departamento..." oninput="renderPersonas()" style="flex:1;min-width:200px;">
+      <select class="f-sel" id="fil-per-depto" onchange="renderPersonas()" style="min-width:160px;">
+        <option value="">Todos los departamentos</option>
+      </select>
+    </div>
+    <!-- KPIs -->
+    <div class="rep-kpi" id="per-kpis" style="margin-bottom:14px;"></div>
+    <!-- Tabla -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Nombre</th>
+            <th>Cargo</th>
+            <th>Departamento</th>
+            <th>Correo</th>
+            <th>Espacio responsable</th>
+            <th>Equipos asignados</th>
+            <th>Estado</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tb-personas"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL NUEVA / EDITAR PERSONA ═══ -->
+  <div class="modal-bg" id="mod-persona">
+    <div class="modal" style="max-width:640px;">
+      <div class="modal-title">
+        <span id="mod-persona-title">Nueva persona</span>
+        <button class="modal-close" onclick="closeModals()">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">Nombre completo *</div>
+          <input class="f-inp" id="per-nombre" placeholder="Ej: María González Herrera">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Cargo / Función *</div>
+          <input class="f-inp" id="per-cargo" placeholder="Ej: Docente de Informática">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Departamento *</div>
+          <input class="f-inp" id="per-depto" list="dl-deptos" placeholder="Ej: Informática">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">📧 Correo electrónico *</div>
+          <input class="f-inp" type="email" id="per-email" placeholder="correo@institucion.edu.pa">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Teléfono</div>
+          <input class="f-inp" id="per-tel" placeholder="Ej: 6123-4567">
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">🏫 Responsable del espacio
+            <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Si esta persona es encargada de un aula o laboratorio, selecciónalo aquí</span>
+          </div>
+          <select class="f-inp f-sel" id="per-espacio">
+            <option value="">— No es responsable de ningún espacio —</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Estado</div>
+          <select class="f-inp f-sel" id="per-estado">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Observaciones</div>
+          <input class="f-inp" id="per-obs" placeholder="Notas adicionales...">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+        <button class="btn btn-p" onclick="guardarPersona()">Guardar persona</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL ESPACIOS ═══ -->
+  <div class="pnl" id="pnl-espacios">
+    <div class="pnl-header">
+      <h2 class="pnl-title">🏫 Espacios y Aulas</h2>
+      <p class="pnl-sub">Aulas, laboratorios, oficinas y cualquier espacio físico con equipos a cargo de un responsable</p>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+      <input class="f-inp" id="fil-esp-q" placeholder="Buscar espacio..." oninput="renderEspacios()" style="flex:1;min-width:200px;">
+    </div>
+    <div class="rep-kpi" id="esp-kpis" style="margin-bottom:14px;"></div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Código</th>
+            <th>Nombre del espacio</th>
+            <th>Tipo</th>
+            <th>Responsable</th>
+            <th>Correo responsable</th>
+            <th>Equipos en este espacio</th>
+            <th>Edificio / Piso</th>
+            <th></th>
+          </tr></thead>
+          <tbody id="tb-espacios"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL NUEVO / EDITAR ESPACIO ═══ -->
+  <div class="modal-bg" id="mod-espacio">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-title">
+        <span id="mod-espacio-title">Nuevo espacio</span>
+        <button class="modal-close" onclick="closeModals()">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">Nombre del espacio *</div>
+          <input class="f-inp" id="esp-nombre" placeholder="Ej: Laboratorio de Informática">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Tipo *</div>
+          <select class="f-inp f-sel" id="esp-tipo">
+            <option value="Laboratorio">Laboratorio</option>
+            <option value="Aula">Aula</option>
+            <option value="Oficina">Oficina</option>
+            <option value="Sala de reuniones">Sala de reuniones</option>
+            <option value="Biblioteca">Biblioteca</option>
+            <option value="Dirección">Dirección</option>
+            <option value="Secretaría">Secretaría</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Edificio / Piso / Ubicación</div>
+          <input class="f-inp" id="esp-ubicacion" placeholder="Ej: Edificio A, Piso 2">
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">👤 Responsable del espacio
+            <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Recibirá notificaciones de TODOS los equipos en este espacio</span>
+          </div>
+          <select class="f-inp f-sel" id="esp-responsable">
+            <option value="">— Sin responsable asignado —</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Capacidad (equipos)</div>
+          <input class="f-inp" type="number" id="esp-capacidad" min="0" placeholder="0">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Estado</div>
+          <select class="f-inp f-sel" id="esp-estado">
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">Observaciones</div>
+          <input class="f-inp" id="esp-obs" placeholder="Notas adicionales...">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+        <button class="btn btn-p" onclick="guardarEspacio()">Guardar espacio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL MOBILIARIO ═══ -->
+  <div class="pnl" id="pnl-mobiliario">
+    <div class="pnl-header">
+      <h2 class="pnl-title">🪑 Inventario de Mobiliario</h2>
+      <p class="pnl-sub">Muebles, equipamiento físico y bienes no tecnológicos de la institución</p>
+    </div>
+    <!-- Filtros -->
+    <div class="f-row" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">
+      <select class="f-sel" id="fil-mob-estado" onchange="renderMobiliario()" style="min-width:140px;">
+        <option value="todos">Todos los estados</option>
+        <option value="bueno">Bueno</option>
+        <option value="regular">Regular</option>
+        <option value="deteriorado">Deteriorado</option>
+        <option value="baja">Dado de baja</option>
+      </select>
+      <select class="f-sel" id="fil-mob-tipo" onchange="renderMobiliario()" style="min-width:140px;">
+        <option value="todos">Todos los tipos</option>
+        <option value="Silla">Silla</option>
+        <option value="Escritorio">Escritorio</option>
+        <option value="Mesa">Mesa</option>
+        <option value="Pizarra">Pizarra</option>
+        <option value="Locker">Locker</option>
+        <option value="Estante">Estante</option>
+        <option value="Armario">Armario</option>
+        <option value="Otro">Otro</option>
+      </select>
+      <input class="f-inp" id="fil-mob-q" placeholder="Buscar mobiliario..." oninput="renderMobiliario()" style="min-width:180px;flex:1;">
+    </div>
+    <!-- KPIs rápidos -->
+    <div class="rep-kpi" id="mob-kpis" style="margin-bottom:14px;"></div>
+    <!-- Tabla -->
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Tipo</th>
+              <th>Cantidad</th>
+              <th>Ubicación / Aula</th>
+              <th>Condición</th>
+              <th>Foto / Doc</th>
+              <th>Valor</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tb-mobiliario"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL NUEVO / EDITAR MOBILIARIO ═══ -->
+  <div class="modal-bg" id="mod-mob">
+    <div class="modal" style="max-width:620px;">
+      <div class="modal-title">
+        <span id="mod-mob-title">Nuevo elemento de mobiliario</span>
+        <button class="modal-close" onclick="closeModals()">✕</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="f-row">
+          <div class="f-lbl">Descripción *</div>
+          <input class="f-inp" id="mob-nombre" placeholder="Ej: Silla de estudiante">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Tipo *</div>
+          <select class="f-inp f-sel" id="mob-tipo">
+            <option value="">— Seleccionar —</option>
+            <option>Silla</option><option>Escritorio</option><option>Mesa</option>
+            <option>Pizarra</option><option>Locker</option><option>Estante</option>
+            <option>Armario</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Cantidad *</div>
+          <input class="f-inp" id="mob-cantidad" type="number" min="1" placeholder="1">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Condición *</div>
+          <select class="f-inp f-sel" id="mob-condicion">
+            <option value="bueno">Bueno</option>
+            <option value="regular">Regular</option>
+            <option value="deteriorado">Deteriorado</option>
+            <option value="baja">Dado de baja</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Ubicación / Aula</div>
+          <input class="f-inp" id="mob-ubicacion" placeholder="Ej: Aula 3B">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Departamento</div>
+          <input class="f-inp" id="mob-depto" placeholder="Ej: Primaria">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Material</div>
+          <select class="f-inp f-sel" id="mob-material">
+            <option value="">— Opcional —</option>
+            <option>Madera</option><option>Metal</option>
+            <option>Plástico</option><option>Mixto</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Color</div>
+          <input class="f-inp" id="mob-color" placeholder="Ej: Negro">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Fecha de adquisición</div>
+          <input class="f-inp" id="mob-fecha" placeholder="DD/MM/AAAA">
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">Valor unitario ($)</div>
+          <input class="f-inp" id="mob-valor" type="number" min="0" placeholder="0">
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">URL de foto o documento <span style="font-size:10px;color:var(--text3)">(pegar enlace de Google Drive u otra URL)</span></div>
+          <input class="f-inp" id="mob-foto" placeholder="https://drive.google.com/...">
+        </div>
+        <div class="f-row" style="grid-column:1/-1;">
+          <div class="f-lbl">Observaciones</div>
+          <textarea class="f-inp" id="mob-obs" rows="2" placeholder="Notas adicionales..." style="resize:vertical;"></textarea>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+        <button class="btn btn-p" onclick="guardarMobiliario()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="pnl" id="pnl-tickets">
         <div class="tab-row"><button class="tab-btn on" onclick="filterT('todos',this)">Todos</button><button class="tab-btn" onclick="filterT('abierto',this)">Abiertos</button><button class="tab-btn" onclick="filterT('progreso',this)">En progreso</button><button class="tab-btn" onclick="filterT('revision',this)">En revisión</button><button class="tab-btn" onclick="filterT('cerrado',this)">Cerrados</button><button class="tab-btn" onclick="filterT('eliminado',this)">Eliminados</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Título</th><th>Activo vinculado</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Avance</th><th>Deadline</th><th></th></tr></thead><tbody id="tb-tickets"></tbody></table></div>
       </div>
@@ -1092,11 +1410,35 @@ tbody tr.clickable{cursor:pointer;}
     oninput="this.value=this.value.toUpperCase()">
   <div class="f-hint">💡 Se convierte a mayúsculas automáticamente. Búscalo en la etiqueta del equipo.</div>
 </div>
-    <div class="f-row"><div class="f-lbl">Ubicación física</div><input class="f-inp" id="ea-ubicacion" list="dl-ubicaciones" autocomplete="off" placeholder="Oficina 3..."></div>
+    <div class="f-row"><div class="f-lbl">Ubicación — Espacio
+  <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Al seleccionar hereda el responsable automáticamente</span>
+</div>
+<select class="f-inp f-sel" id="ea-ubicacion" onchange="onChangeUbicacion(this.value)">
+  <option value="">— Sin ubicación —</option>
+</select>
+<div id="ea-espacio-info" style="font-size:11px;color:var(--navy);margin-top:4px;display:none;padding:4px 8px;background:var(--blue-l,#EFF6FF);border-radius:4px;border-left:3px solid var(--navy)"></div>
+<input type="hidden" id="ea-responsable-espacio-email"></div>
   </div>
   <div class="f-2">
-    <div class="f-row"><div class="f-lbl">Asignado a</div><input class="f-inp" id="ea-asignado" list="dl-asignados" autocomplete="off" placeholder="Nombre completo"></div>
+    <div class="f-row"><div class="f-lbl">Asignado a
+  <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Selecciona de la lista o deja sin asignar</span>
+</div>
+<select class="f-inp f-sel" id="ea-asignado" onchange="onChangeAsignado(this.value)">
+  <option value="">— Sin asignar —</option>
+</select></div>
     <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="ea-depto" list="dl-deptos" autocomplete="off" placeholder="TI, Finanzas..."></div>
+  </div>
+  <div class="f-2">
+    <div class="f-row">
+      <div class="f-lbl">📧 Correo del asignado
+        <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">Para notificarle cuando su equipo entre o salga de mantenimiento</span>
+      </div>
+      <input class="f-inp" type="email" id="ea-asignado-email" placeholder="correo@institucion.edu.pa" autocomplete="off">
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Cargo / Rol</div>
+      <input class="f-inp" id="ea-asignado-cargo" placeholder="Docente, Secretaria..." autocomplete="off">
+    </div>
   </div>
   <div class="f-2">
     <div class="f-row">
@@ -1217,6 +1559,7 @@ tbody tr.clickable{cursor:pointer;}
     </div>
     <input class="f-inp" type="email" id="mm-email-resp"
       placeholder="correo@dominio.com">
+    <div id="mm-email-resp-info" style="font-size:11px;color:var(--navy);margin-top:4px;display:none;padding:4px 8px;background:var(--blue-l,#EFF6FF);border-radius:4px;border-left:3px solid var(--navy)"></div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Técnico</div>
@@ -1279,9 +1622,12 @@ const TIPO_ICON={
   'Teléfono IP':'☎️',
   'Red / Switch':'🔌',Software:'💿',Vehículo:'🚗',Otro:'📦'
 };
-const PERMS={admin:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,edit:true,delete:true},tecnico:{activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,edit:true,delete:false},consultor:{activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,edit:false,delete:false},inventario:{activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
+const PERMS={admin:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,mobiliario:true,edit:true,delete:true},tecnico:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,mobiliario:true,edit:true,delete:false},consultor:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,mobiliario:true,edit:false,delete:false},inventario:{personas:true,espacios:true,mobiliario:true,activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
 let session=null,activos=[],tickets=[],auditLog=[],usuarios=[],activoActual=null;
 let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos',filtroTipo='todos';
+let mobiliario=[];
+let personas=[];
+let espacios=[];
 let pendingDelete={type:null,id:null};
 
 function ts(){return new Date().toLocaleString('es-PA',{dateStyle:'short',timeStyle:'short'});}
@@ -1566,6 +1912,30 @@ async function loadFromSheets(){
   tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
   cntTickets = tickets.length;
   auditLog = rawAud.slice().reverse();
+  // ── MOBILIARIO — carga independiente con fallback seguro ──
+  try {
+    const rawMob = await apiGet('mobiliario');
+    mobiliario = Array.isArray(rawMob) ? rawMob.map(r=>({
+      ...r,
+      cantidad: parseInt(r.cantidad)||1,
+      valor: parseFloat(r.valor)||0,
+      historial: parseHist(r.historial)
+    })) : [];
+  } catch(e) {
+    mobiliario = [];
+  }
+  // ── PERSONAS — carga segura con fallback ──
+  try {
+    const rawPer = await apiGet('personas');
+    personas = Array.isArray(rawPer) ? rawPer.map(r=>({...r})) : [];
+  } catch(e) { personas = []; }
+  // ── ESPACIOS — carga segura con fallback ──
+  try {
+    const rawEsp = await apiGet('espacios');
+    espacios = Array.isArray(rawEsp) ? rawEsp.map(r=>({...r})) : [];
+  } catch(e) { espacios = []; }
+  // Reconstruir datalists con datos frescos
+  if(typeof buildDataLists === 'function') buildDataLists();
   // NOTA: No se crea admin automáticamente para evitar duplicados
   // Si no hay usuarios, mostrar aviso y dejar entrar igual
   ls.textContent=`✅ ${usuarios.length} usuarios · ${activos.length} activos · ${tickets.length} tickets`;
@@ -1686,7 +2056,7 @@ function doLogout(){
 
 function applyPerms(){
   const p=PERMS[session.rol]||{};
-  ['activos','tickets','kanban','auditoria','usuarios'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
+  ['activos','tickets','kanban','auditoria','usuarios','mobiliario','personas','espacios'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
   const repEl=document.getElementById('nav-reportes');
   if(repEl) repEl.classList.toggle('locked', session.rol==='inventario');
   document.getElementById('nav-miperfil').style.display='flex';
@@ -1700,10 +2070,10 @@ function go(panel,el){
   // Smart polling — actualizar panel activo y limpiar badge
   _pollingPanel = panel;
   if(panel==='tickets'||panel==='kanban') _limpiarBadgeNav();
-  const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',usuarios:'Gestión de usuarios',auditoria:'Registro de auditoría',miperfil:'Mi perfil',reportes:'Reportes'};
+  const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',usuarios:'Gestión de usuarios',auditoria:'Registro de auditoría',miperfil:'Mi perfil',reportes:'Reportes',mobiliario:'Inventario de Mobiliario',personas:'Personas y Beneficiarios',espacios:'Espacios y Aulas'};
   document.getElementById('tb-title').textContent=titles[panel]||panel;
   renderTopbarBtns(panel);
-  if(panel==='dashboard')renderDash();if(panel==='activos')renderActivos();if(panel==='tickets')renderTickets();
+  if(panel==='dashboard')renderDash();if(panel==='activos')renderActivos();if(panel==='tickets')renderTickets();if(panel==='mobiliario')renderMobiliario();if(panel==='personas')renderPersonas();if(panel==='espacios')renderEspacios();
   if(panel==='kanban')renderKanban();if(panel==='usuarios')renderUsuarios();if(panel==='auditoria')renderAudit();
   if(panel==='miperfil')renderMiPerfil();if(panel==='reportes')initReportes();
 }
@@ -1719,6 +2089,17 @@ function renderTopbarBtns(p){
     if(['admin','tecnico','inventario'].includes(session.rol)){
       c.innerHTML+='<button class="btn" onclick="abrirModalEtiquetasGrupo()" style="margin-left:6px">🏷️ Etiquetas</button>';
     }
+  }
+  if(p==='personas'){
+    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openPersona(null)">+ Nueva persona</button>';
+  }
+  if(p==='espacios'){
+    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openEspacio(null)">+ Nuevo espacio</button>';
+  }
+  if(p==='mobiliario'){
+    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openMob(null)">+ Nuevo elemento</button>';
+    if(['admin','inventario'].includes(session.rol))
+      c.innerHTML+='<button class="btn" onclick="exportarMobiliarioCSV()" style="margin-left:6px">⬇ Exportar CSV</button>';
   }
   if(p==='tickets'&&per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openTicket(null)">+ Nuevo ticket</button>';
   if(p==='usuarios'&&per.usuarios){
@@ -1845,18 +2226,41 @@ async function cambiarMiPass(){
 
 function openActivo(id){
   const isEdit=id!=null;
+  // Poblar select de personas
+  const selAsig = document.getElementById('ea-asignado');
+  if(selAsig){
+    selAsig.innerHTML = '<option value="">— Sin asignar —</option>' +
+      personas.filter(p=>p.estado!=='inactivo').map(p=>`<option value="${p.nombre}"
+        data-email="${p.email||''}"
+        data-cargo="${p.cargo||''}"
+        data-depto="${p.depto||''}"
+      >${p.nombre}${p.cargo?' — '+p.cargo:''}</option>`).join('');
+  }
+  // Poblar select de espacios
+  const selUbic = document.getElementById('ea-ubicacion');
+  if(selUbic){
+    selUbic.innerHTML = '<option value="">— Sin ubicación —</option>' +
+      espacios.filter(e=>e.estado!=='inactivo').map(e=>`<option value="${e.nombre}"
+        data-responsable="${e.responsableNombre||''}"
+        data-email="${e.responsableEmail||''}"
+      >${e.nombre}${e.tipo?' ('+e.tipo+')':''}</option>`).join('');
+  }
   document.getElementById('mod-activo-title').textContent=isEdit?'Editar activo':'Nuevo activo';
   document.getElementById('ea-save-btn').textContent=isEdit?'Guardar cambios':'Guardar activo';
   document.getElementById('ea-motivo-wrap').style.display=isEdit?'block':'none';
   document.getElementById('ea-motivo').value='';document.getElementById('ea-id').value=id||'';
   if(isEdit){
     const a=activos.find(x=>x.codigo===id);if(!a)return;
-    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
+    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
     Object.entries(fs).forEach(([k,fid])=>document.getElementById(fid).value=a[k]||'');
     document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
     document.getElementById('ea-valor').value=a.valor||'';document.getElementById('ea-vida').value=a.vida||3;
+    // Mostrar info del espacio actual
+    if(a.ubicacion && a.ubicacion!=='—') onChangeUbicacion(a.ubicacion);
+    // Mostrar info del asignado actual
+    if(a.asignado && a.asignado!=='—') onChangeAsignado(a.asignado);
   }else{
-    ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs'].forEach(i=>document.getElementById(i).value='');
+    ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs','ea-asignado-email','ea-asignado-cargo'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ea-valor').value='';document.getElementById('ea-vida').value=3;
     document.getElementById('ea-compra').value='';document.getElementById('ea-garantia').value='';document.getElementById('ea-estado').value='activo';
   }
@@ -1915,7 +2319,7 @@ async function saveActivo(){
     const _asignadoAntes = a.asignado||'—';
     const _deptoAntes = a.depto||'—';
     const _estadoAntes = a.estado||'activo';  // ← capturar estado ANTES de cambios
-    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs'};
+    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
     Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
     a.compra=document.getElementById('ea-compra').value||'—';a.garantia=document.getElementById('ea-garantia').value||'—';
     a.valor=parseFloat(document.getElementById('ea-valor').value)||0;a.vida=parseInt(document.getElementById('ea-vida').value)||3;
@@ -1943,7 +2347,9 @@ async function saveActivo(){
     if(_estadoAntes !== 'mantenimiento' && _estadoNuevo === 'mantenimiento'){
       const motivoMant = motivo || 'Sin especificar';
       // Capturar el correo del responsable desde el modal
-      const emailResp = document.getElementById('mm-email-resp')?.value.trim() || '';
+      // Email del responsable: primero el campo manual, si no el del activo
+    const emailRespManual = document.getElementById('mm-email-resp')?.value.trim() || '';
+    const emailResp = emailRespManual || activoActual?.asignadoEmail || '';
       a.historial.push({
         tipo:        'Entrada a Mantenimiento',
         desc:        `Equipo ingresado a IT para mantenimiento por ${session.nombre}. Motivo: ${motivoMant}. Equipo estará en el Departamento de Tecnología hasta ser devuelto.`,
@@ -1994,7 +2400,10 @@ async function saveActivo(){
       if(cntActReal >= cntActivos) cntActivos = cntActReal;
     }catch(e){ cntActReal = cntActivos; }
     cntActivos = cntActReal + 1;
-    const a={id:code,codigo:code,nombre,tipo:document.getElementById('ea-tipo').value,estado:document.getElementById('ea-estado').value,marca:document.getElementById('ea-marca').value.trim()||'—',modelo:document.getElementById('ea-modelo').value.trim()||'—',serial:document.getElementById('ea-serial').value.trim()||'—',ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',asignado:document.getElementById('ea-asignado').value.trim()||'—',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
+    const a={id:code,codigo:code,nombre,tipo:document.getElementById('ea-tipo').value,estado:document.getElementById('ea-estado').value,marca:document.getElementById('ea-marca').value.trim()||'—',modelo:document.getElementById('ea-modelo').value.trim()||'—',serial:document.getElementById('ea-serial').value.trim()||'—',ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',asignado:document.getElementById('ea-asignado').value||'—',
+    asignadoEmail:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.email||document.getElementById('ea-asignado-email')?.value||'';})(),
+    asignadoCargo:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.cargo||document.getElementById('ea-asignado-cargo')?.value||'';})(),
+    responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     activos.push(a);
     const _aOk = await apiPost('activos','insert',a);
     window._savingActivo = false;
@@ -2239,6 +2648,28 @@ function openMant(){
   if(hoyInput && !hoyInput.value){
     const hoy = new Date();
     hoyInput.value = hoy.toISOString().split('T')[0];
+  }
+  // ── AUTO-FILL email del asignado + responsable del espacio ─────────
+  const emailField = document.getElementById('mm-email-resp');
+  const infoEl = document.getElementById('mm-email-resp-info');
+  if(emailField && activoActual) {
+    const emailAsig  = activoActual.asignadoEmail || '';
+    const emailEspacio = activoActual.responsableEspacioEmail || '';
+    // Mostrar info de quién recibirá notificaciones
+    const msgs = [];
+    if(activoActual.asignado && activoActual.asignado!=='—')
+      msgs.push('Asignado: '+activoActual.asignado+(emailAsig?' ('+emailAsig+')':' ⚠ sin correo'));
+    if(emailEspacio && emailEspacio!==emailAsig){
+      // Buscar nombre del responsable del espacio
+      const espObj = espacios.find(e=>e.nombre===activoActual.ubicacion);
+      msgs.push('Resp. espacio: '+(espObj?.responsableNombre||activoActual.ubicacion)+' ('+emailEspacio+')');
+    }
+    if(infoEl && msgs.length){
+      infoEl.textContent = '📧 Notificaciones a: '+msgs.join(' | ');
+      infoEl.style.display='block';
+    }
+    // Pre-llenar campo con el email más relevante
+    emailField.value = emailAsigToUse;
   }
   document.getElementById('mod-mant').classList.add('open');
 }
@@ -2554,6 +2985,29 @@ function populateSuggestions(){
   if(dlAsig) dlAsig.innerHTML=asignados.map(a=>`<option value="${a}">`).join('');
 }
 
+// ── AUTO-FILL EMAIL al escribir nombre del asignado ────────────────
+function autoFillEmailAsignado(nombre){
+  if(!nombre || nombre.length < 2) return;
+  const emailField = document.getElementById('ea-asignado-email');
+  const cargoField = document.getElementById('ea-asignado-cargo');
+  if(!emailField) return;
+  // Si ya tiene email escrito no sobreescribir
+  if(emailField.value && emailField.value.includes('@')) return;
+  // Buscar en usuarios del sistema por nombre
+  const usuMatch = usuarios.find(u =>
+    u.nombre && u.nombre.toLowerCase() === nombre.toLowerCase()
+  );
+  if(usuMatch && usuMatch.email) {
+    emailField.value = usuMatch.email;
+    if(cargoField && !cargoField.value && usuMatch.cargo) {
+      cargoField.value = usuMatch.cargo;
+    }
+    // Pequeña animación visual para indicar auto-fill
+    emailField.style.background = '#EFF6FF';
+    setTimeout(()=>{ emailField.style.background=''; }, 1200);
+  }
+}
+
 
 // ── DEADLINE — color y formato según proximidad ──────────────────
 function deadStyle(dead){
@@ -2697,7 +3151,7 @@ function renderActivos(){
   tb.innerHTML=list.map(a=>`<tr class="clickable ${a.estado==='eliminado'?'del-row':''}" onclick="showDetalle('${a.codigo}')">
     <td class="code-cell">${a.codigo}</td>
     <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(a.nombre||'')}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${sanitizeHTML(a.modelo||'')}</div></td>
-    <td>${a.tipo}</td><td><div>${sanitizeHTML(a.asignado||'—')}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
+    <td>${a.tipo}</td><td><div title="${a.asignadoEmail?'📧 '+a.asignadoEmail:''}">${sanitizeHTML(a.asignado||'—')}${a.asignadoEmail?'<span style="font-size:9px;color:var(--navy);margin-left:3px">📧</span>':''}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
     <td style="font-size:11px">${sanitizeHTML(a.ubicacion||'—')}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
     <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td>
       <div style="font-size:10px;color:var(--text3)">Original: $${(a.valor||0).toLocaleString()}</div>
@@ -3376,7 +3830,7 @@ function repHojaVida(el, ts){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px">
       <div class="rep-section">
         <div class="rep-sec-title">Información del activo</div>
-        ${[['Código',a.codigo],['Tipo',a.tipo],['Marca / Modelo',(a.marca||'—')+' '+(a.modelo||'')],['Número de serie',a.serial||'—'],['Ubicación física',a.ubicacion||'—'],['Asignado a',a.asignado||'—'],['Departamento',a.depto||'—'],['Fecha de compra',a.compra||'—'],['Garantía hasta',fmtFecha(a.garantia)],['Vida útil',(a.vida||3)+' años'],['Observaciones',a.obs||'—']].map(([k,v])=>`
+        ${[['Código',a.codigo],['Tipo',a.tipo],['Marca / Modelo',(a.marca||'—')+' '+(a.modelo||'')],['Número de serie',a.serial||'—'],['Ubicación física',a.ubicacion||'—'],['Asignado a',(a.asignado||'—')+(a.asignadoEmail?' — 📧 '+a.asignadoEmail:'')+(a.asignadoCargo?' ('+a.asignadoCargo+')':'')],['Departamento',a.depto||'—'],['Fecha de compra',a.compra||'—'],['Garantía hasta',fmtFecha(a.garantia)],['Vida útil',(a.vida||3)+' años'],['Observaciones',a.obs||'—']].map(([k,v])=>`
           <div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
             <span style="color:var(--text3);width:140px;flex-shrink:0">${k}</span>
             <span style="font-weight:500;color:var(--text)">${v}</span>
@@ -4705,328 +5159,590 @@ document.addEventListener('visibilitychange', ()=>{
   }
 });
 
+
+// ════════════════════════════════════════════════════════════════
+// MÓDULO MOBILIARIO
+// ════════════════════════════════════════════════════════════════
+
+// ── RENDER TABLA ─────────────────────────────────────────────────
+function renderMobiliario(){
+  const tb  = document.getElementById('tb-mobiliario');
+  const kpi = document.getElementById('mob-kpis');
+  if(!tb) return;
+
+  const qRaw    = (document.getElementById('fil-mob-q')?.value||'').toLowerCase();
+  const estFil  = document.getElementById('fil-mob-estado')?.value||'todos';
+  const tipoFil = document.getElementById('fil-mob-tipo')?.value||'todos';
+  const per = PERMS[session.rol]||{};
+
+  let list = mobiliario.filter(m => m.estado !== 'eliminado');
+  if(estFil  !== 'todos') list = list.filter(m=>m.condicion===estFil);
+  if(tipoFil !== 'todos') list = list.filter(m=>m.tipo===tipoFil);
+  if(qRaw) list = list.filter(m=>
+    (m.nombre||'').toLowerCase().includes(qRaw)||
+    (m.ubicacion||'').toLowerCase().includes(qRaw)||
+    (m.codigo||'').toLowerCase().includes(qRaw)
+  );
+
+  // KPIs
+  const total   = mobiliario.filter(m=>m.estado!=='eliminado');
+  const buenos  = total.filter(m=>m.condicion==='bueno').length;
+  const regular = total.filter(m=>m.condicion==='regular').length;
+  const deterio = total.filter(m=>m.condicion==='deteriorado').length;
+  const valTotal = total.reduce((s,m)=>(s+(m.valor||0)*(m.cantidad||1)),0);
+  kpi.innerHTML=`
+    <div class="rep-kpi-card"><div class="rep-kpi-v">${total.length}</div><div class="rep-kpi-l">Total elementos</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${buenos}</div><div class="rep-kpi-l">En buen estado</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#BA7517">${regular}</div><div class="rep-kpi-l">Estado regular</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#D85A30">${deterio}</div><div class="rep-kpi-l">Deteriorado</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v">$${valTotal.toLocaleString()}</div><div class="rep-kpi-l">Valor total inventario</div></div>
+  `;
+
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">
+      Sin elementos${estFil!=='todos'||tipoFil!=='todos'?' con los filtros seleccionados':'. Usa "+ Nuevo elemento" para registrar mobiliario.'}</td></tr>`;
+    return;
+  }
+
+  const condColor = {bueno:'#1D9E75',regular:'#BA7517',deteriorado:'#D85A30',baja:'#888'};
+  tb.innerHTML = list.map(m=>`
+    <tr>
+      <td class="code-cell">${m.codigo||'—'}</td>
+      <td>
+        <div style="font-weight:600;font-size:12px">${sanitizeHTML(m.nombre||'')}</div>
+        <div style="font-size:10px;color:var(--text3)">${m.material||''} ${m.color?'· '+m.color:''}</div>
+      </td>
+      <td>${m.tipo||'—'}</td>
+      <td style="text-align:center;font-weight:700">${m.cantidad||1}</td>
+      <td>
+        <div style="font-size:11px">${sanitizeHTML(m.ubicacion||'—')}</div>
+        <div style="font-size:10px;color:var(--text3)">${m.depto||''}</div>
+      </td>
+      <td><span class="badge" style="background:${condColor[m.condicion]||'#888'}22;color:${condColor[m.condicion]||'#888'};border:1px solid ${condColor[m.condicion]||'#888'}44">${m.condicion||'—'}</span></td>
+      <td style="text-align:center">
+        ${m.foto ? `<a href="${sanitizeHTML(m.foto)}" target="_blank" style="color:var(--navy);font-size:11px">🔗 Ver</a>` : '<span style="color:var(--text3);font-size:11px">—</span>'}
+      </td>
+      <td style="font-size:11px">
+        <div style="color:var(--text3)">Unit: $${(m.valor||0).toLocaleString()}</div>
+        <div style="font-weight:700;color:#3B6D11">Total: $${((m.valor||0)*(m.cantidad||1)).toLocaleString()}</div>
+      </td>
+      <td onclick="event.stopPropagation()">
+        ${per.edit?`<button class="act-btn" onclick="openMob('${m.codigo}')">✎</button>`:''}
+        ${per.delete?`<button class="act-btn" onclick="eliminarMob('${m.codigo}')" style="color:var(--red)">×</button>`:''}
+      </td>
+    </tr>`).join('');
+}
+
+// ── ABRIR MODAL ───────────────────────────────────────────────────
+function openMob(codigo){
+  const isEdit = !!codigo;
+  document.getElementById('mod-mob-title').textContent = isEdit ? 'Editar elemento' : 'Nuevo elemento de mobiliario';
+  const m = isEdit ? mobiliario.find(x=>x.codigo===codigo) : {};
+  document.getElementById('mob-nombre').value    = m.nombre||'';
+  document.getElementById('mob-tipo').value      = m.tipo||'';
+  document.getElementById('mob-cantidad').value  = m.cantidad||1;
+  document.getElementById('mob-condicion').value = m.condicion||'bueno';
+  document.getElementById('mob-ubicacion').value = m.ubicacion||'';
+  document.getElementById('mob-depto').value     = m.depto||'';
+  document.getElementById('mob-material').value  = m.material||'';
+  document.getElementById('mob-color').value     = m.color||'';
+  document.getElementById('mob-fecha').value     = m.fecha||'';
+  document.getElementById('mob-valor').value     = m.valor||0;
+  document.getElementById('mob-foto').value      = m.foto||'';
+  document.getElementById('mob-obs').value       = m.obs||'';
+  document.getElementById('mod-mob')._editCodigo = isEdit ? codigo : null;
+  document.getElementById('mod-mob').classList.add('open');
+}
+
+// ── GUARDAR ───────────────────────────────────────────────────────
+async function guardarMobiliario(){
+  const nombre    = document.getElementById('mob-nombre').value.trim();
+  const tipo      = document.getElementById('mob-tipo').value;
+  const condicion = document.getElementById('mob-condicion').value;
+  if(!nombre){ showToast('El nombre/descripción es obligatorio',''); return; }
+  if(!tipo)  { showToast('El tipo es obligatorio',''); return; }
+
+  const editCodigo = document.getElementById('mod-mob')._editCodigo;
+  const isEdit     = !!editCodigo;
+  const obj = {
+    codigo:     isEdit ? editCodigo : '',
+    nombre, tipo, condicion,
+    cantidad:   parseInt(document.getElementById('mob-cantidad').value)||1,
+    ubicacion:  document.getElementById('mob-ubicacion').value.trim(),
+    depto:      document.getElementById('mob-depto').value.trim(),
+    material:   document.getElementById('mob-material').value,
+    color:      document.getElementById('mob-color').value.trim(),
+    fecha:      document.getElementById('mob-fecha').value.trim(),
+    valor:      parseFloat(document.getElementById('mob-valor').value)||0,
+    foto:       document.getElementById('mob-foto').value.trim(),
+    obs:        document.getElementById('mob-obs').value.trim(),
+    estado:     'activo',
+    historial:  JSON.stringify([{
+      tipo: isEdit?'Edición':'Creación',
+      desc: isEdit?`Editado por ${session.nombre}`:`Registrado por ${session.nombre}`,
+      fecha: ts(), usuario: session.nombre, color:'blue'
+    }]),
+    fechaCreacion: isEdit ? (mobiliario.find(m=>m.codigo===editCodigo)?.fechaCreacion||ts()) : ts()
+  };
+
+  const btn = document.querySelector('#mod-mob .btn-p');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+
+  try{
+    await apiPost('mobiliario', isEdit?'update':'insert', obj);
+    if(isEdit){
+      const idx = mobiliario.findIndex(m=>m.codigo===editCodigo);
+      if(idx>=0) mobiliario[idx]={...obj, cantidad:parseInt(obj.cantidad)||1, valor:parseFloat(obj.valor)||0};
+    } else {
+      // Código asignado por el servidor — recargar
+      const raw = await apiGet('mobiliario');
+      mobiliario = raw.map(r=>({...r,cantidad:parseInt(r.cantidad)||1,valor:parseFloat(r.valor)||0,historial:parseHist(r.historial)}));
+    }
+    audit('CREAR','Mobiliario',obj.codigo||'NUEVO',isEdit?'Elemento editado':'Elemento registrado');
+    closeModals();
+    renderMobiliario();
+    showToast(isEdit?'✅ Elemento actualizado':'✅ Elemento registrado','success');
+  }catch(e){
+    showToast('Error guardando: '+e.message,'');
+  }finally{
+    btn.disabled=false; btn.textContent='Guardar';
+  }
+}
+
+// ── ELIMINAR ──────────────────────────────────────────────────────
+async function eliminarMob(codigo){
+  if(!confirm('¿Eliminar este elemento del inventario de mobiliario?')) return;
+  const m = mobiliario.find(x=>x.codigo===codigo);
+  if(!m) return;
+  try{
+    await apiPost('mobiliario','update',{...m, estado:'eliminado'});
+    m.estado='eliminado';
+    audit('ELIMINAR','Mobiliario',codigo,`Eliminado: ${m.nombre}`);
+    renderMobiliario();
+    showToast('Elemento eliminado','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+}
+
+// ── EXPORTAR CSV ──────────────────────────────────────────────────
+function exportarMobiliarioCSV(){
+  const headers=['codigo','nombre','tipo','cantidad','condicion','ubicacion','depto','material','color','valor','valorTotal','fecha','obs'];
+  const rows = mobiliario.filter(m=>m.estado!=='eliminado').map(m=>[
+    m.codigo,m.nombre,m.tipo,m.cantidad,m.condicion,
+    m.ubicacion,m.depto,m.material,m.color,
+    m.valor,(m.valor||0)*(m.cantidad||1),m.fecha,m.obs
+  ]);
+  const csv=[headers,...rows].map(r=>r.map(c=>'"'+String(c||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='SAGAE_Mobiliario_'+new Date().toISOString().slice(0,10)+'.csv';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('✅ CSV de mobiliario exportado','success');
+}
+
+// ── go() hook — llamar renderMobiliario al navegar al panel ───────
+const _goOriginal = go;
+// Se inyecta directamente en el go() existente — ver bloque de navegación
+
+
+// ════════════════════════════════════════════════════════════════════
+// MÓDULO PERSONAS Y ESPACIOS
+// ════════════════════════════════════════════════════════════════════
+
+// ── HELPERS para poblar selects de personas/espacios ─────────────
+function buildDataLists(){
+  // Poblar datalist de departamentos
+  const deptos = [...new Set([
+    ...personas.map(p=>p.depto).filter(Boolean),
+    ...activos.map(a=>a.depto).filter(Boolean),
+    ...usuarios.map(u=>u.depto).filter(Boolean)
+  ])].sort();
+  const dlDep = document.getElementById('dl-deptos');
+  if(dlDep) dlDep.innerHTML = deptos.map(d=>`<option value="${d}">`).join('');
+
+  // Poblar filter de departamentos en personas
+  const filDepto = document.getElementById('fil-per-depto');
+  if(filDepto){
+    const cur = filDepto.value;
+    filDepto.innerHTML = '<option value="">Todos los departamentos</option>' +
+      deptos.map(d=>`<option value="${d}">${d}</option>`).join('');
+    filDepto.value = cur;
+  }
+}
+
+// ── ON CHANGE ASIGNADO ────────────────────────────────────────────
+function onChangeAsignado(nombre){
+  const emailField  = document.getElementById('ea-asignado-email');
+  const cargoField  = document.getElementById('ea-asignado-cargo');
+  if(!nombre){ return; }
+  // Buscar en personas primero, luego en usuarios
+  const per = personas.find(p=>p.nombre===nombre);
+  const usu = usuarios.find(u=>u.nombre===nombre);
+  const found = per || usu;
+  if(found){
+    if(emailField && !emailField.value) emailField.value = found.email||'';
+    if(cargoField && !cargoField.value) cargoField.value = found.cargo||'';
+    if(emailField) {
+      emailField.style.background = found.email ? '#EFF6FF' : '';
+      setTimeout(()=>{ if(emailField) emailField.style.background=''; }, 1200);
+    }
+  }
+}
+
+// ── ON CHANGE UBICACION ───────────────────────────────────────────
+function onChangeUbicacion(nombre){
+  const infoEl   = document.getElementById('ea-espacio-info');
+  const hiddenEl = document.getElementById('ea-responsable-espacio-email');
+  if(!nombre){
+    if(infoEl) infoEl.style.display='none';
+    if(hiddenEl) hiddenEl.value='';
+    return;
+  }
+  const esp = espacios.find(e=>e.nombre===nombre);
+  if(esp && esp.responsableNombre){
+    if(infoEl){
+      infoEl.textContent = '🏫 Responsable del espacio: ' + esp.responsableNombre +
+        (esp.responsableEmail ? ' — 📧 ' + esp.responsableEmail : ' ⚠ sin correo registrado');
+      infoEl.style.display = 'block';
+    }
+    if(hiddenEl) hiddenEl.value = esp.responsableEmail || '';
+    // Auto-llenar depto si está vacío
+    const deptoField = document.getElementById('ea-depto');
+    if(deptoField && !deptoField.value && esp.depto) deptoField.value = esp.depto;
+  } else {
+    if(infoEl){
+      infoEl.textContent = nombre ? '⚠ Espacio sin responsable asignado — puedes asignarlo en el módulo Espacios' : '';
+      infoEl.style.display = nombre ? 'block' : 'none';
+    }
+    if(hiddenEl) hiddenEl.value = '';
+  }
+}
+
+// ── RENDER PERSONAS ───────────────────────────────────────────────
+function renderPersonas(){
+  const tb   = document.getElementById('tb-personas');
+  const kpi  = document.getElementById('per-kpis');
+  const per  = PERMS[session.rol]||{};
+  if(!tb) return;
+
+  const q     = (document.getElementById('fil-per-q')?.value||'').toLowerCase();
+  const depto = document.getElementById('fil-per-depto')?.value||'';
+
+  let list = personas.filter(p=>p.estado!=='eliminado');
+  if(depto) list = list.filter(p=>p.depto===depto);
+  if(q)     list = list.filter(p=>
+    (p.nombre||'').toLowerCase().includes(q) ||
+    (p.email||'').toLowerCase().includes(q)  ||
+    (p.cargo||'').toLowerCase().includes(q)
+  );
+
+  // KPIs
+  const total   = personas.filter(p=>p.estado!=='eliminado');
+  const activos_p = total.filter(p=>p.estado==='activo').length;
+  const conEspacio = total.filter(p=>p.espacioResponsable).length;
+  const sinEmail   = total.filter(p=>!p.email).length;
+  if(kpi) kpi.innerHTML = `
+    <div class="rep-kpi-card"><div class="rep-kpi-v">${total.length}</div><div class="rep-kpi-l">Total personas</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${activos_p}</div><div class="rep-kpi-l">Activas</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#185FA5">${conEspacio}</div><div class="rep-kpi-l">Responsables de espacio</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:${sinEmail>0?'#D85A30':'#1D9E75'}">${sinEmail}</div><div class="rep-kpi-l">${sinEmail>0?'Sin correo ⚠':'Todos con correo ✅'}</div></div>
+  `;
+
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">
+      Sin personas registradas${q||depto?' con esos filtros':'. Usa "+ Nueva persona" para comenzar.'}</td></tr>`;
+    return;
+  }
+
+  // Calcular equipos asignados por persona
+  tb.innerHTML = list.map(p=>{
+    const equipos = activos.filter(a=>a.asignado===p.nombre && a.estado!=='eliminado');
+    const espNombre = p.espacioResponsable || '';
+    const espObj = espacios.find(e=>e.nombre===espNombre);
+    const equiposEspacio = espNombre
+      ? activos.filter(a=>a.ubicacion===espNombre && a.estado!=='eliminado').length
+      : 0;
+    return `<tr class="clickable" onclick="verPersona('${p.codigo}')">
+      <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(p.nombre||'')}</div>
+          <div style="font-size:10px;color:var(--text3)">${p.cargo||''}</div></td>
+      <td style="font-size:11px">${p.cargo||'—'}</td>
+      <td style="font-size:11px">${p.depto||'—'}</td>
+      <td style="font-size:11px">${p.email
+        ? `<a href="mailto:${p.email}" onclick="event.stopPropagation()" style="color:var(--navy)">${p.email}</a>`
+        : '<span style="color:var(--red);font-size:10px">⚠ Sin correo</span>'}</td>
+      <td style="font-size:11px">${espNombre
+        ? `<span style="color:var(--navy);font-weight:600">${espNombre}</span><div style="font-size:10px;color:var(--text3)">${equiposEspacio} equipos en el espacio</div>`
+        : '—'}</td>
+      <td style="text-align:center">
+        <span style="font-weight:700;color:var(--navy)">${equipos.length}</span>
+        ${equipos.length?`<div style="font-size:9px;color:var(--text3)">${equipos.slice(0,2).map(a=>a.codigo).join(', ')}${equipos.length>2?'...':''}</div>`:''}
+      </td>
+      <td><span class="badge s-${p.estado||'activo'}">${p.estado||'activo'}</span></td>
+      <td onclick="event.stopPropagation()">
+        ${per.edit?`<button class="act-btn" onclick="openPersona('${p.codigo}')">✎</button>`:''}
+        ${per.delete?`<button class="act-btn" onclick="eliminarPersona('${p.codigo}')" style="color:var(--red)">×</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ABRIR MODAL PERSONA ───────────────────────────────────────────
+function openPersona(codigo){
+  const isEdit = !!codigo;
+  document.getElementById('mod-persona-title').textContent = isEdit ? 'Editar persona' : 'Nueva persona';
+  const p = isEdit ? personas.find(x=>x.codigo===codigo) : {};
+  document.getElementById('per-nombre').value   = p.nombre||'';
+  document.getElementById('per-cargo').value    = p.cargo||'';
+  document.getElementById('per-depto').value    = p.depto||'';
+  document.getElementById('per-email').value    = p.email||'';
+  document.getElementById('per-tel').value      = p.tel||'';
+  document.getElementById('per-obs').value      = p.obs||'';
+  document.getElementById('per-estado').value   = p.estado||'activo';
+  // Poblar select de espacios
+  const selEsp = document.getElementById('per-espacio');
+  selEsp.innerHTML = '<option value="">— No es responsable de ningún espacio —</option>' +
+    espacios.filter(e=>e.estado!=='inactivo').map(e=>
+      `<option value="${e.nombre}">${e.nombre} (${e.tipo||'Espacio'})</option>`
+    ).join('');
+  selEsp.value = p.espacioResponsable||'';
+  document.getElementById('mod-persona')._editCodigo = isEdit ? codigo : null;
+  document.getElementById('mod-persona').classList.add('open');
+}
+
+// ── GUARDAR PERSONA ───────────────────────────────────────────────
+async function guardarPersona(){
+  const nombre = document.getElementById('per-nombre').value.trim();
+  const email  = document.getElementById('per-email').value.trim();
+  if(!nombre){ showToast('El nombre es obligatorio',''); return; }
+  // Verificar nombre duplicado
+  const editCod = document.getElementById('mod-persona')._editCodigo;
+  const isEdit  = !!editCod;
+  if(!isEdit && personas.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase())){
+    showToast('Ya existe una persona con ese nombre',''); return;
+  }
+  const obj = {
+    codigo: isEdit ? editCod : '',
+    nombre,
+    cargo:            document.getElementById('per-cargo').value.trim(),
+    depto:            document.getElementById('per-depto').value.trim(),
+    email,
+    tel:              document.getElementById('per-tel').value.trim(),
+    espacioResponsable: document.getElementById('per-espacio').value,
+    obs:              document.getElementById('per-obs').value.trim(),
+    estado:           document.getElementById('per-estado').value,
+    fechaCreacion:    isEdit ? (personas.find(p=>p.codigo===editCod)?.fechaCreacion||ts()) : ts()
+  };
+  const btn = document.querySelector('#mod-persona .btn-p');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    await apiPost('personas', isEdit?'update':'insert', obj);
+    if(isEdit){
+      const idx = personas.findIndex(p=>p.codigo===editCod);
+      if(idx>=0) personas[idx]={...obj};
+      // Actualizar email en activos que tienen esta persona asignada
+      activos.filter(a=>a.asignado===nombre).forEach(a=>{ a.asignadoEmail=email; a.asignadoCargo=obj.cargo; });
+    } else {
+      const raw = await apiGet('personas');
+      personas = Array.isArray(raw) ? raw.map(r=>({...r})) : personas;
+    }
+    // Si tiene espacio responsable, actualizar el espacio
+    if(obj.espacioResponsable){
+      const esp = espacios.find(e=>e.nombre===obj.espacioResponsable);
+      if(esp){ esp.responsableNombre=nombre; esp.responsableEmail=email; }
+    }
+    audit('CREAR','Personas',obj.codigo||'NUEVA',isEdit?`Persona editada: ${nombre}`:`Persona registrada: ${nombre}`);
+    closeModals();
+    renderPersonas();
+    buildDataLists();
+    showToast(isEdit?'✅ Persona actualizada':'✅ Persona registrada','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+  finally{ btn.disabled=false; btn.textContent='Guardar persona'; }
+}
+
+// ── ELIMINAR PERSONA ──────────────────────────────────────────────
+async function eliminarPersona(codigo){
+  if(!confirm('¿Eliminar esta persona? Los equipos que tenga asignados quedarán sin asignado.')) return;
+  const p = personas.find(x=>x.codigo===codigo);
+  if(!p) return;
+  try{
+    await apiPost('personas','update',{...p,estado:'eliminado'});
+    p.estado='eliminado';
+    audit('ELIMINAR','Personas',codigo,`Eliminada: ${p.nombre}`);
+    renderPersonas();
+    showToast('Persona eliminada','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+}
+
+// ── VER DETALLE PERSONA ───────────────────────────────────────────
+function verPersona(codigo){
+  const p = personas.find(x=>x.codigo===codigo);
+  if(!p) return;
+  const equiposDirect = activos.filter(a=>a.asignado===p.nombre && a.estado!=='eliminado');
+  const equiposEsp = p.espacioResponsable
+    ? activos.filter(a=>a.ubicacion===p.espacioResponsable && a.estado!=='eliminado')
+    : [];
+  const msg = p.nombre + '\n\n'
+    + 'Cargo: '+(p.cargo||'—')+'\n'
+    + 'Depto: '+(p.depto||'—')+'\n'
+    + 'Email: '+(p.email||'Sin correo')+'\n'
+    + 'Equipos asignados: '+equiposDirect.length+'\n'
+    + 'Responsable de: '+(p.espacioResponsable||'Ningún espacio')+'\n'
+    + 'Equipos en ese espacio: '+equiposEsp.length;
+  alert(msg);
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// MÓDULO ESPACIOS
+// ═══════════════════════════════════════════════════════════════════
+
+function renderEspacios(){
+  const tb  = document.getElementById('tb-espacios');
+  const kpi = document.getElementById('esp-kpis');
+  const per = PERMS[session.rol]||{};
+  if(!tb) return;
+
+  const q = (document.getElementById('fil-esp-q')?.value||'').toLowerCase();
+  let list = espacios.filter(e=>e.estado!=='eliminado');
+  if(q) list = list.filter(e=>
+    (e.nombre||'').toLowerCase().includes(q) ||
+    (e.responsableNombre||'').toLowerCase().includes(q) ||
+    (e.tipo||'').toLowerCase().includes(q)
+  );
+
+  // KPIs
+  const total = espacios.filter(e=>e.estado!=='eliminado');
+  const conResp = total.filter(e=>e.responsableNombre).length;
+  const sinResp = total.length - conResp;
+  const totalEquipos = total.reduce((s,e)=>
+    s + activos.filter(a=>a.ubicacion===e.nombre && a.estado!=='eliminado').length, 0);
+  if(kpi) kpi.innerHTML = `
+    <div class="rep-kpi-card"><div class="rep-kpi-v">${total.length}</div><div class="rep-kpi-l">Total espacios</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${conResp}</div><div class="rep-kpi-l">Con responsable</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:${sinResp>0?'#D85A30':'#1D9E75'}">${sinResp}</div><div class="rep-kpi-l">${sinResp>0?'Sin responsable ⚠':'Todos cubiertos ✅'}</div></div>
+    <div class="rep-kpi-card"><div class="rep-kpi-v">${totalEquipos}</div><div class="rep-kpi-l">Equipos en espacios</div></div>
+  `;
+
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">
+      Sin espacios registrados. Usa "+ Nuevo espacio" para crear aulas y laboratorios.</td></tr>`;
+    return;
+  }
+
+  tb.innerHTML = list.map(e=>{
+    const equipos = activos.filter(a=>a.ubicacion===e.nombre && a.estado!=='eliminado');
+    return `<tr>
+      <td class="code-cell">${e.codigo||'—'}</td>
+      <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(e.nombre||'')}</div></td>
+      <td style="font-size:11px">${e.tipo||'—'}</td>
+      <td style="font-size:11px">${e.responsableNombre
+        ? `<span style="font-weight:600">${e.responsableNombre}</span>`
+        : '<span style="color:var(--red);font-size:10px">⚠ Sin responsable</span>'}</td>
+      <td style="font-size:11px">${e.responsableEmail
+        ? `<a href="mailto:${e.responsableEmail}" style="color:var(--navy)">${e.responsableEmail}</a>`
+        : '—'}</td>
+      <td style="text-align:center">
+        <span style="font-weight:700;color:var(--navy)">${equipos.length}</span>
+        ${e.capacidad?`<div style="font-size:9px;color:var(--text3)">Capacidad: ${e.capacidad}</div>`:''}
+      </td>
+      <td style="font-size:11px">${e.ubicacion||'—'}</td>
+      <td onclick="event.stopPropagation()">
+        ${per.edit?`<button class="act-btn" onclick="openEspacio('${e.codigo}')">✎</button>`:''}
+        ${per.delete?`<button class="act-btn" onclick="eliminarEspacio('${e.codigo}')" style="color:var(--red)">×</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── ABRIR MODAL ESPACIO ───────────────────────────────────────────
+function openEspacio(codigo){
+  const isEdit = !!codigo;
+  document.getElementById('mod-espacio-title').textContent = isEdit ? 'Editar espacio' : 'Nuevo espacio';
+  const e = isEdit ? espacios.find(x=>x.codigo===codigo) : {};
+  document.getElementById('esp-nombre').value    = e.nombre||'';
+  document.getElementById('esp-tipo').value      = e.tipo||'Laboratorio';
+  document.getElementById('esp-ubicacion').value = e.ubicacion||'';
+  document.getElementById('esp-capacidad').value = e.capacidad||'';
+  document.getElementById('esp-obs').value       = e.obs||'';
+  document.getElementById('esp-estado').value    = e.estado||'activo';
+  // Poblar select de responsables (personas activas)
+  const selResp = document.getElementById('esp-responsable');
+  selResp.innerHTML = '<option value="">— Sin responsable asignado —</option>' +
+    personas.filter(p=>p.estado==='activo').map(p=>
+      `<option value="${p.nombre}" data-email="${p.email||''}">${p.nombre}${p.cargo?' — '+p.cargo:''}</option>`
+    ).join('');
+  selResp.value = e.responsableNombre||'';
+  document.getElementById('mod-espacio')._editCodigo = isEdit ? codigo : null;
+  document.getElementById('mod-espacio').classList.add('open');
+}
+
+// ── GUARDAR ESPACIO ───────────────────────────────────────────────
+async function guardarEspacio(){
+  const nombre = document.getElementById('esp-nombre').value.trim();
+  if(!nombre){ showToast('El nombre del espacio es obligatorio',''); return; }
+  const editCod = document.getElementById('mod-espacio')._editCodigo;
+  const isEdit  = !!editCod;
+  // Obtener email del responsable desde el select
+  const selResp = document.getElementById('esp-responsable');
+  const respNombre = selResp.value;
+  const respOpt = selResp.options[selResp.selectedIndex];
+  const respEmail = respOpt?.dataset?.email || '';
+  const obj = {
+    codigo:             isEdit ? editCod : '',
+    nombre,
+    tipo:               document.getElementById('esp-tipo').value,
+    ubicacion:          document.getElementById('esp-ubicacion').value.trim(),
+    responsableNombre:  respNombre,
+    responsableEmail:   respEmail,
+    capacidad:          parseInt(document.getElementById('esp-capacidad').value)||0,
+    obs:                document.getElementById('esp-obs').value.trim(),
+    estado:             document.getElementById('esp-estado').value,
+    fechaCreacion:      isEdit ? (espacios.find(e=>e.codigo===editCod)?.fechaCreacion||ts()) : ts()
+  };
+  const btn = document.querySelector('#mod-espacio .btn-p');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    await apiPost('espacios', isEdit?'update':'insert', obj);
+    if(isEdit){
+      const idx = espacios.findIndex(e=>e.codigo===editCod);
+      if(idx>=0) espacios[idx]={...obj};
+      // Actualizar email en activos que están en este espacio
+      activos.filter(a=>a.ubicacion===nombre).forEach(a=>{
+        a.responsableEspacioEmail = respEmail;
+      });
+    } else {
+      const raw = await apiGet('espacios');
+      espacios = Array.isArray(raw) ? raw.map(r=>({...r})) : espacios;
+    }
+    // Actualizar la persona como responsable del espacio
+    if(respNombre){
+      const per = personas.find(p=>p.nombre===respNombre);
+      if(per) per.espacioResponsable = nombre;
+    }
+    audit('CREAR','Espacios',obj.codigo||'NUEVO',isEdit?`Espacio editado: ${nombre}`:`Espacio registrado: ${nombre}`);
+    closeModals();
+    renderEspacios();
+    buildDataLists();
+    showToast(isEdit?'✅ Espacio actualizado':'✅ Espacio registrado','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+  finally{ btn.disabled=false; btn.textContent='Guardar espacio'; }
+}
+
+// ── ELIMINAR ESPACIO ──────────────────────────────────────────────
+async function eliminarEspacio(codigo){
+  if(!confirm('¿Eliminar este espacio? Los equipos en él quedarán sin ubicación de espacio.')) return;
+  const e = espacios.find(x=>x.codigo===codigo);
+  if(!e) return;
+  try{
+    await apiPost('espacios','update',{...e,estado:'eliminado'});
+    e.estado='eliminado';
+    audit('ELIMINAR','Espacios',codigo,`Eliminado: ${e.nombre}`);
+    renderEspacios();
+    showToast('Espacio eliminado','success');
+  }catch(e2){ showToast('Error: '+e2.message,''); }
+}
+
 </script>
-
-<!-- DATALISTS PARA AUTOCOMPLETE CON SUGERENCIAS -->
-<datalist id="dl-deptos">
-  <option value="Administración">
-  <option value="Cómputo P">
-  <option value="Cómputo S">
-  <option value="Pre Es">
-  <option value="Edi Ala N">
-  <option value="K4A">
-  <option value="K4B">
-  <option value="K4C">
-  <option value="K5A">
-  <option value="K5B">
-  <option value="K5C">
-  <option value="1A">
-  <option value="1B">
-  <option value="1C">
-  <option value="2A">
-  <option value="2B">
-  <option value="2C">
-  <option value="3A">
-  <option value="3B">
-  <option value="3C">
-  <option value="4A">
-  <option value="4B">
-  <option value="4C">
-  <option value="5A">
-  <option value="5B">
-  <option value="5C">
-  <option value="6A">
-  <option value="6B">
-  <option value="6C">
-  <option value="7A">
-  <option value="7B">
-  <option value="7C">
-  <option value="8A">
-  <option value="8B">
-  <option value="8C">
-  <option value="9A">
-  <option value="9B">
-  <option value="9C">
-  <option value="10A">
-  <option value="10B">
-  <option value="10C">
-  <option value="11A">
-  <option value="11B">
-  <option value="11C">
-  <option value="12A">
-  <option value="12B">
-  <option value="12C">
-  <option value="Robo Lab">
-  <option value="Sal Doc Pre">
-  <option value="Sal Doc Pri">
-  <option value="Sal Doc Sec">
-  <option value="Gym">
-  <option value="Gym Pri">
-  <option value="Gym Sec">
-  <option value="Auditorio">
-  <option value="Capilla N">
-  <option value="Rack Pri">
-  <option value="Rack Sec">
-  <option value="Informática">
-  <option value="Dirección">
-  <option value="Coordinación">
-</datalist>
-<datalist id="dl-ubicaciones">
-  <option value="Planta Baja">
-  <option value="Primer Piso">
-  <option value="Segundo Piso">
-  <option value="Edificio Ala Norte">
-  <option value="Edificio Ala Sur">
-  <option value="Oficina de Administración">
-  <option value="Oficina de Dirección">
-  <option value="Oficina de Coordinación">
-  <option value="Sala de Reuniones">
-  <option value="Laboratorio de Robótica">
-  <option value="Robo Lab">
-  <option value="Rack Principal">
-  <option value="Rack Primaria">
-  <option value="Rack Secundaria">
-  <option value="Sala de Docentes Preescolar">
-  <option value="Sala de Docentes Primaria">
-  <option value="Sala de Docentes Secundaria">
-  <option value="Gimnasio">
-  <option value="Gimnasio Primaria">
-  <option value="Gimnasio Secundaria">
-  <option value="Auditorio">
-  <option value="Capilla Norte">
-  <option value="Aula K4A">
-  <option value="Aula K4B">
-  <option value="Aula K4C">
-  <option value="Aula K5A">
-  <option value="Aula K5B">
-  <option value="Aula K5C">
-  <option value="Aula 1A">
-  <option value="Aula 1B">
-  <option value="Aula 1C">
-  <option value="Aula 2A">
-  <option value="Aula 2B">
-  <option value="Aula 2C">
-  <option value="Aula 3A">
-  <option value="Aula 3B">
-  <option value="Aula 3C">
-  <option value="Aula 4A">
-  <option value="Aula 4B">
-  <option value="Aula 4C">
-  <option value="Aula 5A">
-  <option value="Aula 5B">
-  <option value="Aula 5C">
-  <option value="Aula 6A">
-  <option value="Aula 6B">
-  <option value="Aula 6C">
-  <option value="Aula 7A">
-  <option value="Aula 7B">
-  <option value="Aula 7C">
-  <option value="Aula 8A">
-  <option value="Aula 8B">
-  <option value="Aula 8C">
-  <option value="Aula 9A">
-  <option value="Aula 9B">
-  <option value="Aula 9C">
-  <option value="Aula 10A">
-  <option value="Aula 10B">
-  <option value="Aula 10C">
-  <option value="Aula 11A">
-  <option value="Aula 11B">
-  <option value="Aula 11C">
-  <option value="Aula 12A">
-  <option value="Aula 12B">
-  <option value="Aula 12C">
-  <option value="Lab Cómputo Primaria">
-  <option value="Lab Cómputo Secundaria">
-  <option value="Pasillo Planta Baja">
-  <option value="Pasillo Primer Piso">
-  <option value="Entrada Principal">
-  <option value="Estacionamiento">
-  <option value="Patio Central">
-  <option value="Área de Recreo">
-</datalist>
-<datalist id="dl-asignados"></datalist>
-<datalist id="dl-marcas">
-  <option>Dell</option><option>HP</option><option>Lenovo</option>
-  <option>Apple</option><option>Asus</option><option>Acer</option>
-  <option>Samsung</option><option>LG</option><option>Sony</option>
-  <option>Cisco</option><option>TP-Link</option><option>Hikvision</option>
-  <option>Dahua</option><option>Epson</option><option>Canon</option>
-  <option>Brother</option><option>Logitech</option><option>APC</option>
-  <option>Ubiquiti</option><option>Mikrotik</option><option>D-Link</option>
-  <option>Netgear</option><option>Fortinet</option><option>SonicWall</option>
-</datalist>
-<datalist id="dl-seriales"></datalist>
-
-
-<!-- MODAL DE ETIQUETA IMPRIMIBLE — FORMATO ZEBRA -->
-<div id="modal-etiqueta">
-  <div class="etiqueta-wrap">
-    <div class="etiqueta-titulo">
-      🏷️ Etiqueta del Activo
-      <span style="font-size:10px;font-weight:400;color:#888;margin-left:8px">Etiqueta Zebra 57×32mm</span>
-    </div>
-    <!-- Preview: layout Zebra — barcode izquierda, QR derecha -->
-    <div class="etiqueta-preview">
-      <div style="font-size:10px;color:#999;text-align:center;margin-bottom:6px">Vista previa de la etiqueta</div>
-      <div class="etiqueta-preview-inner">
-        <!-- Columna izquierda: nombre + barcode Code128 -->
-        <div class="etiqueta-barcode-col">
-          <div id="prev-nombre" class="etiqueta-nombre-print"></div>
-          <svg id="prev-barcode-svg" class="etiqueta-barcode-svg"></svg>
-          <div id="prev-codigo" class="etiqueta-codigo-print"></div>
-        </div>
-
-      </div>
-    </div>
-    <div class="etiqueta-acciones">
-      <span class="etiqueta-info">📌 Code 128 — Para lector físico</span>
-      <div style="display:flex;gap:8px">
-        <button class="btn" onclick="cerrarEtiqueta()">Cancelar</button>
-        <button class="btn btn-p" onclick="imprimirEtiqueta()">🖨️ Imprimir en Zebra</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ÁREA DE IMPRESIÓN ZEBRA — etiqueta individual -->
-<div id="print-etiqueta-area" style="display:none">
-  <div id="print-barcode-col">
-    <div id="print-nombre"></div>
-    <svg id="print-barcode-svg"></svg>
-    <div id="print-codigo"></div>
-  </div>
-</div>
-
-<!-- ÁREA DE IMPRESIÓN MÚLTIPLE — grupo/rango de etiquetas Zebra -->
-<div id="print-multi-area" style="display:none;position:absolute;left:-9999px;top:0;"></div>
-
-<!-- MODAL ETIQUETAS GRUPALES -->
-<div class="modal-bg" id="mod-etiq-grupo">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-title">
-      <span>🏷️ Imprimir etiquetas</span>
-      <button class="modal-close" onclick="closeModals()">✕</button>
-    </div>
-
-    <!-- Selector de conjunto -->
-    <div class="f-row">
-      <div class="f-lbl">¿Qué etiquetas imprimir?</div>
-      <select class="f-inp f-sel" id="eg-modo" onchange="actualizarModoEtiq()">
-        <option value="filtro">Vista actual (estado + tipo filtrado)</option>
-        <option value="tipo">Por tipo de activo</option>
-        <option value="rango">Rango de códigos (ACT-XXXX a ACT-YYYY)</option>
-        <option value="todos">Todos los activos (sin eliminados)</option>
-      </select>
-    </div>
-
-    <!-- Panel: por tipo -->
-    <div id="eg-panel-tipo" style="display:none">
-      <div class="f-row">
-        <div class="f-lbl">Tipo de activo</div>
-        <select class="f-inp f-sel" id="eg-tipo-sel" onchange="actualizarPreviewEtiq()">
-          <option value="">— Selecciona un tipo —</option>
-        </select>
-      </div>
-    </div>
-
-    <!-- Panel: rango -->
-    <div id="eg-panel-rango" style="display:none">
-      <div class="f-2">
-        <div class="f-row">
-          <div class="f-lbl">Desde (número)</div>
-          <input class="f-inp" type="number" id="eg-desde" min="1" placeholder="1" oninput="actualizarPreviewEtiq()">
-        </div>
-        <div class="f-row">
-          <div class="f-lbl">Hasta (número)</div>
-          <input class="f-inp" type="number" id="eg-hasta" min="1" placeholder="50" oninput="actualizarPreviewEtiq()">
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--text3);margin-top:-6px;margin-bottom:8px;">
-        Ej: desde 1 hasta 30 → ACT-0001 a ACT-0030
-      </div>
-    </div>
-
-    <!-- Resumen -->
-    <div id="eg-resumen" style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:14px;min-height:38px;">
-      Selecciona el modo para ver el resumen.
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn" onclick="closeModals()">Cancelar</button>
-      <button class="btn btn-p" id="eg-btn-imprimir" onclick="imprimirGrupoEtiquetas()" disabled>
-        🖨️ Imprimir etiquetas
-      </button>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- MODAL IMPORTAR ACTIVOS -->
-<div class="modal-bg" id="mod-importar-activos">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-title">
-      <span>⬆ Importar activos desde Excel / CSV</span>
-      <button class="modal-close" onclick="cerrarImportarActivos()">✕</button>
-    </div>
-    <div style="padding:4px 0 10px;font-size:12px;color:var(--text3)">
-      Importa decenas o cientos de activos de una sola vez. Descarga la plantilla, llénala y súbela aquí.
-    </div>
-    <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
-      <button class="btn btn-p" onclick="descargarPlantillaActivos()">⬇ Descargar plantilla Excel (.xlsx)</button>
-      <span style="font-size:11px;color:var(--text3);align-self:center">← Descarga, llena en Excel y sube el archivo aquí</span>
-    </div>
-    <div class="f-row">
-      <div class="f-lbl">Seleccionar archivo (.csv o .xlsx)</div>
-      <input type="file" id="import-activos-file" accept=".csv,.xlsx,.xls"
-             style="width:100%;padding:8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;"
-             onchange="leerArchivoActivos(this)">
-    </div>
-    <div id="import-activos-status" style="font-size:12px;color:var(--text2);margin:10px 0;min-height:20px;"></div>
-    <div id="import-activos-preview" style="max-height:220px;overflow-y:auto;margin-bottom:12px;"></div>
-    <div class="modal-actions">
-      <button class="btn" onclick="cerrarImportarActivos()">Cancelar</button>
-      <button class="btn btn-p" id="import-activos-btn" onclick="ejecutarImportarActivos()" disabled>
-        ⬆ Importar activos
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL IMPORTAR USUARIOS -->
-<div class="modal-bg" id="mod-importar-usuarios">
-  <div class="modal" style="max-width:640px;">
-    <div class="modal-title">
-      <span>⬆ Importar usuarios desde Excel / CSV</span>
-      <button class="modal-close" onclick="cerrarImportarUsuarios()">✕</button>
-    </div>
-    <div style="padding:4px 0 10px;font-size:12px;color:var(--text3)">
-      Importa múltiples usuarios de una sola vez. Todos deberán cambiar su contraseña en el primer acceso.
-    </div>
-    <div class="f-row">
-      <div class="f-lbl">Seleccionar archivo (.csv o .xlsx)</div>
-      <input type="file" id="import-usuarios-file" accept=".csv,.xlsx,.xls"
-             style="width:100%;padding:8px;border:1.5px solid var(--border2);border-radius:6px;font-size:13px;"
-             onchange="leerArchivoUsuarios(this)">
-    </div>
-    <div style="background:var(--amber-l);border:1px solid var(--amber-m);border-radius:6px;padding:8px 12px;font-size:11px;color:var(--amber);margin:8px 0;">
-      ⚠ Columnas requeridas: username, pass_temp, rol, nombre, email, estado<br>
-      Roles válidos: admin · tecnico · inventario · consultor
-    </div>
-    <div id="import-usuarios-status" style="font-size:12px;color:var(--text2);margin:10px 0;min-height:20px;"></div>
-    <div id="import-usuarios-preview" style="max-height:200px;overflow-y:auto;margin-bottom:12px;"></div>
-    <div class="modal-actions">
-      <button class="btn" onclick="cerrarImportarUsuarios()">Cancelar</button>
-      <button class="btn btn-p" id="import-usuarios-btn" onclick="ejecutarImportarUsuarios()" disabled>
-        ⬆ Importar usuarios
-      </button>
-    </div>
-  </div>
-</div>
-
-</body>
-</html>
 
 
 
