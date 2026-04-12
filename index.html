@@ -933,6 +933,49 @@ tbody tr.clickable{cursor:pointer;}
     </div>
   </div>
 
+  <!-- ── ROW 4: Resumen de Mobiliario ── -->
+  <div class="pbi-row2" style="margin-top:12px;">
+
+    <!-- KPIs Mobiliario -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">🪑 Resumen de Mobiliario</div>
+      <div class="pbi-kpi-bar" style="grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;" id="dash-mob-kpis">
+        <div class="pbi-kpi-card" style="cursor:pointer" onclick="go('mobiliario',document.getElementById('nav-mobiliario'))">
+          <div class="pbi-kpi-label">Total elementos</div>
+          <div class="pbi-kpi-value" id="d-mob-total">0</div>
+          <div class="pbi-kpi-sub">elementos registrados</div>
+          <div class="pbi-kpi-bar-accent" style="background:#1B3A6B"></div>
+        </div>
+        <div class="pbi-kpi-card">
+          <div class="pbi-kpi-label">Total unidades</div>
+          <div class="pbi-kpi-value" id="d-mob-unidades">0</div>
+          <div class="pbi-kpi-sub">piezas en inventario</div>
+          <div class="pbi-kpi-bar-accent" style="background:#00B4B4"></div>
+        </div>
+        <div class="pbi-kpi-card">
+          <div class="pbi-kpi-label">Valor mobiliario</div>
+          <div class="pbi-kpi-value" style="font-size:18px;color:#1A7A4A" id="d-mob-val">$0</div>
+          <div class="pbi-kpi-sub">valor total inventario</div>
+          <div class="pbi-kpi-bar-accent" style="background:#1A7A4A"></div>
+        </div>
+      </div>
+      <!-- Barras de condición -->
+      <div style="margin-top:12px;" id="dash-mob-condicion"></div>
+    </div>
+
+    <!-- Tabla: mobiliario en mal estado -->
+    <div class="pbi-card">
+      <div class="pbi-card-title">⚠️ Mobiliario que requiere atención</div>
+      <div style="overflow-y:auto;max-height:240px;">
+        <table class="pbi-tbl">
+          <thead><tr><th>Código</th><th>Descripción</th><th>Tipo</th><th>Condición</th><th>Ubicación</th></tr></thead>
+          <tbody id="pbi-tbl-mob"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
       </div>
       <div class="pnl" id="pnl-activos">
         <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:6px 12px;font-size:11px;color:#1E40AF;margin-bottom:6px;">
@@ -1095,7 +1138,7 @@ tbody tr.clickable{cursor:pointer;}
         </div>
         <div class="f-row">
           <div class="f-lbl">📧 Correo electrónico *</div>
-          <input class="f-inp" type="email" id="per-email" placeholder="correo@institucion.edu.pa">
+          <input class="f-inp" type="email" id="per-email" placeholder="correo@institucion.edu.pa" oninput="validateField(this,'email','Ej: nombre@pca.edu.pa')" onblur="validateField(this,'email','Ej: nombre@pca.edu.pa')">
         </div>
         <div class="f-row">
           <div class="f-lbl">Teléfono</div>
@@ -1328,7 +1371,7 @@ tbody tr.clickable{cursor:pointer;}
         </div>
         <div class="f-row">
           <div class="f-lbl">Fecha de adquisición</div>
-          <input class="f-inp" id="mob-fecha" placeholder="DD/MM/AAAA">
+          <input class="f-inp" type="date" id="mob-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)">
         </div>
         <div class="f-row">
           <div class="f-lbl">Valor unitario ($)</div>
@@ -1522,7 +1565,7 @@ tbody tr.clickable{cursor:pointer;}
       <div class="f-lbl">📧 Correo del asignado
         <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">Para notificarle cuando su equipo entre o salga de mantenimiento</span>
       </div>
-      <input class="f-inp" type="email" id="ea-asignado-email" placeholder="correo@institucion.edu.pa" autocomplete="off">
+      <input class="f-inp" type="email" id="ea-asignado-email" placeholder="correo@institucion.edu.pa" autocomplete="off" oninput="validateField(this,'email','Ej: nombre@pca.edu.pa')" onblur="validateField(this,'email','Ej: nombre@pca.edu.pa')">
     </div>
     <div class="f-row">
       <div class="f-lbl">Cargo / Rol</div>
@@ -1650,7 +1693,7 @@ tbody tr.clickable{cursor:pointer;}
       <span style="font-size:10px;font-weight:400;color:#666;display:block;margin-top:2px">Opcional — para notificarle que su equipo está en IT</span>
     </div>
     <input class="f-inp" type="email" id="mm-email-resp"
-      placeholder="correo@dominio.com">
+      placeholder="correo@dominio.com" oninput="validateField(this,'email','Ej: nombre@pca.edu.pa')">
     <div id="mm-email-resp-info" style="font-size:11px;color:var(--navy);margin-top:4px;display:none;padding:4px 8px;background:var(--blue-l,#EFF6FF);border-radius:4px;border-left:3px solid var(--navy)"></div>
   </div>
   <div class="f-2">
@@ -1681,7 +1724,7 @@ tbody tr.clickable{cursor:pointer;}
           </select>
         </div>
         <div class="f-row"><div class="f-lbl">Correo del encargado de compras *</div>
-          <input class="f-inp" type="email" id="mm-piezas-email" placeholder="compras@colegio.edu">
+          <input class="f-inp" type="email" id="mm-piezas-email" placeholder="compras@colegio.edu" oninput="validateField(this,'email','Ej: correo@pca.edu.pa')">
         </div>
       </div>
       <div class="f-row"><div class="f-lbl">Presupuesto estimado ($)</div>
@@ -2287,23 +2330,30 @@ function renderUsuarios(){
   if(!lista.length){
     grid.innerHTML='<div class="empty-c">Sin usuarios con esos filtros.</div>';return;
   }
-  grid.innerHTML=lista.map(u=>`<div class="user-card" style="${u.estado==='inactivo'?'opacity:0.6;':''}">
+  grid.innerHTML=lista.map(u=>{
+    const sNombre   = sanitizeHTML(u.nombre||'—');
+    const sCargo    = sanitizeHTML(u.cargo||'—');
+    const sEmail    = sanitizeHTML(u.email||'Sin correo');
+    const sTel      = sanitizeHTML(u.tel||'Sin teléfono');
+    const sDepto    = sanitizeHTML(u.depto||'Sin departamento');
+    const sUsername = sanitizeHTML(u.username||'');
+    return `<div class="user-card" style="${u.estado==='inactivo'?'opacity:0.6;':''}">
     <div class="user-card-head">
       <div class="sb-avatar" style="width:40px;height:40px;font-size:14px">${initials(u.nombre)}</div>
-      <div><div class="user-name">${u.nombre||'—'}</div><div class="user-cargo">${u.cargo||'—'}</div></div>
+      <div><div class="user-name">${sNombre}</div><div class="user-cargo">${sCargo}</div></div>
     </div>
     <div style="display:flex;gap:5px;flex-wrap:wrap"><span class="badge ${ROL_CLASS[u.rol]||''}">${ROL_LABELS[u.rol]||u.rol}</span><span class="badge ${u.estado==='activo'?'s-activo':'s-inactivo'}">${u.estado||'activo'}</span></div>
     <div class="user-detail">
-      <span>✉ ${u.email||'Sin correo'}</span><span>📞 ${u.tel||'Sin teléfono'}</span>
-      <span>🏢 ${u.depto||'Sin departamento'}</span>
-      <span style="color:var(--text3);font-size:10px">Usuario: <strong>${u.username}</strong></span>
+      <span>✉ ${sEmail}</span><span>📞 ${sTel}</span>
+      <span>🏢 ${sDepto}</span>
+      <span style="color:var(--text3);font-size:10px">Usuario: <strong>${sUsername}</strong></span>
       <span style="color:var(--text3);font-size:10px">Último acceso: ${u.ultimoAcceso||'Nunca'}</span>
     </div>
     ${per.usuarios?`<div style="display:flex;gap:6px;margin-top:4px">
-      <button class="btn btn-p" style="flex:1;font-size:11px" onclick="openUsuario('${u.username}')">✎ Editar</button>
-      ${u.username!==session.username?`<button class="btn ${u.estado==='activo'?'btn-warn':''}" style="font-size:11px" onclick="toggleUsuarioEstado('${u.username}')">${u.estado==='activo'?'Desactivar':'Activar'}</button>`:''}
+      <button class="btn btn-p" style="flex:1;font-size:11px" onclick="openUsuario('${sUsername}')">✎ Editar</button>
+      ${u.username!==session.username?`<button class="btn ${u.estado==='activo'?'btn-warn':''}" style="font-size:11px" onclick="toggleUsuarioEstado('${sUsername}')">${u.estado==='activo'?'Desactivar':'Activar'}</button>`:''}
     </div>`:''}
-  </div>`).join('');
+  </div>`;}).join('');
 }
 
 async function toggleUsuarioEstado(username){
@@ -3555,6 +3605,63 @@ function renderDash(){
         <td style="font-weight:700;color:#1A7A4A">$${calcDepre(a).toLocaleString()}</td>
       </tr>`).join('')
     : '<tr><td colspan="5" class="pbi-empty">Sin activos</td></tr>';
+
+  // ── MOBILIARIO en Dashboard ──────────────────────────────────
+  const mob = Array.isArray(mobiliario) ? mobiliario.filter(m=>m.estado!=='eliminado') : [];
+  const mobTotal    = mob.length;
+  const mobUnidades = mob.reduce((s,m)=>s+(parseInt(m.cantidad)||1),0);
+  const mobVal      = mob.reduce((s,m)=>s+(parseFloat(m.valor)||0)*(parseInt(m.cantidad)||1),0);
+  const mobBueno    = mob.filter(m=>m.condicion==='bueno').length;
+  const mobRegular  = mob.filter(m=>m.condicion==='regular').length;
+  const mobDeteri   = mob.filter(m=>m.condicion==='deteriorado').length;
+  const mobBaja     = mob.filter(m=>m.condicion==='baja').length;
+
+  if(el('d-mob-total'))    el('d-mob-total').textContent    = mobTotal;
+  if(el('d-mob-unidades')) el('d-mob-unidades').textContent = mobUnidades;
+  if(el('d-mob-val'))      el('d-mob-val').textContent      = '$'+mobVal.toLocaleString();
+
+  // Barras de condición
+  const condEl = el('dash-mob-condicion');
+  if(condEl && mobTotal > 0){
+    const barras = [
+      {label:'Bueno',     val:mobBueno,  color:'#1A7A4A'},
+      {label:'Regular',   val:mobRegular,color:'#E8A800'},
+      {label:'Deteriorado',val:mobDeteri,color:'#E07B39'},
+      {label:'Dado de baja',val:mobBaja, color:'#9CA3AF'},
+    ];
+    condEl.innerHTML = barras.map(b=>{
+      const pct = mobTotal ? Math.round(b.val/mobTotal*100) : 0;
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <span style="font-size:10px;color:#6B7280;width:80px;flex-shrink:0">${b.label}</span>
+        <div style="flex:1;background:#F3F4F6;border-radius:4px;height:10px;">
+          <div style="width:${pct}%;background:${b.color};border-radius:4px;height:10px;transition:width .4s"></div>
+        </div>
+        <span style="font-size:10px;font-weight:700;color:${b.color};width:36px;text-align:right">${b.val} <span style="color:#9CA3AF;font-weight:400">(${pct}%)</span></span>
+      </div>`;
+    }).join('');
+  } else if(condEl){
+    condEl.innerHTML = '<div class="pbi-empty" style="font-size:11px">Sin mobiliario registrado</div>';
+  }
+
+  // Tabla mobiliario que requiere atención (regular + deteriorado + baja)
+  const mobAtenc = mob
+    .filter(m=>m.condicion==='regular'||m.condicion==='deteriorado'||m.condicion==='baja')
+    .sort((a,b)=>{
+      const ord={baja:0,deteriorado:1,regular:2};
+      return (ord[a.condicion]||3)-(ord[b.condicion]||3);
+    });
+  const tblMob = el('pbi-tbl-mob');
+  if(tblMob){
+    tblMob.innerHTML = mobAtenc.length
+      ? mobAtenc.slice(0,10).map(m=>`<tr>
+          <td class="pbi-code">${m.codigo||'—'}</td>
+          <td style="font-weight:600;font-size:11px">${sanitizeHTML(m.nombre||'')}</td>
+          <td style="font-size:11px">${m.tipo||'—'}</td>
+          <td><span class="badge" style="background:${m.condicion==='deteriorado'?'#E07B3922':m.condicion==='baja'?'#9CA3AF22':'#E8A80022'};color:${m.condicion==='deteriorado'?'#E07B39':m.condicion==='baja'?'#6B7280':'#E8A800'}">${m.condicion}</span></td>
+          <td style="font-size:11px">${sanitizeHTML(m.ubicacion||'—')}</td>
+        </tr>`).join('')
+      : '<tr><td colspan="5" class="pbi-empty">Todo el mobiliario está en buen estado ✅</td></tr>';
+  }
 }
 
 // ── Canvas: barras horas con líneas por usuario ──────────────
