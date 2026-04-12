@@ -2136,16 +2136,46 @@ async function loadFromSheets(){
   // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
   lt.textContent='Conectando a Google Sheets...';
   ls.textContent='Cargando datos en paralelo...';
-  const [rawU, rawA, rawT, rawAud, rawMob0, rawPer0, rawEsp0, rawDep0] = await Promise.all([
-    apiGet('usuarios'),
-    apiGet('activos'),
-    apiGet('tickets'),
-    apiGet('auditoria'),
-    apiGet('mobiliario').catch(()=>[]),
-    apiGet('personas').catch(()=>[]),
-    apiGet('espacios').catch(()=>[]),
-    apiGet('departamentos').catch(()=>[])
+  // ── HOJAS CRÍTICAS — si fallan el sistema no puede funcionar ──
+  // Se intentan hasta 3 veces antes de mostrar error al usuario
+  const cargarCritica = async (hoja, intento=1) => {
+    try {
+      const data = await apiGet(hoja);
+      if(Array.isArray(data)) return data;
+      throw new Error('Respuesta inválida');
+    } catch(e) {
+      if(intento < 3){
+        lt.textContent = `Reintentando ${hoja} (${intento}/3)...`;
+        await new Promise(r=>setTimeout(r, intento * 2000));
+        return cargarCritica(hoja, intento+1);
+      }
+      throw new Error(`No se pudo cargar la hoja "${hoja}" después de 3 intentos. Verifica tu conexión y el Apps Script.`);
+    }
+  };
+
+  // ── HOJAS OPCIONALES — si fallan retornan vacío sin romper la carga ──
+  const cargarOpcional = async (hoja) => {
+    try { const d = await apiGet(hoja); return Array.isArray(d) ? d : []; }
+    catch(e) { return []; }
+  };
+
+  // Cargar críticas primero (en paralelo entre sí)
+  lt.textContent='Cargando datos del sistema...';
+  const [rawU, rawA, rawT, rawAud] = await Promise.all([
+    cargarCritica('usuarios'),
+    cargarCritica('activos'),
+    cargarCritica('tickets'),
+    cargarCritica('auditoria'),
   ]);
+
+  // Cargar opcionales en paralelo (no bloquean si fallan)
+  const [rawMob0, rawPer0, rawEsp0, rawDep0] = await Promise.all([
+    cargarOpcional('mobiliario'),
+    cargarOpcional('personas'),
+    cargarOpcional('espacios'),
+    cargarOpcional('departamentos'),
+  ]);
+
   lt.textContent='Procesando datos...';
   usuarios = rawU.map(r=>({...r}));
   activos  = rawA.map(r=>({...r,id:r.codigo,valor:parseFloat(r.valor)||0,vida:parseInt(r.vida)||3,historial:parseHist(r.historial)}));
