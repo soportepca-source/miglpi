@@ -769,6 +769,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="sb-sec">General</div>
     <div class="sb-item on" id="nav-dashboard" onclick="go('dashboard',this)">◈ Dashboard</div>
     <div class="sb-sec">Personas y Espacios</div>
+    <div class="sb-item" id="nav-departamentos" onclick="go('departamentos',this)">🏷️ Departamentos</div>
     <div class="sb-item" id="nav-personas" onclick="go('personas',this)">👤 Personas</div>
     <div class="sb-item" id="nav-espacios" onclick="go('espacios',this)">🏫 Espacios</div>
     <div class="sb-sec">Activos</div>
@@ -974,7 +975,65 @@ tbody tr.clickable{cursor:pointer;}
         <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
       </div>
       <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
-      <!-- ═══ PANEL PERSONAS ═══ -->
+      <!-- ═══ PANEL DEPARTAMENTOS ═══ -->
+  <div class="pnl" id="pnl-departamentos">
+    <div class="pnl-header">
+      <h2 class="pnl-title">🏷️ Catálogo de Departamentos</h2>
+      <p class="pnl-sub">Define los departamentos una sola vez. Todos los demás módulos usarán esta lista para evitar errores de escritura.</p>
+    </div>
+    <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;padding:8px 12px;font-size:11px;color:#1E40AF;margin-bottom:12px;">
+      ℹ️ <strong>Importante:</strong> Crea aquí todos los departamentos antes de registrar activos, personas o mobiliario. Una vez creados, aparecerán como lista desplegable en todos los módulos.
+    </div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Código</th><th>Nombre del departamento</th><th>Descripción</th><th>Responsable</th><th>Estado</th><th></th>
+          </tr></thead>
+          <tbody id="tb-departamentos"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ MODAL DEPARTAMENTO ═══ -->
+  <div class="modal-bg" id="mod-departamento">
+    <div class="modal" style="max-width:480px;">
+      <div class="modal-title">
+        <span id="mod-dep-title">Nuevo departamento</span>
+        <button class="modal-close" onclick="closeModals()">✕</button>
+      </div>
+      <div class="f-row">
+        <div class="f-lbl">Nombre del departamento *
+          <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Escríbelo exactamente como debe aparecer en todo el sistema</span>
+        </div>
+        <input class="f-inp" id="dep-nombre" placeholder="Ej: Informática">
+      </div>
+      <div class="f-row">
+        <div class="f-lbl">Descripción</div>
+        <input class="f-inp" id="dep-desc" placeholder="Ej: Departamento de tecnología e informática">
+      </div>
+      <div class="f-row">
+        <div class="f-lbl">Responsable del departamento</div>
+        <select class="f-inp f-sel" id="dep-responsable">
+          <option value="">— Sin responsable —</option>
+        </select>
+      </div>
+      <div class="f-row">
+        <div class="f-lbl">Estado</div>
+        <select class="f-inp f-sel" id="dep-estado">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModals()">Cancelar</button>
+        <button class="btn btn-p" onclick="guardarDepartamento()">Guardar departamento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ PANEL PERSONAS ═══ -->
   <div class="pnl" id="pnl-personas">
     <div class="pnl-header">
       <h2 class="pnl-title">👤 Personas y Beneficiarios</h2>
@@ -1030,7 +1089,9 @@ tbody tr.clickable{cursor:pointer;}
         </div>
         <div class="f-row">
           <div class="f-lbl">Departamento *</div>
-          <input class="f-inp" id="per-depto" list="dl-deptos" placeholder="Ej: Informática">
+          <select class="f-inp f-sel" id="per-depto">
+            <option value="">— Seleccionar departamento —</option>
+          </select>
         </div>
         <div class="f-row">
           <div class="f-lbl">📧 Correo electrónico *</div>
@@ -1245,11 +1306,13 @@ tbody tr.clickable{cursor:pointer;}
         </div>
         <div class="f-row">
           <div class="f-lbl">Ubicación / Aula</div>
-          <input class="f-inp" id="mob-ubicacion" placeholder="Ej: Aula 3B">
+          <select class="f-inp f-sel" id="mob-ubicacion" onchange="onChangeMobUbicacion(this.value)">
+  <option value="">— Seleccionar espacio —</option>
+</select>
         </div>
         <div class="f-row">
           <div class="f-lbl">Departamento</div>
-          <input class="f-inp" id="mob-depto" placeholder="Ej: Primaria">
+          <select class="f-inp f-sel" id="mob-depto"><option value="">— Seleccionar departamento —</option></select>
         </div>
         <div class="f-row">
           <div class="f-lbl">Material</div>
@@ -1313,6 +1376,9 @@ tbody tr.clickable{cursor:pointer;}
             <option value="mantenimientos">Mantenimientos y costos</option>
             <option value="danos">Reporte de daños / descartes</option>
             <option value="trazabilidad">Trazabilidad por persona asignada</option>
+            <option value="mobiliario_inv">Inventario de mobiliario</option>
+            <option value="activos_espacio">Activos por espacio</option>
+            <option value="activos_persona">Activos por persona</option>
           </select>
           <div id="rep-filtros" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;"></div>
           <div style="margin-left:auto;display:flex;gap:7px;">
@@ -1426,7 +1492,10 @@ tbody tr.clickable{cursor:pointer;}
 <select class="f-inp f-sel" id="ea-asignado" onchange="onChangeAsignado(this.value)">
   <option value="">— Sin asignar —</option>
 </select></div>
-    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="ea-depto" list="dl-deptos" autocomplete="off" placeholder="TI, Finanzas..."></div>
+    <div class="f-row"><div class="f-lbl">Departamento</div>
+<select class="f-inp f-sel" id="ea-depto">
+  <option value="">— Seleccionar departamento —</option>
+</select></div>
   </div>
   <div class="f-2">
     <div class="f-row">
@@ -1530,7 +1599,10 @@ tbody tr.clickable{cursor:pointer;}
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Teléfono</div><input class="f-inp" id="eu-tel" oninput="validateField(this,'phone','Ej: 6000-0000')" onblur="validateField(this,'phone','Ej: 6000-0000')" placeholder="+507 6000-0000"></div>
-    <div class="f-row"><div class="f-lbl">Departamento</div><input class="f-inp" id="eu-depto" list="dl-deptos" autocomplete="off" placeholder="TI, Finanzas..."></div>
+    <div class="f-row"><div class="f-lbl">Departamento</div>
+<select class="f-inp f-sel" id="eu-depto">
+  <option value="">— Seleccionar departamento —</option>
+</select></div>
   </div>
   <div class="f-2">
     <div class="f-row"><div class="f-lbl">Cargo / Puesto</div><input class="f-inp" id="eu-cargo" placeholder="Técnico de soporte..."></div>
@@ -1622,10 +1694,11 @@ const TIPO_ICON={
   'Teléfono IP':'☎️',
   'Red / Switch':'🔌',Software:'💿',Vehículo:'🚗',Otro:'📦'
 };
-const PERMS={admin:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,mobiliario:true,edit:true,delete:true},tecnico:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,mobiliario:true,edit:true,delete:false},consultor:{personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,mobiliario:true,edit:false,delete:false},inventario:{personas:true,espacios:true,mobiliario:true,activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
+const PERMS={admin:{departamentos:true,personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:true,mobiliario:true,edit:true,delete:true},tecnico:{departamentos:false,personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:false,usuarios:false,mobiliario:true,edit:true,delete:false},consultor:{departamentos:false,personas:true,espacios:true,activos:true,tickets:true,kanban:true,auditoria:true,usuarios:false,mobiliario:true,edit:false,delete:false},inventario:{departamentos:false,personas:true,espacios:true,mobiliario:true,activos:true,tickets:false,kanban:false,auditoria:false,usuarios:false,edit:true,delete:false}};
 let session=null,activos=[],tickets=[],auditLog=[],usuarios=[],activoActual=null;
 let cntActivos=0,cntTickets=0,filtroA='todos',filtroT='todos',filtroAud='todos',filtroTipo='todos';
 let mobiliario=[];
+let departamentos=[];
 let personas=[];
 let espacios=[];
 let pendingDelete={type:null,id:null};
@@ -1934,7 +2007,12 @@ async function loadFromSheets(){
     const rawEsp = await apiGet('espacios');
     espacios = Array.isArray(rawEsp) ? rawEsp.map(r=>({...r})) : [];
   } catch(e) { espacios = []; }
-  // Reconstruir datalists con datos frescos
+  // ── DEPARTAMENTOS — carga segura con fallback ──
+  try {
+    const rawDep = await apiGet('departamentos');
+    departamentos = Array.isArray(rawDep) ? rawDep.map(r=>({...r})) : [];
+  } catch(e) { departamentos = []; }
+  // Reconstruir datalists/selects con datos frescos
   if(typeof buildDataLists === 'function') buildDataLists();
   // NOTA: No se crea admin automáticamente para evitar duplicados
   // Si no hay usuarios, mostrar aviso y dejar entrar igual
@@ -2056,7 +2134,7 @@ function doLogout(){
 
 function applyPerms(){
   const p=PERMS[session.rol]||{};
-  ['activos','tickets','kanban','auditoria','usuarios','mobiliario','personas','espacios'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
+  ['activos','tickets','kanban','auditoria','usuarios','mobiliario','personas','espacios','departamentos'].forEach(m=>{const el=document.getElementById('nav-'+m);if(el)el.classList.toggle('locked',!p[m]);});
   const repEl=document.getElementById('nav-reportes');
   if(repEl) repEl.classList.toggle('locked', session.rol==='inventario');
   document.getElementById('nav-miperfil').style.display='flex';
@@ -2070,10 +2148,10 @@ function go(panel,el){
   // Smart polling — actualizar panel activo y limpiar badge
   _pollingPanel = panel;
   if(panel==='tickets'||panel==='kanban') _limpiarBadgeNav();
-  const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',usuarios:'Gestión de usuarios',auditoria:'Registro de auditoría',miperfil:'Mi perfil',reportes:'Reportes',mobiliario:'Inventario de Mobiliario',personas:'Personas y Beneficiarios',espacios:'Espacios y Aulas'};
+  const titles={dashboard:'Dashboard',activos:'Inventario de activos',detalle:'Detalle del activo',tickets:'Gestión de tickets',kanban:'Kanban de tickets',usuarios:'Gestión de usuarios',auditoria:'Registro de auditoría',miperfil:'Mi perfil',reportes:'Reportes',mobiliario:'Inventario de Mobiliario',personas:'Personas y Beneficiarios',espacios:'Espacios y Aulas',departamentos:'Catálogo de Departamentos'};
   document.getElementById('tb-title').textContent=titles[panel]||panel;
   renderTopbarBtns(panel);
-  if(panel==='dashboard')renderDash();if(panel==='activos')renderActivos();if(panel==='tickets')renderTickets();if(panel==='mobiliario')renderMobiliario();if(panel==='personas')renderPersonas();if(panel==='espacios')renderEspacios();
+  if(panel==='dashboard')renderDash();if(panel==='activos')renderActivos();if(panel==='tickets')renderTickets();if(panel==='mobiliario')renderMobiliario();if(panel==='personas')renderPersonas();if(panel==='espacios')renderEspacios();if(panel==='departamentos')renderDepartamentos();
   if(panel==='kanban')renderKanban();if(panel==='usuarios')renderUsuarios();if(panel==='auditoria')renderAudit();
   if(panel==='miperfil')renderMiPerfil();if(panel==='reportes')initReportes();
 }
@@ -2089,6 +2167,9 @@ function renderTopbarBtns(p){
     if(['admin','tecnico','inventario'].includes(session.rol)){
       c.innerHTML+='<button class="btn" onclick="abrirModalEtiquetasGrupo()" style="margin-left:6px">🏷️ Etiquetas</button>';
     }
+  }
+  if(p==='departamentos'){
+    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openDepartamento(null)">+ Nuevo departamento</button>';
   }
   if(p==='personas'){
     if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openPersona(null)">+ Nueva persona</button>';
@@ -2113,6 +2194,7 @@ function renderTopbarBtns(p){
 }
 
 function openUsuario(id){
+  buildDataLists();
   const isEdit=id!=null;
   document.getElementById('mod-usuario-title').textContent=isEdit?'Editar usuario':'Nuevo usuario';
   document.getElementById('eu-save-btn').textContent=isEdit?'Guardar cambios':'Crear usuario';
@@ -2226,6 +2308,8 @@ async function cambiarMiPass(){
 
 function openActivo(id){
   const isEdit=id!=null;
+  // Poblar todos los selects (depto, espacios, personas)
+  buildDataLists();
   // Poblar select de personas
   const selAsig = document.getElementById('ea-asignado');
   if(selAsig){
@@ -2251,14 +2335,22 @@ function openActivo(id){
   document.getElementById('ea-motivo').value='';document.getElementById('ea-id').value=id||'';
   if(isEdit){
     const a=activos.find(x=>x.codigo===id);if(!a)return;
-    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
+    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
     Object.entries(fs).forEach(([k,fid])=>document.getElementById(fid).value=a[k]||'');
+    // Selects que se pueblan con buildDataLists necesitan timeout
+    setTimeout(()=>{
+      const selUbic = document.getElementById('ea-ubicacion');
+      if(selUbic) selUbic.value = a.ubicacion||'';
+      const selAsig = document.getElementById('ea-asignado');
+      if(selAsig) selAsig.value = a.asignado||'';
+      const selDep  = document.getElementById('ea-depto');
+      if(selDep)  selDep.value  = a.depto||'';
+      if(a.ubicacion && a.ubicacion!=='—') onChangeUbicacion(a.ubicacion);
+      if(a.asignado  && a.asignado !=='—') onChangeAsignado(a.asignado);
+    }, 50);
     document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
     document.getElementById('ea-valor').value=a.valor||'';document.getElementById('ea-vida').value=a.vida||3;
-    // Mostrar info del espacio actual
-    if(a.ubicacion && a.ubicacion!=='—') onChangeUbicacion(a.ubicacion);
-    // Mostrar info del asignado actual
-    if(a.asignado && a.asignado!=='—') onChangeAsignado(a.asignado);
+
   }else{
     ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs','ea-asignado-email','ea-asignado-cargo'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ea-valor').value='';document.getElementById('ea-vida').value=3;
@@ -2320,7 +2412,9 @@ async function saveActivo(){
     const _deptoAntes = a.depto||'—';
     const _estadoAntes = a.estado||'activo';  // ← capturar estado ANTES de cambios
     const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
-    Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
+    Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();
+    // Actualizar email del responsable del espacio
+    a.responsableEspacioEmail = document.getElementById('ea-responsable-espacio-email')?.value||'';if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
     a.compra=document.getElementById('ea-compra').value||'—';a.garantia=document.getElementById('ea-garantia').value||'—';
     a.valor=parseFloat(document.getElementById('ea-valor').value)||0;a.vida=parseInt(document.getElementById('ea-vida').value)||3;
     const det=`Motivo: ${motivo}. Cambios: ${cambios.length?cambios.join('; '):'Sin cambios'}`;
@@ -2403,6 +2497,7 @@ async function saveActivo(){
     const a={id:code,codigo:code,nombre,tipo:document.getElementById('ea-tipo').value,estado:document.getElementById('ea-estado').value,marca:document.getElementById('ea-marca').value.trim()||'—',modelo:document.getElementById('ea-modelo').value.trim()||'—',serial:document.getElementById('ea-serial').value.trim()||'—',ubicacion:document.getElementById('ea-ubicacion').value.trim()||'—',asignado:document.getElementById('ea-asignado').value||'—',
     asignadoEmail:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.email||document.getElementById('ea-asignado-email')?.value||'';})(),
     asignadoCargo:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.cargo||document.getElementById('ea-asignado-cargo')?.value||'';})(),
+    responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',
     responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     activos.push(a);
     const _aOk = await apiPost('activos','insert',a);
@@ -2651,25 +2746,23 @@ function openMant(){
   }
   // ── AUTO-FILL email del asignado + responsable del espacio ─────────
   const emailField = document.getElementById('mm-email-resp');
-  const infoEl = document.getElementById('mm-email-resp-info');
+  const infoEl     = document.getElementById('mm-email-resp-info');
   if(emailField && activoActual) {
-    const emailAsig  = activoActual.asignadoEmail || '';
+    const emailAsig    = activoActual.asignadoEmail    || '';
     const emailEspacio = activoActual.responsableEspacioEmail || '';
-    // Mostrar info de quién recibirá notificaciones
+    const espArr = Array.isArray(espacios) ? espacios : [];
+    const espObj = espArr.find(e=>e.nombre===(activoActual.ubicacion||''));
+    const emailEspCalc = emailEspacio || (espObj?.responsableEmail||'');
     const msgs = [];
     if(activoActual.asignado && activoActual.asignado!=='—')
       msgs.push('Asignado: '+activoActual.asignado+(emailAsig?' ('+emailAsig+')':' ⚠ sin correo'));
-    if(emailEspacio && emailEspacio!==emailAsig){
-      // Buscar nombre del responsable del espacio
-      const espObj = espacios.find(e=>e.nombre===activoActual.ubicacion);
-      msgs.push('Resp. espacio: '+(espObj?.responsableNombre||activoActual.ubicacion)+' ('+emailEspacio+')');
+    if(emailEspCalc && emailEspCalc!==emailAsig)
+      msgs.push('Resp. espacio: '+(espObj?.responsableNombre||activoActual.ubicacion||'')+'('+emailEspCalc+')');
+    if(infoEl){
+      infoEl.textContent = msgs.length ? '📧 '+msgs.join(' | ') : '';
+      infoEl.style.display = msgs.length ? 'block' : 'none';
     }
-    if(infoEl && msgs.length){
-      infoEl.textContent = '📧 Notificaciones a: '+msgs.join(' | ');
-      infoEl.style.display='block';
-    }
-    // Pre-llenar campo con el email más relevante
-    emailField.value = emailAsigToUse;
+    emailField.value = emailAsig || emailEspCalc || '';
   }
   document.getElementById('mod-mant').classList.add('open');
 }
@@ -2682,6 +2775,8 @@ async function saveMant(){
   const desc = document.getElementById('mm-desc').value.trim();
   if(!desc){ showToast('La descripción es obligatoria','error'); return; }
 
+  const emailRespManual = document.getElementById('mm-email-resp')?.value.trim() || '';
+  const emailResp = emailRespManual || activoActual?.asignadoEmail || activoActual?.responsableEspacioEmail || '';
   const e = {
     tipo:     document.getElementById('mm-tipo').value,
     desc,
@@ -2689,6 +2784,7 @@ async function saveMant(){
     tec:      document.getElementById('mm-tec').value.trim() || session.nombre,
     costo:    parseFloat(document.getElementById('mm-costo').value) || 0,
     usuario:  session.nombre,
+    emailResp,
     color:    'amber'
   };
 
@@ -3070,10 +3166,6 @@ function showDetalle(id){
       <div class="det-field"><div class="det-fl">Fecha de compra</div><div class="det-fv">${fmtFecha(activoActual.compra)}</div></div>
       <div class="det-field"><div class="det-fl">Garantía hasta</div><div class="det-fv">${fmtFecha(activoActual.garantia)}</div></div>
       <div class="det-field"><div class="det-fl">Valor de compra</div><div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div></div>
-      <div class="det-field">
-        <div class="det-fl">Valor de compra</div>
-        <div class="det-fv">$${(activoActual.valor||0).toLocaleString()}</div>
-      </div>
       <div class="det-field">
         <div class="det-fl">Valor depreciado</div>
         <div class="det-fv" style="color:#3B6D11;font-weight:700">
@@ -3664,6 +3756,9 @@ function generarReporte(){
   else if(tipo==='tickets') repTickets(content, ahora);
   else if(tipo==='mantenimientos') repMantenimientos(content, ahora);
   else if(tipo==='trazabilidad') repTrazabilidad(content, ahora);
+  else if(tipo==='mobiliario_inv') repMobiliarioInventario(content, ahora);
+  else if(tipo==='activos_espacio') repActivosPorEspacio(content, ahora);
+  else if(tipo==='activos_persona') repActivosPorPersona(content, ahora);
   else if(tipo==='danos') repDanos(content, ahora);
 }
 
@@ -5235,6 +5330,7 @@ function renderMobiliario(){
 
 // ── ABRIR MODAL ───────────────────────────────────────────────────
 function openMob(codigo){
+  buildDataLists();
   const isEdit = !!codigo;
   document.getElementById('mod-mob-title').textContent = isEdit ? 'Editar elemento' : 'Nuevo elemento de mobiliario';
   const m = isEdit ? mobiliario.find(x=>x.codigo===codigo) : {};
@@ -5242,8 +5338,13 @@ function openMob(codigo){
   document.getElementById('mob-tipo').value      = m.tipo||'';
   document.getElementById('mob-cantidad').value  = m.cantidad||1;
   document.getElementById('mob-condicion').value = m.condicion||'bueno';
-  document.getElementById('mob-ubicacion').value = m.ubicacion||'';
-  document.getElementById('mob-depto').value     = m.depto||'';
+  // Selects poblados por buildDataLists() — asignar valor después de poblar
+  setTimeout(()=>{
+    const selUbic = document.getElementById('mob-ubicacion');
+    if(selUbic) selUbic.value = m.ubicacion||'';
+    const selDep = document.getElementById('mob-depto');
+    if(selDep) selDep.value = m.depto||'';
+  }, 50);
   document.getElementById('mob-material').value  = m.material||'';
   document.getElementById('mob-color').value     = m.color||'';
   document.getElementById('mob-fecha').value     = m.fecha||'';
@@ -5352,22 +5453,89 @@ const _goOriginal = go;
 
 // ── HELPERS para poblar selects de personas/espacios ─────────────
 function buildDataLists(){
-  // Poblar datalist de departamentos
-  const deptos = [...new Set([
-    ...personas.map(p=>p.depto).filter(Boolean),
+  // ── Fuente de departamentos: catálogo maestro primero,
+  //    luego los que existan en otros módulos como fallback ──
+  const depCatalogo = departamentos.filter(d=>d.estado!=='inactivo').map(d=>d.nombre);
+  const depFallback = [...new Set([
     ...activos.map(a=>a.depto).filter(Boolean),
-    ...usuarios.map(u=>u.depto).filter(Boolean)
+    ...personas.map(p=>p.depto).filter(Boolean),
+    ...usuarios.map(u=>u.depto).filter(Boolean),
   ])].sort();
-  const dlDep = document.getElementById('dl-deptos');
-  if(dlDep) dlDep.innerHTML = deptos.map(d=>`<option value="${d}">`).join('');
+  const deptos = depCatalogo.length ? depCatalogo : depFallback;
 
-  // Poblar filter de departamentos en personas
-  const filDepto = document.getElementById('fil-per-depto');
-  if(filDepto){
-    const cur = filDepto.value;
-    filDepto.innerHTML = '<option value="">Todos los departamentos</option>' +
+  // Función helper para poblar cualquier select de departamentos
+  function poblarSelectDepto(id){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    el.innerHTML = '<option value="">— Seleccionar departamento —</option>' +
       deptos.map(d=>`<option value="${d}">${d}</option>`).join('');
-    filDepto.value = cur;
+    if(cur) el.value = cur;
+  }
+
+  // Poblar TODOS los selects de departamento
+  ['ea-depto','eu-depto','per-depto','mob-depto'].forEach(poblarSelectDepto);
+
+  // Poblar filtros de departamento (selects de reportes e inventario)
+  ['fil-per-depto','fil-depto-inv','fil-depto','fil-area','fil-area-mant'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    const first = el.options[0]?.textContent || 'Todos';
+    el.innerHTML = `<option value="">${first}</option>` +
+      deptos.map(d=>`<option value="${d}">${d}</option>`).join('');
+    if(cur) el.value = cur;
+  });
+
+  // ── Poblar selects de Espacios ──
+  const espActivos = (Array.isArray(espacios)?espacios:[]).filter(e=>e.estado!=='inactivo');
+  function poblarSelectEspacio(id, placeholder='— Seleccionar espacio —'){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    el.innerHTML = `<option value="">${placeholder}</option>` +
+      espActivos.map(e=>`<option value="${e.nombre}"
+        data-responsable="${e.responsableNombre||''}"
+        data-email="${e.responsableEmail||''}"
+      >${e.nombre}${e.tipo?' ('+e.tipo+')':''}</option>`).join('');
+    if(cur) el.value = cur;
+  }
+  poblarSelectEspacio('mob-ubicacion');
+
+  // ── Poblar selects de Personas ──
+  const persActivas = (Array.isArray(personas)?personas:[]).filter(p=>p.estado!=='inactivo');
+  function poblarSelectPersona(id, placeholder='— Sin asignar —'){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const cur = el.value;
+    el.innerHTML = `<option value="">${placeholder}</option>` +
+      persActivas.map(p=>`<option value="${p.nombre}"
+        data-email="${p.email||''}"
+        data-cargo="${p.cargo||''}"
+        data-depto="${p.depto||''}"
+      >${p.nombre}${p.cargo?' — '+p.cargo:''}</option>`).join('');
+    if(cur) el.value = cur;
+  }
+  poblarSelectPersona('dep-responsable','— Sin responsable —');
+
+  // ── Poblar select de responsable en Departamentos modal ──
+  const selDepResp = document.getElementById('dep-responsable');
+  if(selDepResp){
+    const cur = selDepResp.value;
+    selDepResp.innerHTML = '<option value="">— Sin responsable —</option>' +
+      persActivas.map(p=>`<option value="${p.nombre}">${p.nombre}${p.cargo?' — '+p.cargo:''}</option>`).join('');
+    if(cur) selDepResp.value = cur;
+  }
+}
+
+// ── ON CHANGE MOB UBICACION ──────────────────────────────────────
+function onChangeMobUbicacion(nombre){
+  // Cuando se selecciona un espacio en mobiliario, auto-llenar depto
+  if(!nombre) return;
+  const esp = Array.isArray(espacios) ? espacios.find(e=>e.nombre===nombre) : null;
+  const deptoEl = document.getElementById('mob-depto');
+  if(esp && deptoEl && !deptoEl.value && esp.depto){
+    deptoEl.value = esp.depto;
   }
 }
 
@@ -5489,6 +5657,7 @@ function renderPersonas(){
 
 // ── ABRIR MODAL PERSONA ───────────────────────────────────────────
 function openPersona(codigo){
+  buildDataLists();
   const isEdit = !!codigo;
   document.getElementById('mod-persona-title').textContent = isEdit ? 'Editar persona' : 'Nueva persona';
   const p = isEdit ? personas.find(x=>x.codigo===codigo) : {};
@@ -5656,6 +5825,7 @@ function renderEspacios(){
 
 // ── ABRIR MODAL ESPACIO ───────────────────────────────────────────
 function openEspacio(codigo){
+  buildDataLists();
   const isEdit = !!codigo;
   document.getElementById('mod-espacio-title').textContent = isEdit ? 'Editar espacio' : 'Nuevo espacio';
   const e = isEdit ? espacios.find(x=>x.codigo===codigo) : {};
@@ -5740,6 +5910,243 @@ async function eliminarEspacio(codigo){
     renderEspacios();
     showToast('Espacio eliminado','success');
   }catch(e2){ showToast('Error: '+e2.message,''); }
+}
+
+
+// ════════════════════════════════════════════════════════════════════
+// MÓDULO DEPARTAMENTOS
+// ════════════════════════════════════════════════════════════════════
+function renderDepartamentos(){
+  const tb  = document.getElementById('tb-departamentos');
+  const per = PERMS[session.rol]||{};
+  if(!tb) return;
+  const list = departamentos.filter(d=>d.estado!=='eliminado');
+  if(!list.length){
+    tb.innerHTML=`<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">
+      Sin departamentos. Usa "+ Nuevo departamento" para crear el catálogo.</td></tr>`;
+    return;
+  }
+  tb.innerHTML = list.map(d=>{
+    const activos_d  = activos.filter(a=>a.depto===d.nombre && a.estado!=='eliminado').length;
+    const personas_d = Array.isArray(personas) ? personas.filter(p=>p.depto===d.nombre && p.estado!=='inactivo').length : 0;
+    return `<tr>
+      <td class="code-cell">${d.codigo||'—'}</td>
+      <td><strong>${sanitizeHTML(d.nombre||'')}</strong></td>
+      <td style="font-size:11px;color:var(--text3)">${d.desc||'—'}</td>
+      <td style="font-size:11px">${d.responsable||'—'}</td>
+      <td><span class="badge s-${d.estado||'activo'}">${d.estado||'activo'}</span>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${activos_d} activos · ${personas_d} personas</div></td>
+      <td onclick="event.stopPropagation()">
+        ${per.edit?`<button class="act-btn" onclick="openDepartamento('${d.codigo}')">✎</button>`:''}
+        ${per.delete?`<button class="act-btn" onclick="eliminarDepartamento('${d.codigo}')" style="color:var(--red)">×</button>`:''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openDepartamento(codigo){
+  buildDataLists();
+  const isEdit = !!codigo;
+  document.getElementById('mod-dep-title').textContent = isEdit ? 'Editar departamento' : 'Nuevo departamento';
+  const d = isEdit ? departamentos.find(x=>x.codigo===codigo) : {};
+  document.getElementById('dep-nombre').value = d.nombre||'';
+  document.getElementById('dep-desc').value   = d.desc||'';
+  document.getElementById('dep-estado').value = d.estado||'activo';
+  setTimeout(()=>{
+    const selR = document.getElementById('dep-responsable');
+    if(selR) selR.value = d.responsable||'';
+  }, 60);
+  document.getElementById('mod-departamento')._editCodigo = isEdit ? codigo : null;
+  document.getElementById('mod-departamento').classList.add('open');
+}
+
+async function guardarDepartamento(){
+  const nombre = document.getElementById('dep-nombre').value.trim();
+  if(!nombre){ showToast('El nombre es obligatorio',''); return; }
+  const editCod = document.getElementById('mod-departamento')._editCodigo;
+  const isEdit  = !!editCod;
+  if(!isEdit && departamentos.find(d=>d.nombre.toLowerCase()===nombre.toLowerCase())){
+    showToast('Ya existe un departamento con ese nombre',''); return;
+  }
+  const obj = {
+    codigo:      isEdit ? editCod : '',
+    nombre,
+    desc:        document.getElementById('dep-desc').value.trim(),
+    responsable: document.getElementById('dep-responsable').value,
+    estado:      document.getElementById('dep-estado').value,
+    fechaCreacion: isEdit ? (departamentos.find(d=>d.codigo===editCod)?.fechaCreacion||ts()) : ts()
+  };
+  const btn = document.querySelector('#mod-departamento .btn-p');
+  btn.disabled=true; btn.textContent='Guardando...';
+  try{
+    await apiPost('departamentos', isEdit?'update':'insert', obj);
+    if(isEdit){
+      const idx = departamentos.findIndex(d=>d.codigo===editCod);
+      if(idx>=0) departamentos[idx]={...obj};
+    } else {
+      const raw = await apiGet('departamentos');
+      departamentos = Array.isArray(raw) ? raw.map(r=>({...r})) : departamentos;
+    }
+    audit('CREAR','Departamentos',obj.codigo||'NUEVO',isEdit?`Editado: ${nombre}`:`Creado: ${nombre}`);
+    closeModals();
+    renderDepartamentos();
+    buildDataLists();
+    showToast(isEdit?'✅ Departamento actualizado':'✅ Departamento creado','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+  finally{ btn.disabled=false; btn.textContent='Guardar departamento'; }
+}
+
+async function eliminarDepartamento(codigo){
+  const d = departamentos.find(x=>x.codigo===codigo);
+  if(!d) return;
+  const enUso = activos.filter(a=>a.depto===d.nombre).length +
+    (Array.isArray(personas)?personas.filter(p=>p.depto===d.nombre).length:0);
+  if(enUso > 0){
+    showToast(`No se puede eliminar: ${enUso} registro(s) usan este departamento`,'');
+    return;
+  }
+  if(!confirm('¿Eliminar el departamento "'+d.nombre+'"?')) return;
+  try{
+    await apiPost('departamentos','update',{...d,estado:'eliminado'});
+    d.estado='eliminado';
+    audit('ELIMINAR','Departamentos',codigo,`Eliminado: ${d.nombre}`);
+    renderDepartamentos();
+    buildDataLists();
+    showToast('Departamento eliminado','success');
+  }catch(e){ showToast('Error: '+e.message,''); }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// NUEVOS REPORTES
+// ════════════════════════════════════════════════════════════════════
+
+// ── REPORTE: INVENTARIO DE MOBILIARIO ────────────────────────────
+function repMobiliarioInventario(el, tsStr){
+  const list = mobiliario.filter(m=>m.estado!=='eliminado');
+  repDatosActuales = list;
+  const valTotal = list.reduce((s,m)=>(s+(m.valor||0)*(m.cantidad||1)),0);
+  const buenos    = list.filter(m=>m.condicion==='bueno').length;
+  const deteriorados = list.filter(m=>m.condicion==='deteriorado').length;
+  el.innerHTML = `
+    <div class="rep-header">
+      <div><div class="rep-title">Inventario de Mobiliario</div>
+      <div class="rep-meta">Generado: ${tsStr} · Total: ${list.length} elementos</div></div>
+    </div>
+    <div class="rep-kpi">
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${list.length}</div><div class="rep-kpi-l">Total elementos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${buenos}</div><div class="rep-kpi-l">En buen estado</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#D85A30">${deteriorados}</div><div class="rep-kpi-l">Deteriorados</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">$${valTotal.toLocaleString()}</div><div class="rep-kpi-l">Valor total</div></div>
+    </div>
+    <div class="rep-section">
+      <div class="rep-sec-title">Detalle de mobiliario</div>
+      <div class="tbl-wrap"><table>
+        <thead><tr>
+          <th>Código</th><th>Descripción</th><th>Tipo</th><th>Cantidad</th>
+          <th>Condición</th><th>Ubicación</th><th>Departamento</th>
+          <th>Valor unit.</th><th>Valor total</th>
+        </tr></thead>
+        <tbody>${list.map(m=>`<tr>
+          <td class="code-cell">${m.codigo||'—'}</td>
+          <td style="font-weight:600">${sanitizeHTML(m.nombre||'')}</td>
+          <td>${m.tipo||'—'}</td>
+          <td style="text-align:center;font-weight:700">${m.cantidad||1}</td>
+          <td><span class="badge" style="background:${m.condicion==='bueno'?'#1D9E7522':m.condicion==='deteriorado'?'#D85A3022':'#BA751722'};color:${m.condicion==='bueno'?'#1D9E75':m.condicion==='deteriorado'?'#D85A30':'#BA7517'}">${m.condicion||'—'}</span></td>
+          <td style="font-size:11px">${sanitizeHTML(m.ubicacion||'—')}</td>
+          <td style="font-size:11px">${sanitizeHTML(m.depto||'—')}</td>
+          <td style="font-size:11px">$${(m.valor||0).toLocaleString()}</td>
+          <td style="font-weight:700;color:#3B6D11">$${((m.valor||0)*(m.cantidad||1)).toLocaleString()}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+}
+
+// ── REPORTE: ACTIVOS POR ESPACIO ─────────────────────────────────
+function repActivosPorEspacio(el, tsStr){
+  const lista = activos.filter(a=>a.estado!=='eliminado');
+  const espMap = {};
+  lista.forEach(a=>{
+    const k = a.ubicacion||'Sin espacio definido';
+    if(!espMap[k]) espMap[k]=[];
+    espMap[k].push(a);
+  });
+  repDatosActuales = lista;
+  let html = `
+    <div class="rep-header">
+      <div><div class="rep-title">Activos por Espacio</div>
+      <div class="rep-meta">Generado: ${tsStr} · ${Object.keys(espMap).length} espacios · ${lista.length} activos</div></div>
+    </div>
+    <div class="rep-kpi">
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${Object.keys(espMap).length}</div><div class="rep-kpi-l">Espacios con equipos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${lista.length}</div><div class="rep-kpi-l">Total activos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">$${lista.reduce((s,a)=>s+calcDepre(a),0).toLocaleString()}</div><div class="rep-kpi-l">Valor depreciado total</div></div>
+    </div>`;
+  Object.entries(espMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([espNom, items])=>{
+    const espObj = Array.isArray(espacios) ? espacios.find(e=>e.nombre===espNom) : null;
+    const valEsp = items.reduce((s,a)=>s+calcDepre(a),0);
+    html += `<div class="rep-section">
+      <div class="rep-sec-title">${espNom}
+        ${espObj?.responsableNombre?` — Responsable: ${espObj.responsableNombre}`:''}
+        <span style="float:right;font-weight:400">${items.length} equipos · $${valEsp.toLocaleString()}</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Estado</th><th>Valor dep.</th></tr></thead>
+        <tbody>${items.map(a=>`<tr>
+          <td class="code-cell">${a.codigo}</td>
+          <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td>
+          <td>${a.tipo||'—'}</td>
+          <td style="font-size:11px">${sanitizeHTML(a.asignado||'—')}</td>
+          <td><span class="badge s-${a.estado}">${a.estado}</span></td>
+          <td style="font-weight:700;color:#3B6D11">$${calcDepre(a).toLocaleString()}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// ── REPORTE: ACTIVOS POR PERSONA ─────────────────────────────────
+function repActivosPorPersona(el, tsStr){
+  const lista = activos.filter(a=>a.estado!=='eliminado' && a.asignado && a.asignado!=='—');
+  const perMap = {};
+  lista.forEach(a=>{
+    const k = a.asignado;
+    if(!perMap[k]) perMap[k]=[];
+    perMap[k].push(a);
+  });
+  repDatosActuales = lista;
+  let html = `
+    <div class="rep-header">
+      <div><div class="rep-title">Activos por Persona</div>
+      <div class="rep-meta">Generado: ${tsStr} · ${Object.keys(perMap).length} personas con equipos asignados</div></div>
+    </div>
+    <div class="rep-kpi">
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${Object.keys(perMap).length}</div><div class="rep-kpi-l">Personas con equipos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${lista.length}</div><div class="rep-kpi-l">Activos asignados</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${activos.filter(a=>a.estado!=='eliminado'&&(!a.asignado||a.asignado==='—')).length}</div><div class="rep-kpi-l">Sin asignar</div></div>
+    </div>`;
+  Object.entries(perMap).sort((a,b)=>a[0].localeCompare(b[0])).forEach(([perNom, items])=>{
+    const perObj = Array.isArray(personas) ? personas.find(p=>p.nombre===perNom) : null;
+    html += `<div class="rep-section">
+      <div class="rep-sec-title">${perNom}
+        ${perObj?.cargo?' — '+perObj.cargo:''}
+        ${perObj?.email?` · 📧 ${perObj.email}`:''}
+        <span style="float:right;font-weight:400">${items.length} equipo(s)</span>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Ubicación</th><th>Estado</th><th>Garantía</th></tr></thead>
+        <tbody>${items.map(a=>`<tr>
+          <td class="code-cell">${a.codigo}</td>
+          <td style="font-weight:600">${sanitizeHTML(a.nombre||'')}</td>
+          <td>${a.tipo||'—'}</td>
+          <td style="font-size:11px">${sanitizeHTML(a.ubicacion||'—')}</td>
+          <td><span class="badge s-${a.estado}">${a.estado}</span></td>
+          <td style="font-size:11px;color:${garantiaColor(a.garantia)}">${fmtFecha(a.garantia)}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </div>`;
+  });
+  el.innerHTML = html;
 }
 
 </script>
