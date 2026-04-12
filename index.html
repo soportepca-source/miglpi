@@ -1362,7 +1362,27 @@ tbody tr.clickable{cursor:pointer;}
           <div class="k-col"><div class="k-hdr">Cerrado <span class="k-cnt" id="kc-cerrado">0</span></div><div id="k-cerrado"></div></div>
         </div>
       </div>
-      <div class="pnl" id="pnl-usuarios"><div class="user-grid" id="user-grid"></div></div>
+      <div class="pnl" id="pnl-usuarios">
+  <!-- Barra de filtros de usuarios -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px;">
+    <input class="f-inp" id="fil-usr-q" placeholder="Buscar por nombre, usuario o correo..."
+      oninput="renderUsuarios()" style="flex:1;min-width:200px;max-width:340px;">
+    <select class="f-sel" id="fil-usr-rol" onchange="renderUsuarios()" style="min-width:150px;">
+      <option value="">Todos los roles</option>
+      <option value="admin">Administrador</option>
+      <option value="tecnico">Técnico</option>
+      <option value="consultor">Consultor</option>
+      <option value="inventario">Inventario</option>
+    </select>
+    <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;
+      background:var(--blue-l,#EFF6FF);padding:6px 12px;border-radius:6px;border:1px solid #BFDBFE;">
+      <input type="checkbox" id="fil-usr-inactivos" onchange="renderUsuarios()" style="cursor:pointer;">
+      Mostrar inactivos
+    </label>
+    <span id="usr-contador" style="font-size:11px;color:var(--text3);white-space:nowrap;"></span>
+  </div>
+  <div class="user-grid" id="user-grid"></div>
+</div>
       <div class="pnl" id="pnl-reportes">
         <!-- SELECTOR DE REPORTE -->
         <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center;">
@@ -2241,7 +2261,33 @@ async function saveUsuario(){
 function renderUsuarios(){
   const grid=document.getElementById('user-grid'),per=PERMS[session.rol]||{};
   if(!usuarios.length){grid.innerHTML='<div class="empty-c">Sin usuarios.</div>';return;}
-  grid.innerHTML=usuarios.map(u=>`<div class="user-card">
+  // ── Aplicar filtros ──
+  const q         = (document.getElementById('fil-usr-q')?.value||'').toLowerCase();
+  const rolFil    = document.getElementById('fil-usr-rol')?.value||'';
+  const verInact  = document.getElementById('fil-usr-inactivos')?.checked||false;
+  let lista = usuarios.filter(u=>{
+    if(!verInact && u.estado==='inactivo') return false;
+    if(rolFil && u.rol!==rolFil) return false;
+    if(q && !(
+      (u.nombre||'').toLowerCase().includes(q) ||
+      (u.username||'').toLowerCase().includes(q) ||
+      (u.email||'').toLowerCase().includes(q) ||
+      (u.depto||'').toLowerCase().includes(q)
+    )) return false;
+    return true;
+  });
+  // Contador
+  const contador = document.getElementById('usr-contador');
+  if(contador){
+    const total   = usuarios.length;
+    const activos = usuarios.filter(u=>u.estado==='activo').length;
+    const inact   = usuarios.filter(u=>u.estado==='inactivo').length;
+    contador.textContent = `${lista.length} mostrado(s) · ${activos} activo(s) · ${inact} inactivo(s)`;
+  }
+  if(!lista.length){
+    grid.innerHTML='<div class="empty-c">Sin usuarios con esos filtros.</div>';return;
+  }
+  grid.innerHTML=lista.map(u=>`<div class="user-card" style="${u.estado==='inactivo'?'opacity:0.6;':''}">
     <div class="user-card-head">
       <div class="sb-avatar" style="width:40px;height:40px;font-size:14px">${initials(u.nombre)}</div>
       <div><div class="user-name">${u.nombre||'—'}</div><div class="user-cargo">${u.cargo||'—'}</div></div>
@@ -3664,6 +3710,37 @@ function cambiarReporte(tipo){
   if(!tipo){initReportes();return;}
 
   // Filtros dinámicos por tipo de reporte
+  if(tipo==='mobiliario_inv'){
+    // Generar opciones dinámicas desde los datos actuales
+    const deptosMob = [...new Set(mobiliario.filter(m=>m.estado!=='eliminado').map(m=>m.depto).filter(Boolean))].sort();
+    const ubicsMob  = [...new Set(mobiliario.filter(m=>m.estado!=='eliminado').map(m=>m.ubicacion).filter(Boolean))].sort();
+    filtros.innerHTML = `
+      <select class="f-sel" id="fil-mob-rep-condicion" onchange="generarReporte()" style="min-width:160px;">
+        <option value="">Todas las condiciones</option>
+        <option value="bueno">✅ Bueno</option>
+        <option value="regular">🟡 Regular</option>
+        <option value="deteriorado">🔴 Deteriorado</option>
+        <option value="baja">⬛ Dado de baja</option>
+      </select>
+      <select class="f-sel" id="fil-mob-rep-tipo" onchange="generarReporte()" style="min-width:140px;">
+        <option value="">Todos los tipos</option>
+        <option>Silla</option><option>Escritorio</option><option>Mesa</option>
+        <option>Pizarra</option><option>Locker</option><option>Estante</option>
+        <option>Armario</option><option>Otro</option>
+      </select>
+      <select class="f-sel" id="fil-mob-rep-depto" onchange="generarReporte()" style="min-width:160px;">
+        <option value="">Todos los departamentos</option>
+        ${deptosMob.map(d=>`<option value="${d}">${d}</option>`).join('')}
+      </select>
+      <select class="f-sel" id="fil-mob-rep-ubic" onchange="generarReporte()" style="min-width:160px;">
+        <option value="">Todas las ubicaciones</option>
+        ${ubicsMob.map(u=>`<option value="${u}">${u}</option>`).join('')}
+      </select>`;
+    document.getElementById('btn-csv').style.display='inline-flex';
+    document.getElementById('btn-pdf').style.display='inline-flex';
+    generarReporte();
+    return;
+  }
   if(tipo==='inventario'){
     // Generar opciones de tipo dinámicamente desde los datos
     const tiposEnUso=[...new Set(activos.filter(a=>a.estado!=='eliminado').map(a=>a.tipo||'Otro'))].sort();
@@ -5453,15 +5530,13 @@ const _goOriginal = go;
 
 // ── HELPERS para poblar selects de personas/espacios ─────────────
 function buildDataLists(){
-  // ── Fuente de departamentos: catálogo maestro primero,
-  //    luego los que existan en otros módulos como fallback ──
-  const depCatalogo = departamentos.filter(d=>d.estado!=='inactivo').map(d=>d.nombre);
-  const depFallback = [...new Set([
-    ...activos.map(a=>a.depto).filter(Boolean),
-    ...personas.map(p=>p.depto).filter(Boolean),
-    ...usuarios.map(u=>u.depto).filter(Boolean),
-  ])].sort();
-  const deptos = depCatalogo.length ? depCatalogo : depFallback;
+  // ── Fuente ÚNICA de departamentos: solo el catálogo maestro ──
+  // Si no hay departamentos creados, los selects quedan vacíos.
+  // No se usan fallbacks de otros módulos para evitar inconsistencias.
+  const deptos = departamentos
+    .filter(d=>d.estado!=='inactivo' && d.estado!=='eliminado')
+    .map(d=>d.nombre)
+    .sort();
 
   // Función helper para poblar cualquier select de departamentos
   function poblarSelectDepto(id){
@@ -6022,15 +6097,51 @@ async function eliminarDepartamento(codigo){
 
 // ── REPORTE: INVENTARIO DE MOBILIARIO ────────────────────────────
 function repMobiliarioInventario(el, tsStr){
-  const list = mobiliario.filter(m=>m.estado!=='eliminado');
+  // Leer filtros activos
+  const filCondicion = document.getElementById('fil-mob-rep-condicion')?.value||'';
+  const filTipo      = document.getElementById('fil-mob-rep-tipo')?.value||'';
+  const filDepto     = document.getElementById('fil-mob-rep-depto')?.value||'';
+  const filUbic      = document.getElementById('fil-mob-rep-ubic')?.value||'';
+
+  let list = mobiliario.filter(m=>m.estado!=='eliminado');
+  if(filCondicion) list = list.filter(m=>m.condicion===filCondicion);
+  if(filTipo)      list = list.filter(m=>m.tipo===filTipo);
+  if(filDepto)     list = list.filter(m=>m.depto===filDepto);
+  if(filUbic)      list = list.filter(m=>m.ubicacion===filUbic);
+
   repDatosActuales = list;
-  const valTotal = list.reduce((s,m)=>(s+(m.valor||0)*(m.cantidad||1)),0);
-  const buenos    = list.filter(m=>m.condicion==='bueno').length;
+
+  // KPIs del subconjunto filtrado
+  const valTotal     = list.reduce((s,m)=>(s+(m.valor||0)*(m.cantidad||1)),0);
+  const buenos       = list.filter(m=>m.condicion==='bueno').length;
+  const regulares    = list.filter(m=>m.condicion==='regular').length;
   const deteriorados = list.filter(m=>m.condicion==='deteriorado').length;
+  const baja         = list.filter(m=>m.condicion==='baja').length;
+  const cantTotal    = list.reduce((s,m)=>s+(m.cantidad||1),0);
+
+  // Etiqueta de filtros activos
+  const filtrosActivos = [
+    filCondicion ? `Condición: ${filCondicion}` : '',
+    filTipo      ? `Tipo: ${filTipo}` : '',
+    filDepto     ? `Depto: ${filDepto}` : '',
+    filUbic      ? `Ubicación: ${filUbic}` : '',
+  ].filter(Boolean).join(' · ');
+
   el.innerHTML = `
     <div class="rep-header">
-      <div><div class="rep-title">Inventario de Mobiliario</div>
-      <div class="rep-meta">Generado: ${tsStr} · Total: ${list.length} elementos</div></div>
+      <div>
+        <div class="rep-title">Inventario de Mobiliario${filCondicion||filTipo||filDepto||filUbic?' — Filtrado':''}</div>
+        <div class="rep-meta">Generado: ${tsStr} · ${list.length} elemento(s) · ${cantTotal} unidad(es) en total${filtrosActivos?' · Filtros: '+filtrosActivos:''}</div>
+      </div>
+    </div>
+    <div class="rep-kpi">
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${list.length}</div><div class="rep-kpi-l">Elementos</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">${cantTotal}</div><div class="rep-kpi-l">Unidades totales</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#1D9E75">${buenos}</div><div class="rep-kpi-l">Bueno</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#BA7517">${regulares}</div><div class="rep-kpi-l">Regular</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#D85A30">${deteriorados}</div><div class="rep-kpi-l">Deteriorado</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v" style="color:#888">${baja}</div><div class="rep-kpi-l">Dado de baja</div></div>
+      <div class="rep-kpi-card"><div class="rep-kpi-v">$${valTotal.toLocaleString()}</div><div class="rep-kpi-l">Valor total</div></div>
     </div>
     <div class="rep-kpi">
       <div class="rep-kpi-card"><div class="rep-kpi-v">${list.length}</div><div class="rep-kpi-l">Total elementos</div></div>
