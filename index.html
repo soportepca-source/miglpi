@@ -795,7 +795,7 @@ tbody tr.clickable{cursor:pointer;}
     <div class="sb-logout"><button class="btn-logout" onclick="doLogout()">Cerrar sesión</button></div>
   </div>
   <div class="main">
-    <div class="sync-bar" id="sync-bar"><div class="sync-dot" id="sync-dot"></div><span id="sync-msg">Conectado</span></div>
+    <div class="sync-bar" id="sync-bar"><div class="sync-dot" id="sync-dot"><span id="queue-badge" style="display:none;background:#E07B39;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;margin-left:6px;vertical-align:middle;" title="Operaciones pendientes de sincronizar"></span></div><span id="sync-msg">Conectado</span></div>
     <div class="topbar">
       <div class="topbar-title" id="tb-title">Dashboard</div>
       <div class="global-search-wrap" id="search-wrap">
@@ -1460,6 +1460,19 @@ tbody tr.clickable{cursor:pointer;}
       </div>
 
       <div class="pnl" id="pnl-auditoria">
+      <!-- Backup buttons - solo visible para admin -->
+      <div id="backup-admin-bar" style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;">
+        <span style="font-size:11px;font-weight:700;color:#1A7A4A;">💾 Respaldo de datos:</span>
+        <button class="btn btn-p" onclick="ejecutarBackupManual()" id="btn-backup"
+          style="font-size:11px;background:#1A7A4A;padding:4px 10px;">
+          Backup manual ahora
+        </button>
+        <button class="btn" onclick="instalarTriggerBackup()" id="btn-trigger"
+          style="font-size:11px;padding:4px 10px;" title="Instala backup automático diario a las 2am">
+          ⏰ Activar backup automático
+        </button>
+        <span id="backup-status" style="font-size:11px;color:var(--text3);"></span>
+      </div>
         <div class="tab-row"><button class="tab-btn on" onclick="filterAud('todos',this)">Todo</button><button class="tab-btn" onclick="filterAud('CREAR',this)">Creaciones</button><button class="tab-btn" onclick="filterAud('EDITAR',this)">Ediciones</button><button class="tab-btn" onclick="filterAud('ELIMINAR',this)">Eliminaciones</button><button class="tab-btn" onclick="filterAud('LOGIN',this)">Accesos</button></div>
         <div class="tbl-wrap"><table><thead><tr><th>Fecha / Hora</th><th>Usuario</th><th>Rol</th><th>Acción</th><th>Objeto</th><th>Código</th><th>Detalle</th></tr></thead><tbody id="tb-audit"></tbody></table></div>
       </div>
@@ -1817,14 +1830,102 @@ function hashPass(p){ return hashPassLegacy(p); }
 function togglePass(id,btn){const el=document.getElementById(id);el.type=el.type==='password'?'text':'password';btn.textContent=el.type==='password'?'👁':'🙈';}
 function setSyncStatus(ok,msg){const b=document.getElementById('sync-bar'),d=document.getElementById('sync-dot');b.className='sync-bar'+(ok?'':' err');d.className='sync-dot'+(ok?'':' err');document.getElementById('sync-msg').textContent=msg;}
 
+async // ── COLA DE OPERACIONES PENDIENTES (resiliencia de red) ──────────
+const _opQueue   = [];   // operaciones pendientes
+let   _queueProc = false; // procesando cola
+let   _isOnline  = navigator.onLine;
+
+// Detectar cambios de conectividad
+window.addEventListener('online',  ()=>{ _isOnline=true;  _flushQueue(); setSyncStatus(true,'Conexión restaurada'); });
+window.addEventListener('offline', ()=>{ _isOnline=false; setSyncStatus(false,'Sin conexión — operaciones en cola'); });
+
+// Advertir al usuario si hay pendientes al cerrar
+window.addEventListener('beforeunload', e=>{
+  if(_opQueue.length > 0){
+    e.preventDefault();
+    e.returnValue = 'Hay '+_opQueue.length+' operación(es) pendiente(s) de sincronizar. ¿Seguro que deseas salir?';
+  }
+});
+
 async function apiPost(sheet,action,payload){
   try{
-    // Incluir token de autenticación en cada request
     const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
-    await fetch(API,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sheet,action,payload:securePayload})});
-    setSyncStatus(true,'Guardado · '+ts());return true;
-  }catch(e){setSyncStatus(false,'Error al guardar');return false;}
+    const body = JSON.stringify({sheet,action,payload:securePayload});
+
+    if(!_isOnline){
+      // Sin conexión: encolar y mostrar indicador
+      _opQueue.push({sheet,action,payload,body,ts:Date.now(),intentos:0});
+      _updateQueueBadge();
+      setSyncStatus(false,'Sin conexión — '+_opQueue.length+' operación(es) en cola');
+      return true; // no interrumpir el flujo del usuario
+    }
+
+    // Con conexión: intentar enviar con retry automático (3 intentos)
+    for(let intento=1; intento<=3; intento++){
+      try{
+        await fetch(API,{
+          method:'POST', mode:'no-cors',
+          headers:{'Content-Type':'application/json'},
+          body,
+          signal: AbortSignal.timeout(12000)
+        });
+        setSyncStatus(true,'Guardado · '+ts());
+        return true;
+      }catch(err){
+        if(intento===3) throw err;
+        await new Promise(r=>setTimeout(r, intento*1500)); // backoff: 1.5s, 3s
+      }
+    }
+    return true;
+  }catch(e){
+    // Fallo definitivo: encolar para reintento posterior
+    _opQueue.push({sheet,action,payload,body,ts:Date.now(),intentos:3});
+    _updateQueueBadge();
+    setSyncStatus(false,'Error de red — operación guardada en cola');
+    return false;
+  }
+}
+
+async function _flushQueue(){
+  if(_queueProc || _opQueue.length===0 || !_isOnline) return;
+  _queueProc=true;
+  setSyncStatus(true,'Sincronizando '+_opQueue.length+' operación(es)...');
+  while(_opQueue.length > 0 && _isOnline){
+    const op = _opQueue[0];
+    try{
+      await fetch(API,{method:'POST',mode:'no-cors',
+        headers:{'Content-Type':'application/json'},
+        body:op.body,
+        signal:AbortSignal.timeout(12000)
+      });
+      _opQueue.shift(); // éxito: sacar de la cola
+      _updateQueueBadge();
+    }catch(e){
+      op.intentos++;
+      if(op.intentos >= 5){ _opQueue.shift(); } // descartar si falló 5+ veces
+      break; // esperar antes del siguiente intento
+    }
+  }
+  _queueProc=false;
+  if(_opQueue.length===0){
+    setSyncStatus(true,'Todo sincronizado · '+ts());
+  } else {
+    setSyncStatus(false,_opQueue.length+' operación(es) pendiente(s)');
+  }
+}
+
+// Intentar vaciar cola cada 30 segundos
+setInterval(()=>{ if(_isOnline && _opQueue.length>0) _flushQueue(); }, 30000);
+
+function _updateQueueBadge(){
+  const badge = document.getElementById('queue-badge');
+  if(!badge) return;
+  if(_opQueue.length > 0){
+    badge.textContent = _opQueue.length;
+    badge.style.display='inline-flex';
+  } else {
+    badge.style.display='none';
+  }
 }
 async function apiGet(sheet){
   try{
@@ -6162,8 +6263,16 @@ async function guardarDepartamento(){
   if(!nombre){ showToast('El nombre es obligatorio',''); return; }
   const editCod = document.getElementById('mod-departamento')._editCodigo;
   const isEdit  = !!editCod;
-  if(!isEdit && departamentos.find(d=>d.nombre.toLowerCase()===nombre.toLowerCase())){
-    showToast('Ya existe un departamento con ese nombre',''); return;
+  const depExiste = departamentos.find(d=>d.nombre.toLowerCase()===nombre.toLowerCase() && d.codigo!==editCod);
+  if(depExiste){ showToast('Ya existe un departamento con ese nombre',''); return; }
+
+  // Detectar renombrado para propagar en cascada
+  let nombreAnterior = null;
+  if(isEdit){
+    const depActual = departamentos.find(d=>d.codigo===editCod);
+    if(depActual && depActual.nombre !== nombre){
+      nombreAnterior = depActual.nombre;
+    }
   }
   const obj = {
     codigo:      isEdit ? editCod : '',
@@ -6184,11 +6293,44 @@ async function guardarDepartamento(){
       const raw = await apiGet('departamentos');
       departamentos = Array.isArray(raw) ? raw.map(r=>({...r})) : departamentos;
     }
-    audit('CREAR','Departamentos',obj.codigo||'NUEVO',isEdit?`Editado: ${nombre}`:`Creado: ${nombre}`);
+    if(isEdit){
+      audit('EDITAR','Departamentos',obj.codigo,`Renombrado por ${session.nombre}: "${nombreAnterior||nombre}" → "${nombre}"`);
+    } else {
+      audit('CREAR','Departamentos',obj.codigo||'NUEVO',`Creado por ${session.nombre}: ${nombre}`);
+    }
+    // ── PROPAGACIÓN EN CASCADA si hubo renombrado ──────────────
+    if(nombreAnterior){
+      let cascadeCount = 0;
+      const promises = [];
+      // Activos
+      activos.filter(a=>a.depto===nombreAnterior).forEach(a=>{
+        a.depto=nombre; promises.push(apiPost('activos','update',a)); cascadeCount++;
+      });
+      // Personas
+      if(Array.isArray(personas)) personas.filter(p=>p.depto===nombreAnterior).forEach(p=>{
+        p.depto=nombre; promises.push(apiPost('personas','update',p)); cascadeCount++;
+      });
+      // Usuarios
+      usuarios.filter(u=>u.depto===nombreAnterior).forEach(u=>{
+        u.depto=nombre; promises.push(apiPost('usuarios','update',u)); cascadeCount++;
+      });
+      // Mobiliario
+      if(Array.isArray(mobiliario)) mobiliario.filter(m=>m.depto===nombreAnterior).forEach(m=>{
+        m.depto=nombre; promises.push(apiPost('mobiliario','update',m)); cascadeCount++;
+      });
+      if(promises.length>0){
+        await Promise.all(promises);
+        showToast(`✅ Departamento renombrado. ${cascadeCount} registro(s) actualizados en cascada.`,'success');
+        audit('EDITAR','Departamentos',obj.codigo,`Cascada: ${cascadeCount} registros actualizados de "${nombreAnterior}" a "${nombre}"`);
+      } else {
+        showToast('✅ Departamento actualizado','success');
+      }
+    } else {
+      showToast(isEdit?'✅ Departamento actualizado':'✅ Departamento creado','success');
+    }
     closeModals();
     renderDepartamentos();
     buildDataLists();
-    showToast(isEdit?'✅ Departamento actualizado':'✅ Departamento creado','success');
   }catch(e){ showToast('Error: '+e.message,''); }
   finally{ btn.disabled=false; btn.textContent='Guardar departamento'; }
 }
@@ -6380,6 +6522,56 @@ function repActivosPorPersona(el, tsStr){
     </div>`;
   });
   el.innerHTML = html;
+}
+
+
+// ── BACKUP MANUAL ──────────────────────────────────────────────
+async function ejecutarBackupManual(){
+  const btn = document.getElementById('btn-backup');
+  const status = document.getElementById('backup-status');
+  if(btn){ btn.disabled=true; btn.textContent='💾 Generando backup...'; }
+  if(status) status.textContent = 'Conectando con Google Drive...';
+  try{
+    const r = await fetch(API, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sheet:'sistema', action:'backup',
+        payload:{_apiToken: API_TOKEN}
+      })
+    });
+    // no-cors no retorna body, pero si no lanzó error significa éxito
+    if(status) status.textContent = '✅ Backup completado — revisa la carpeta SAGAE_Backups en Google Drive';
+    audit('CREAR','Backup','MANUAL','Backup manual ejecutado por '+session.nombre);
+    showToast('✅ Backup guardado en Google Drive','success');
+  }catch(e){
+    if(status) status.textContent = '❌ Error: '+e.message;
+    showToast('Error al generar backup: '+e.message,'');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='💾 Backup manual ahora'; }
+  }
+}
+
+async function instalarTriggerBackup(){
+  const btn = document.getElementById('btn-trigger');
+  const status = document.getElementById('backup-status');
+  if(btn){ btn.disabled=true; btn.textContent='⏰ Instalando...'; }
+  try{
+    await fetch(API, {
+      method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        sheet:'sistema', action:'install_backup_trigger',
+        payload:{_apiToken: API_TOKEN}
+      })
+    });
+    if(status) status.textContent = '✅ Backup automático activado — se ejecutará diariamente a las 2am';
+    showToast('✅ Backup automático activado','success');
+  }catch(e){
+    showToast('Error: '+e.message,'');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='⏰ Activar backup automático diario'; }
+  }
 }
 
 </script>
