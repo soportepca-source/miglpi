@@ -2035,11 +2035,15 @@ async function loadFromSheets(){
   // ── CARGA EN PARALELO — 4 hojas simultáneas ──────────────────
   lt.textContent='Conectando a Google Sheets...';
   ls.textContent='Cargando datos en paralelo...';
-  const [rawU, rawA, rawT, rawAud] = await Promise.all([
+  const [rawU, rawA, rawT, rawAud, rawMob0, rawPer0, rawEsp0, rawDep0] = await Promise.all([
     apiGet('usuarios'),
     apiGet('activos'),
     apiGet('tickets'),
-    apiGet('auditoria')
+    apiGet('auditoria'),
+    apiGet('mobiliario').catch(()=>[]),
+    apiGet('personas').catch(()=>[]),
+    apiGet('espacios').catch(()=>[]),
+    apiGet('departamentos').catch(()=>[])
   ]);
   lt.textContent='Procesando datos...';
   usuarios = rawU.map(r=>({...r}));
@@ -2048,34 +2052,15 @@ async function loadFromSheets(){
   tickets  = rawT.map(r=>({...r,id:r.codigo,avance:parseInt(r.avance)||0,historial:parseHist(r.historial)}));
   cntTickets = tickets.length;
   auditLog = rawAud.slice().reverse();
-  // ── MOBILIARIO — carga independiente con fallback seguro ──
-  try {
-    const rawMob = await apiGet('mobiliario');
-    mobiliario = Array.isArray(rawMob) ? rawMob.map(r=>({
-      ...r,
-      cantidad: parseInt(r.cantidad)||1,
-      valor: parseFloat(r.valor)||0,
-      historial: parseHist(r.historial)
-    })) : [];
-  } catch(e) {
-    mobiliario = [];
-  }
-  // ── PERSONAS — carga segura con fallback ──
-  try {
-    const rawPer = await apiGet('personas');
-    personas = Array.isArray(rawPer) ? rawPer.map(r=>({...r})) : [];
-  } catch(e) { personas = []; }
-  // ── ESPACIOS — carga segura con fallback ──
-  try {
-    const rawEsp = await apiGet('espacios');
-    espacios = Array.isArray(rawEsp) ? rawEsp.map(r=>({...r})) : [];
-  } catch(e) { espacios = []; }
-  // ── DEPARTAMENTOS — carga segura con fallback ──
-  try {
-    const rawDep = await apiGet('departamentos');
-    departamentos = Array.isArray(rawDep) ? rawDep.map(r=>({...r})) : [];
-  } catch(e) { departamentos = []; }
-  // Reconstruir datalists/selects con datos frescos
+  // ── Procesar datos cargados en Promise.all ──
+  mobiliario = Array.isArray(rawMob0) ? rawMob0.map(r=>({
+    ...r, cantidad:parseInt(r.cantidad)||1, valor:parseFloat(r.valor)||0, historial:parseHist(r.historial)
+  })) : [];
+  personas     = Array.isArray(rawPer0) ? rawPer0.map(r=>({...r})) : [];
+  espacios     = Array.isArray(rawEsp0) ? rawEsp0.map(r=>({...r})) : [];
+  departamentos= Array.isArray(rawDep0) ? rawDep0.map(r=>({...r})) : [];
+  // Limpiar caché de depreciación y reconstruir selects
+  if(typeof _depreCache !== 'undefined') _depreCache.clear();
   if(typeof buildDataLists === 'function') buildDataLists();
   // NOTA: No se crea admin automáticamente para evitar duplicados
   // Si no hay usuarios, mostrar aviso y dejar entrar igual
@@ -3241,7 +3226,13 @@ function fmtFecha(v){
   }catch(e){return String(v);}
 }
 
-function calcDepre(a){if(!a.valor||!a.compra||a.compra==='—')return a.valor||0;const y=(new Date()-new Date(a.compra))/(365.25*24*3600*1000);return Math.max(0,Math.round(a.valor-(a.valor*(y/(a.vida||3)))));}
+const _depreCache = new Map();
+function calcDepre(a){
+  if(!a.valor||!a.compra||a.compra==='—') return a.valor||0;
+  const key = a.codigo+'|'+a.compra+'|'+a.valor+'|'+a.vida;
+  if(_depreCache.has(key)) return _depreCache.get(key);const y=(new Date()-new Date(a.compra))/(365.25*24*3600*1000);const result = Math.max(0,Math.round(a.valor-(a.valor*(y/(a.vida||3)))));
+  _depreCache.set(key,result);
+  return result;}
 
 function showDetalle(id){
   activoActual=activos.find(a=>a.codigo===id);if(!activoActual)return;
@@ -4292,7 +4283,7 @@ function repTrazabilidad(el, ts){
     <div class="rep-header">
       <div>
         <div class="rep-title">👤 Trazabilidad — ${persona}</div>
-        <div class="rep-meta">Generado: ${ts} · ${activosActuales.length} activos actuales · ${activosHistoricos.length} activos históricos</div>
+        <div class="rep-meta">Generado: ${ts} · ${activosActuales.length} activos actuales · ${activosHistoricos.length} activos históricos${(()=>{const p=Array.isArray(personas)?personas.find(x=>x.nombre===persona):null;return p?.email?' · 📧 '+p.email+(p.cargo?' · '+p.cargo:''):'';})()}</div>
       </div>
     </div>
     <div class="rep-kpi">
@@ -5583,7 +5574,11 @@ async function guardarMobiliario(){
       const raw = await apiGet('mobiliario');
       mobiliario = raw.map(r=>({...r,cantidad:parseInt(r.cantidad)||1,valor:parseFloat(r.valor)||0,historial:parseHist(r.historial)}));
     }
-    audit('CREAR','Mobiliario',obj.codigo||'NUEVO',isEdit?'Elemento editado':'Elemento registrado');
+    if(isEdit){
+      audit('EDITAR','Mobiliario',obj.codigo,'Editado por '+session.nombre);
+    } else {
+      audit('CREAR','Mobiliario',obj.codigo||'NUEVO','Registrado por '+session.nombre+': '+obj.nombre);
+    }
     closeModals();
     renderMobiliario();
     showToast(isEdit?'✅ Elemento actualizado':'✅ Elemento registrado','success');
@@ -5745,31 +5740,30 @@ function onChangeUbicacion(nombre){
   const infoEl   = document.getElementById('ea-espacio-info');
   const hiddenEl = document.getElementById('ea-responsable-espacio-email');
   if(!nombre){
-    if(infoEl) infoEl.style.display='none';
+    if(infoEl){ infoEl.style.display='none'; }
     if(hiddenEl) hiddenEl.value='';
     return;
   }
-  const esp = espacios.find(e=>e.nombre===nombre);
-  if(esp && esp.responsableNombre){
+  const espArr = Array.isArray(espacios) ? espacios : [];
+  const esp = espArr.find(e=>e.nombre===nombre);
+  if(esp){
+    // Mostrar info del responsable
     if(infoEl){
-      infoEl.textContent = '🏫 Responsable del espacio: ' + esp.responsableNombre +
-        (esp.responsableEmail ? ' — 📧 ' + esp.responsableEmail : ' ⚠ sin correo registrado');
-      infoEl.style.display = 'block';
+      infoEl.textContent = esp.responsableNombre
+        ? '🏫 Responsable: '+esp.responsableNombre+(esp.responsableEmail?' — 📧 '+esp.responsableEmail:' ⚠ sin correo')
+        : '⚠ Espacio sin responsable asignado — puedes asignarlo en el módulo Espacios';
+      infoEl.style.display='block';
     }
-    if(hiddenEl) hiddenEl.value = esp.responsableEmail || '';
-    // Auto-llenar depto si está vacío
-    const deptoField = document.getElementById('ea-depto');
-    if(deptoField && !deptoField.value && esp.depto) deptoField.value = esp.depto;
+    if(hiddenEl) hiddenEl.value = esp.responsableEmail||'';
+    // Auto-llenar depto desde el espacio (siempre, no solo si está vacío)
+    const deptoEl = document.getElementById('ea-depto');
+    if(deptoEl && esp.depto) deptoEl.value = esp.depto;
   } else {
-    if(infoEl){
-      infoEl.textContent = nombre ? '⚠ Espacio sin responsable asignado — puedes asignarlo en el módulo Espacios' : '';
-      infoEl.style.display = nombre ? 'block' : 'none';
-    }
-    if(hiddenEl) hiddenEl.value = '';
+    if(infoEl){ infoEl.style.display='none'; }
+    if(hiddenEl) hiddenEl.value='';
   }
 }
 
-// ── RENDER PERSONAS ───────────────────────────────────────────────
 function renderPersonas(){
   const tb   = document.getElementById('tb-personas');
   const kpi  = document.getElementById('per-kpis');
@@ -5891,8 +5885,12 @@ async function guardarPersona(){
     if(isEdit){
       const idx = personas.findIndex(p=>p.codigo===editCod);
       if(idx>=0) personas[idx]={...obj};
-      // Actualizar email en activos que tienen esta persona asignada
-      activos.filter(a=>a.asignado===nombre).forEach(a=>{ a.asignadoEmail=email; a.asignadoCargo=obj.cargo; });
+      // Actualizar email en activos vinculados — memoria Y Sheets
+    const activosAfectados = activos.filter(a=>a.asignado===nombre && a.estado!=='eliminado');
+    activosAfectados.forEach(a=>{ a.asignadoEmail=email; a.asignadoCargo=obj.cargo; });
+    if(activosAfectados.length > 0){
+      await Promise.all(activosAfectados.map(a=>apiPost('activos','update',a)));
+    }
     } else {
       const raw = await apiGet('personas');
       personas = Array.isArray(raw) ? raw.map(r=>({...r})) : personas;
@@ -5902,7 +5900,11 @@ async function guardarPersona(){
       const esp = espacios.find(e=>e.nombre===obj.espacioResponsable);
       if(esp){ esp.responsableNombre=nombre; esp.responsableEmail=email; }
     }
-    audit('CREAR','Personas',obj.codigo||'NUEVA',isEdit?`Persona editada: ${nombre}`:`Persona registrada: ${nombre}`);
+    if(isEdit){
+      audit('EDITAR','Personas',obj.codigo,`Editada por ${session.nombre}: ${nombre}`);
+    } else {
+      audit('CREAR','Personas',obj.codigo||'NUEVA',`Registrada por ${session.nombre}: ${nombre}`);
+    }
     closeModals();
     renderPersonas();
     buildDataLists();
@@ -6058,10 +6060,12 @@ async function guardarEspacio(){
     if(isEdit){
       const idx = espacios.findIndex(e=>e.codigo===editCod);
       if(idx>=0) espacios[idx]={...obj};
-      // Actualizar email en activos que están en este espacio
-      activos.filter(a=>a.ubicacion===nombre).forEach(a=>{
-        a.responsableEspacioEmail = respEmail;
-      });
+      // Actualizar email en activos del espacio — memoria Y Sheets
+    const activosEspacio = activos.filter(a=>a.ubicacion===nombre && a.estado!=='eliminado');
+    activosEspacio.forEach(a=>{ a.responsableEspacioEmail = respEmail; });
+    if(activosEspacio.length > 0){
+      await Promise.all(activosEspacio.map(a=>apiPost('activos','update',a)));
+    }
     } else {
       const raw = await apiGet('espacios');
       espacios = Array.isArray(raw) ? raw.map(r=>({...r})) : espacios;
@@ -6082,7 +6086,18 @@ async function guardarEspacio(){
 
 // ── ELIMINAR ESPACIO ──────────────────────────────────────────────
 async function eliminarEspacio(codigo){
-  if(!confirm('¿Eliminar este espacio? Los equipos en él quedarán sin ubicación de espacio.')) return;
+  const e0 = espacios.find(x=>x.codigo===codigo);
+  if(!e0) return;
+  const equiposEnEspacio = activos.filter(a=>a.ubicacion===e0.nombre && a.estado!=='eliminado').length;
+  const persResponsable  = Array.isArray(personas) ? personas.filter(p=>p.espacioResponsable===e0.nombre && p.estado!=='inactivo').length : 0;
+  if(equiposEnEspacio > 0 || persResponsable > 0){
+    const msg = [];
+    if(equiposEnEspacio > 0) msg.push(`${equiposEnEspacio} equipo(s) tienen este espacio como ubicación`);
+    if(persResponsable  > 0) msg.push(`${persResponsable} persona(s) son responsables de este espacio`);
+    if(!confirm('⚠️ Atención:\n' + msg.join('\n') + '\n\n¿Deseas eliminar el espacio de todas formas? Los registros relacionados quedarán sin espacio asignado.')) return;
+  } else {
+    if(!confirm(`¿Eliminar el espacio "${e0.nombre}"?`)) return;
+  }
   const e = espacios.find(x=>x.codigo===codigo);
   if(!e) return;
   try{
