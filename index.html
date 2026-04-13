@@ -1014,7 +1014,7 @@ tbody tr.clickable{cursor:pointer;}
   <button class="tab-btn" onclick="filterTipo('Regulador',this)">⚡ Regulador</button>
   <button class="tab-btn" onclick="filterTipo('Otro',this)">📦 Otro</button>
 </div>
-        <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Nombre</th><th>Tipo</th><th>Asignado a</th><th>Ubicación</th><th>Estado</th><th>📎</th><th>Garantía</th><th>Valor actual</th><th></th></tr></thead><tbody id="tb-activos"></tbody></table></div>
       </div>
       <div class="pnl" id="pnl-detalle"><div id="det-content"></div></div>
       <!-- ═══ PANEL DEPARTAMENTOS ═══ -->
@@ -1389,8 +1389,19 @@ tbody tr.clickable{cursor:pointer;}
           <input class="f-inp" id="mob-valor" type="number" min="0" placeholder="0">
         </div>
         <div class="f-row" style="grid-column:1/-1;">
-          <div class="f-lbl">URL de foto o documento <span style="font-size:10px;color:var(--text3)">(pegar enlace de Google Drive u otra URL)</span></div>
-          <input class="f-inp" id="mob-foto" placeholder="https://drive.google.com/...">
+          <div class="f-lbl">📎 Foto o documento
+            <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Selecciona desde Google Drive o pega un enlace</span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input class="f-inp" id="mob-foto" placeholder="https://drive.google.com/..." style="flex:1;">
+            <button type="button" class="btn" onclick="abrirDrivePicker('mob-foto')"
+              style="white-space:nowrap;padding:8px 12px;font-size:12px;">
+              📂 Subir
+            </button>
+          </div>
+          <div id="mob-foto-preview" style="display:none;margin-top:6px;font-size:11px;color:var(--navy);
+            background:var(--blue-l);padding:6px 10px;border-radius:6px;border-left:3px solid var(--navy);">
+          </div>
         </div>
         <div class="f-row" style="grid-column:1/-1;">
           <div class="f-lbl">Observaciones</div>
@@ -1406,7 +1417,7 @@ tbody tr.clickable{cursor:pointer;}
 
   <div class="pnl" id="pnl-tickets">
         <div class="tab-row"><button class="tab-btn on" onclick="filterT('todos',this)">Todos</button><button class="tab-btn" onclick="filterT('abierto',this)">Abiertos</button><button class="tab-btn" onclick="filterT('progreso',this)">En progreso</button><button class="tab-btn" onclick="filterT('revision',this)">En revisión</button><button class="tab-btn" onclick="filterT('cerrado',this)">Cerrados</button><button class="tab-btn" onclick="filterT('eliminado',this)">Eliminados</button></div>
-        <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Título</th><th>Activo vinculado</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Avance</th><th>Deadline</th><th></th></tr></thead><tbody id="tb-tickets"></tbody></table></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Código</th><th>Título</th><th>Activo vinculado</th><th>Responsable</th><th>Prioridad</th><th>Estado</th><th>Avance</th><th>Deadline</th><th>📎</th><th></th></tr></thead><tbody id="tb-tickets"></tbody></table></div>
       </div>
       <div class="pnl" id="pnl-kanban">
         <div class="kanban">
@@ -1631,6 +1642,21 @@ tbody tr.clickable{cursor:pointer;}
 </div>
   </div>
   <div class="f-row"><div class="f-lbl">Observaciones</div><input class="f-inp" id="ea-obs" placeholder="Notas adicionales..."></div>
+  <div class="f-row">
+    <div class="f-lbl">📎 Foto o documento
+      <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Selecciona desde Google Drive o pega un enlace</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="f-inp" id="ea-foto" placeholder="https://drive.google.com/..." style="flex:1;">
+      <button type="button" class="btn" onclick="abrirDrivePicker('ea-foto')"
+        style="white-space:nowrap;padding:8px 12px;font-size:12px;">
+        📂 Subir
+      </button>
+    </div>
+    <div id="ea-foto-preview" style="display:none;margin-top:6px;font-size:11px;color:var(--navy);
+      background:var(--blue-l);padding:6px 10px;border-radius:6px;border-left:3px solid var(--navy);">
+    </div>
+  </div>
   <div class="f-row" id="ea-motivo-wrap" style="display:none;">
     <div class="req-note">Motivo obligatorio — queda registrado en auditoría.</div>
     <div class="f-lbl">Motivo de la edición *</div>
@@ -1661,6 +1687,21 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row"><div class="f-lbl">Proyecto / Cliente</div><input class="f-inp" id="et-proy" placeholder="Nombre del proyecto"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Descripción</div><input class="f-inp" id="et-desc" placeholder="Detalle completo..."></div>
+  <div class="f-row">
+    <div class="f-lbl">📎 Foto o documento adjunto
+      <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Evidencia del problema o solución</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <input class="f-inp" id="et-foto" placeholder="https://drive.google.com/..." style="flex:1;">
+      <button type="button" class="btn" onclick="abrirDrivePicker('et-foto')"
+        style="white-space:nowrap;padding:8px 12px;font-size:12px;">
+        📂 Subir
+      </button>
+    </div>
+    <div id="et-foto-preview" style="display:none;margin-top:6px;font-size:11px;color:var(--navy);
+      background:var(--blue-l);padding:6px 10px;border-radius:6px;border-left:3px solid var(--navy);">
+    </div>
+  </div>
   <div class="f-row" id="et-motivo-wrap" style="display:none;">
     <div class="req-note">Motivo obligatorio — queda registrado en auditoría.</div>
     <div class="f-lbl">Motivo de la edición *</div>
@@ -1770,6 +1811,7 @@ const API="https://script.google.com/macros/s/AKfycbxl0l0Y45cy0bbyi7xCVb5e-i4gh2
 // ── TOKEN DE API — debe coincidir con SAGAE_API_TOKEN en Script Properties ──
 // Cambiar este valor y configurar el mismo en Apps Script > Propiedades del proyecto
 const API_TOKEN = "SAGAE-DDAB838CDF2A9BDE7EDB2FF38669F09C"; // ← CAMBIAR por token secreto único por cliente;
+
 const ROL_LABELS={admin:'Administrador',tecnico:'Técnico',consultor:'Consultor',inventario:'Inventario'};
 const ROL_CLASS={admin:'s-admin',tecnico:'s-tecnico',consultor:'s-consultor',inventario:'s-inventario'};
 const TIPO_ICON={
@@ -1861,6 +1903,7 @@ window.addEventListener('beforeunload', e=>{
 });
 
 async function apiPost(sheet,action,payload){
+  // uploadFoto no necesita sheet
   try{
     const securePayload = {...(payload||{}), _apiToken: API_TOKEN};
     const body = JSON.stringify({sheet,action,payload:securePayload});
@@ -2552,7 +2595,7 @@ function openActivo(id){
     document.getElementById('ea-valor').value=a.valor||'';document.getElementById('ea-vida').value=a.vida||3;
 
   }else{
-    ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs','ea-asignado-email','ea-asignado-cargo'].forEach(i=>document.getElementById(i).value='');
+    ['ea-nombre','ea-marca','ea-modelo','ea-serial','ea-ubicacion','ea-asignado','ea-depto','ea-obs','ea-foto','ea-asignado-email','ea-asignado-cargo'].forEach(i=>document.getElementById(i).value='');
     document.getElementById('ea-valor').value='';document.getElementById('ea-vida').value=3;
     document.getElementById('ea-compra').value='';document.getElementById('ea-garantia').value='';document.getElementById('ea-estado').value='activo';
   }
@@ -2611,7 +2654,7 @@ async function saveActivo(){
     const _asignadoAntes = a.asignado||'—';
     const _deptoAntes = a.depto||'—';
     const _estadoAntes = a.estado||'activo';  // ← capturar estado ANTES de cambios
-    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
+    const fs={nombre:'ea-nombre',tipo:'ea-tipo',estado:'ea-estado',marca:'ea-marca',modelo:'ea-modelo',serial:'ea-serial',ubicacion:'ea-ubicacion',asignado:'ea-asignado',depto:'ea-depto',obs:'ea-obs',foto:'ea-foto',asignadoEmail:'ea-asignado-email',asignadoCargo:'ea-asignado-cargo'};
     Object.entries(fs).forEach(([k,fid])=>{const nv=document.getElementById(fid).value.trim();
     // Actualizar email del responsable del espacio
     a.responsableEspacioEmail = document.getElementById('ea-responsable-espacio-email')?.value||'';if((a[k]||'')!==nv){cambios.push(`${k}:"${a[k]||''}"→"${nv}"`);a[k]=nv;}});
@@ -2698,7 +2741,7 @@ async function saveActivo(){
     asignadoEmail:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.email||document.getElementById('ea-asignado-email')?.value||'';})(),
     asignadoCargo:(()=>{const sel=document.getElementById('ea-asignado');const opt=sel?.options[sel?.selectedIndex];return opt?.dataset?.cargo||document.getElementById('ea-asignado-cargo')?.value||'';})(),
     responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',
-    responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
+    responsableEspacioEmail:document.getElementById('ea-responsable-espacio-email')?.value||'',depto:document.getElementById('ea-depto').value.trim()||'—',compra:document.getElementById('ea-compra').value||'—',garantia:document.getElementById('ea-garantia').value||'—',valor:parseFloat(document.getElementById('ea-valor').value)||0,vida:parseInt(document.getElementById('ea-vida').value)||3,obs:document.getElementById('ea-obs').value.trim(),foto:document.getElementById('ea-foto')?.value.trim()||'—',historial:[{tipo:'Creación',desc:'Registrado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     activos.push(a);
     const _aOk = await apiPost('activos','insert',a);
     window._savingActivo = false;
@@ -2832,10 +2875,10 @@ function openTicket(id){
     document.getElementById('et-resp').value=t.resp||''; // selectdocument.getElementById('et-tipo').value=t.tipo||'incidencia';
     document.getElementById('et-prior').value=t.prior||'importante';document.getElementById('et-estado').value=t.estado||'abierto';
     document.getElementById('et-avance').value=t.avance||0;document.getElementById('et-dead').value=t.dead!=='—'?t.dead:'';
-    document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';document.getElementById('et-desc').value=t.desc||'';
+    document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';document.getElementById('et-desc').value=t.desc||'';const _etf=document.getElementById('et-foto');if(_etf)_etf.value=t.foto!=='—'?t.foto||'':'';
   }else{
     ['et-titulo','et-proy','et-desc'].forEach(i=>document.getElementById(i).value=''); document.getElementById('et-resp').value='';
-    document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';
+    document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';const _etFoto=document.getElementById('et-foto');if(_etFoto)_etFoto.value='';
   }
   document.getElementById('mod-ticket').classList.add('open');
 }
@@ -2854,7 +2897,7 @@ async function saveTicket(){
     if(t.titulo!==titulo)cambios.push(`Título:"${t.titulo}"→"${titulo}"`);if(t.resp!==nResp)cambios.push(`Responsable:"${t.resp}"→"${nResp}"`);
     t.titulo=titulo;t.resp=nResp;t.tipo=document.getElementById('et-tipo').value;t.prior=document.getElementById('et-prior').value;
     t.estado=document.getElementById('et-estado').value;t.avance=Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0));
-    t.dead=document.getElementById('et-dead').value||'—';t.proy=document.getElementById('et-proy').value.trim()||'—';t.desc=document.getElementById('et-desc').value.trim();
+    t.dead=document.getElementById('et-dead').value||'—';t.proy=document.getElementById('et-proy').value.trim()||'—';t.desc=document.getElementById('et-desc').value.trim();t.foto=document.getElementById('et-foto')?.value.trim()||t.foto||'—';
     const det=`Motivo: ${motivo}. ${cambios.length?'Cambios: '+cambios.join('; '):''}`;
     t.historial=t.historial||[];
     // Evento de historial detallado — visible para técnicos, consultores y usuario
@@ -2892,7 +2935,7 @@ async function saveTicket(){
     cntTickets = cntReal + 1;
     const aId=document.getElementById('et-activo').value;
     const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
-    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
+    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),foto:document.getElementById('et-foto')?.value.trim()||'—',historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     tickets.push(t);
     if(aId){const act=activos.find(a=>a.codigo===aId);if(act){act.historial=act.historial||[];act.historial.push({tipo:'Ticket vinculado',desc:code+': '+titulo,fecha:ts(),usuario:session.nombre,color:'blue'});await apiPost('activos','update',act);if(t.tipo==='mantenimiento')act.estado='mantenimiento';}}
     const insertOk = await apiPost('tickets','insert',t);
@@ -3381,6 +3424,18 @@ function showDetalle(id){
         </div>
       </div>
       <div class="det-field"><div class="det-fl">Vida útil</div><div class="det-fv">${activoActual.vida||3} años</div></div>
+      ${activoActual.foto && activoActual.foto!=='—' ? `
+      <div class="det-field" style="grid-column:1/-1">
+        <div class="det-fl">📎 Foto / Documento</div>
+        <div class="det-fv">
+          <a href="${activoActual.foto}" target="_blank"
+            style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+            background:var(--blue-l);border:1px solid var(--blue-m);border-radius:6px;
+            color:var(--navy);font-size:12px;font-weight:600;text-decoration:none;">
+            📂 Ver foto / documento en Drive
+          </a>
+        </div>
+      </div>` : ''}
     </div>
     ${activoActual.obs?`<div style="background:var(--bg2);border-radius:var(--r-md);padding:9px 12px;font-size:12px;color:var(--text2);margin-bottom:14px;border:1px solid var(--border)">${activoActual.obs}</div>`:''}
     <div style="margin-bottom:14px"><div class="sec-title">Tickets vinculados (${tks.length})</div>
@@ -3445,12 +3500,13 @@ function renderActivos(){
   let list = filtroA==='todos' ? activos : activos.filter(a=>a.estado===filtroA);
   // Filtrar por tipo (combinado con estado)
   if(filtroTipo!=='todos') list = list.filter(a=>a.tipo===filtroTipo);
-  if(!list.length){tb.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin activos${filtroA!=='todos'?' en este estado':'. Usa "+ Nuevo activo"'}.</td></tr>`;return;}
+  if(!list.length){tb.innerHTML=`<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--text3);font-size:12px">Sin activos${filtroA!=='todos'?' en este estado':'. Usa "+ Nuevo activo"'}.</td></tr>`;return;}
   tb.innerHTML=list.map(a=>`<tr class="clickable ${a.estado==='eliminado'?'del-row':''}" onclick="showDetalle('${a.codigo}')">
     <td class="code-cell">${a.codigo}</td>
     <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(a.nombre||'')}</div><div style="font-size:10px;color:var(--text3)">${a.marca||''} ${sanitizeHTML(a.modelo||'')}</div></td>
     <td>${a.tipo}</td><td><div title="${a.asignadoEmail?'📧 '+a.asignadoEmail:''}">${sanitizeHTML(a.asignado||'—')}${a.asignadoEmail?'<span style="font-size:9px;color:var(--navy);margin-left:3px">📧</span>':''}</div><div style="font-size:10px;color:var(--text3)">${a.depto||''}</div></td>
     <td style="font-size:11px">${sanitizeHTML(a.ubicacion||'—')}</td><td><span class="badge s-${a.estado}">${a.estado}</span></td>
+    <td style="text-align:center">${a.foto && a.foto!=='—' ? `<a href="${sanitizeHTML(a.foto)}" target="_blank" title="Ver foto/doc" style="font-size:16px;text-decoration:none">📎</a>` : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
     <td style="font-size:11px;color:var(--text3)">${fmtFecha(a.garantia)}</td><td>
       <div style="font-size:10px;color:var(--text3)">Original: $${(a.valor||0).toLocaleString()}</div>
       <div style="font-weight:700;color:#3B6D11;font-size:13px">$${calcDepre(a).toLocaleString()}</div>
@@ -3477,6 +3533,7 @@ function renderTickets(){
     <td><span class="badge s-${t.prior}">${t.prior}</span></td><td><span class="badge s-${t.estado}">${t.estado}</span></td>
     <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
     <td style="font-size:11px;color:var(--text3)">${renderDead(t.dead)}</td>
+    <td style="text-align:center">${t.foto && t.foto!=='—' ? `<a href="${sanitizeHTML(t.foto)}" target="_blank" title="Ver foto/doc" style="font-size:16px;text-decoration:none">📎</a>` : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
     <td style="white-space:nowrap">
       ${(t.estado!=='cerrado'&&t.estado!=='eliminado'&&['admin','tecnico'].includes(session.rol)&&t.resp!==session.nombre)?
         `<button class="act-btn" style="background:#1B3A6B;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600" onclick="tomarTicket('${t.codigo}')">Tomar</button>`:
@@ -5855,6 +5912,101 @@ function onChangeAsignado(nombre){
 }
 
 // ── ON CHANGE UBICACION ───────────────────────────────────────────
+
+// ══════════════════════════════════════════════════════════════
+// SUBIDA DE FOTOS A GOOGLE DRIVE (vía Apps Script)
+// ══════════════════════════════════════════════════════════════
+
+// Abre selector de archivo y sube al Drive via Apps Script
+function abrirDrivePicker(targetInputId, modulo){
+  // Crear input file oculto
+  const input = document.createElement('input');
+  input.type  = 'file';
+  input.accept= 'image/*,application/pdf,.doc,.docx';
+  input.style.display = 'none';
+  document.body.appendChild(input);
+
+  input.onchange = async () => {
+    const file = input.files[0];
+    document.body.removeChild(input);
+    if(!file) return;
+
+    // Validar tamaño máximo 10MB
+    if(file.size > 10 * 1024 * 1024){
+      showToast('El archivo no puede superar 10MB','');
+      return;
+    }
+
+    await _subirArchivoADrive(file, targetInputId, modulo || _detectarModulo(targetInputId));
+  };
+  input.click();
+}
+
+function _detectarModulo(inputId){
+  if(inputId.startsWith('ea-')) return 'Activos';
+  if(inputId.startsWith('et-')) return 'Tickets';
+  if(inputId.startsWith('mob-')) return 'Mobiliario';
+  return 'General';
+}
+
+async function _subirArchivoADrive(file, targetInputId, modulo){
+  const btnId = targetInputId.replace('foto','') + 'btn-foto';
+  const prevId= targetInputId + '-preview';
+
+  // Mostrar estado de carga en el botón
+  const btns = document.querySelectorAll(`button[onclick*="${targetInputId}"]`);
+  btns.forEach(b=>{ b.disabled=true; b.textContent='⏳ Subiendo...'; });
+
+  try {
+    // Leer archivo como base64
+    const base64 = await _fileToBase64(file);
+    // Quitar el prefijo data:...;base64,
+    const base64data = base64.split(',')[1];
+
+    // Enviar al Apps Script
+    const result = await apiPost(null, 'uploadFoto', {
+      base64:          base64data,
+      mimeType:        file.type,
+      nombreArchivo:   file.name,
+      modulo:          modulo,
+      codigoRegistro:  ''
+    });
+
+    if(result && result.url){
+      // Poner URL en el input
+      const inp = document.getElementById(targetInputId);
+      if(inp) inp.value = result.url;
+
+      // Mostrar preview
+      const prev = document.getElementById(prevId);
+      if(prev){
+        const isImg = file.type.startsWith('image/');
+        prev.style.display = 'block';
+        prev.innerHTML = isImg
+          ? `📷 <strong>${sanitizeHTML(file.name)}</strong> — <a href="${result.url}" target="_blank" style="color:var(--navy)">Ver imagen ↗</a>`
+          : `📄 <strong>${sanitizeHTML(file.name)}</strong> — <a href="${result.url}" target="_blank" style="color:var(--navy)">Abrir documento ↗</a>`;
+      }
+      showToast('✅ Archivo subido correctamente','success');
+    } else {
+      showToast('Error al subir: '+(result?.error||'sin respuesta'),'');
+    }
+  } catch(e) {
+    showToast('Error al subir archivo: '+e.message,'');
+  } finally {
+    btns.forEach(b=>{ b.disabled=false; b.textContent='📂 Subir'; });
+  }
+}
+
+function _fileToBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Error leyendo archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+// ══════════════════════════════════════════════════════════════
+
 function onChangeDeptoActivo(depto){
   // Filtrar el select de espacios según el departamento seleccionado
   const selUbic = document.getElementById('ea-ubicacion');
