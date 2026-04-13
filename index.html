@@ -1178,6 +1178,9 @@ tbody tr.clickable{cursor:pointer;}
     </div>
     <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
       <input class="f-inp" id="fil-esp-q" placeholder="Buscar espacio..." oninput="renderEspacios()" style="flex:1;min-width:200px;">
+      <select class="f-inp f-sel" id="fil-esp-depto" onchange="renderEspacios()" style="min-width:180px;">
+        <option value="">Todos los departamentos</option>
+      </select>
     </div>
     <div class="rep-kpi" id="esp-kpis" style="margin-bottom:14px;"></div>
     <div class="card" style="padding:0;overflow:hidden;">
@@ -1186,10 +1189,11 @@ tbody tr.clickable{cursor:pointer;}
           <thead><tr>
             <th>Código</th>
             <th>Nombre del espacio</th>
+            <th>Departamento</th>
             <th>Tipo</th>
             <th>Responsable</th>
             <th>Correo responsable</th>
-            <th>Equipos en este espacio</th>
+            <th>Equipos</th>
             <th>Edificio / Piso</th>
             <th></th>
           </tr></thead>
@@ -1222,6 +1226,14 @@ tbody tr.clickable{cursor:pointer;}
             <option value="Dirección">Dirección</option>
             <option value="Secretaría">Secretaría</option>
             <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="f-row">
+          <div class="f-lbl">🏷️ Departamento *
+            <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Al que pertenece este espacio</span>
+          </div>
+          <select class="f-inp f-sel" id="esp-depto">
+            <option value="">— Seleccionar departamento —</option>
           </select>
         </div>
         <div class="f-row">
@@ -1567,8 +1579,10 @@ tbody tr.clickable{cursor:pointer;}
 <select class="f-inp f-sel" id="ea-asignado" onchange="onChangeAsignado(this.value)">
   <option value="">— Sin asignar —</option>
 </select></div>
-    <div class="f-row"><div class="f-lbl">Departamento</div>
-<select class="f-inp f-sel" id="ea-depto">
+    <div class="f-row"><div class="f-lbl">Departamento
+  <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Filtra los espacios disponibles</span>
+</div>
+<select class="f-inp f-sel" id="ea-depto" onchange="onChangeDeptoActivo(this.value)">
   <option value="">— Seleccionar departamento —</option>
 </select></div>
   </div>
@@ -2501,14 +2515,15 @@ function openActivo(id){
         data-depto="${p.depto||''}"
       >${p.nombre}${p.cargo?' — '+p.cargo:''}</option>`).join('');
   }
-  // Poblar select de espacios
+  // Poblar select de espacios (todos inicialmente, se filtra al cambiar depto)
   const selUbic = document.getElementById('ea-ubicacion');
   if(selUbic){
     selUbic.innerHTML = '<option value="">— Sin ubicación —</option>' +
       espacios.filter(e=>e.estado!=='inactivo').map(e=>`<option value="${e.nombre}"
         data-responsable="${e.responsableNombre||''}"
         data-email="${e.responsableEmail||''}"
-      >${e.nombre}${e.tipo?' ('+e.tipo+')':''}</option>`).join('');
+        data-depto="${e.depto||''}"
+      >${e.nombre}${e.depto?' ('+e.depto+')':''}</option>`).join('');
   }
   document.getElementById('mod-activo-title').textContent=isEdit?'Editar activo':'Nuevo activo';
   document.getElementById('ea-save-btn').textContent=isEdit?'Guardar cambios':'Guardar activo';
@@ -2526,7 +2541,11 @@ function openActivo(id){
       if(selAsig) selAsig.value = a.asignado||'';
       const selDep  = document.getElementById('ea-depto');
       if(selDep)  selDep.value  = a.depto||'';
-      if(a.ubicacion && a.ubicacion!=='—') onChangeUbicacion(a.ubicacion);
+      if(a.depto && a.depto!=='—') onChangeDeptoActivo(a.depto);
+      if(a.ubicacion && a.ubicacion!=='—'){
+        // Restaurar ubicacion tras filtrar por depto
+        setTimeout(()=>{ selUbic.value=a.ubicacion; onChangeUbicacion(a.ubicacion); },10);
+      }
       if(a.asignado  && a.asignado !=='—') onChangeAsignado(a.asignado);
     }, 50);
     document.getElementById('ea-compra').value=a.compra!=='—'?a.compra:'';document.getElementById('ea-garantia').value=a.garantia!=='—'?a.garantia:'';
@@ -5754,7 +5773,7 @@ function buildDataLists(){
   ['ea-depto','eu-depto','per-depto','mob-depto'].forEach(poblarSelectDepto);
 
   // Poblar filtros de departamento (selects de reportes e inventario)
-  ['fil-per-depto','fil-depto-inv','fil-depto','fil-area','fil-area-mant'].forEach(id=>{
+  ['fil-per-depto','fil-depto-inv','fil-depto','fil-area','fil-area-mant','fil-esp-depto'].forEach(id=>{
     const el = document.getElementById(id);
     if(!el) return;
     const cur = el.value;
@@ -5836,6 +5855,22 @@ function onChangeAsignado(nombre){
 }
 
 // ── ON CHANGE UBICACION ───────────────────────────────────────────
+function onChangeDeptoActivo(depto){
+  // Filtrar el select de espacios según el departamento seleccionado
+  const selUbic = document.getElementById('ea-ubicacion');
+  if(!selUbic) return;
+  const espArr = Array.isArray(espacios) ? espacios : [];
+  const filtered = depto
+    ? espArr.filter(e=>e.estado!=='eliminado' && e.depto===depto)
+    : espArr.filter(e=>e.estado!=='eliminado');
+  const cur = selUbic.value;
+  selUbic.innerHTML = '<option value="">— Sin ubicación —</option>' +
+    filtered.map(e=>`<option value="${e.nombre}">${e.nombre}</option>`).join('');
+  // Restaurar valor si sigue siendo válido
+  if(cur && filtered.find(e=>e.nombre===cur)) selUbic.value = cur;
+  else onChangeUbicacion(''); // limpiar info de espacio
+}
+
 function onChangeUbicacion(nombre){
   const infoEl   = document.getElementById('ea-espacio-info');
   const hiddenEl = document.getElementById('ea-responsable-espacio-email');
@@ -6055,12 +6090,15 @@ function renderEspacios(){
   const per = PERMS[session.rol]||{};
   if(!tb) return;
 
-  const q = (document.getElementById('fil-esp-q')?.value||'').toLowerCase();
+  const q     = (document.getElementById('fil-esp-q')?.value||'').toLowerCase();
+  const fDepto= (document.getElementById('fil-esp-depto')?.value||'');
   let list = espacios.filter(e=>e.estado!=='eliminado');
+  if(fDepto) list = list.filter(e=>e.depto===fDepto);
   if(q) list = list.filter(e=>
     (e.nombre||'').toLowerCase().includes(q) ||
     (e.responsableNombre||'').toLowerCase().includes(q) ||
-    (e.tipo||'').toLowerCase().includes(q)
+    (e.tipo||'').toLowerCase().includes(q) ||
+    (e.depto||'').toLowerCase().includes(q)
   );
 
   // KPIs
@@ -6087,6 +6125,7 @@ function renderEspacios(){
     return `<tr>
       <td class="code-cell">${e.codigo||'—'}</td>
       <td><div style="font-weight:600;font-size:12px">${sanitizeHTML(e.nombre||'')}</div></td>
+      <td style="font-size:11px"><span class="badge s-activo" style="font-size:10px">${e.depto||'—'}</span></td>
       <td style="font-size:11px">${e.tipo||'—'}</td>
       <td style="font-size:11px">${e.responsableNombre
         ? `<span style="font-weight:600">${e.responsableNombre}</span>`
@@ -6119,6 +6158,13 @@ function openEspacio(codigo){
   document.getElementById('esp-capacidad').value = e.capacidad||'';
   document.getElementById('esp-obs').value       = e.obs||'';
   document.getElementById('esp-estado').value    = e.estado||'activo';
+  // Poblar select de departamentos
+  const selDep = document.getElementById('esp-depto');
+  selDep.innerHTML = '<option value="">— Seleccionar departamento —</option>' +
+    departamentos.filter(d=>d.estado!=='eliminado').map(d=>
+      `<option value="${d.nombre}">${d.nombre}</option>`
+    ).join('');
+  selDep.value = e.depto||'';
   // Poblar select de responsables (personas activas)
   const selResp = document.getElementById('esp-responsable');
   selResp.innerHTML = '<option value="">— Sin responsable asignado —</option>' +
@@ -6145,6 +6191,7 @@ async function guardarEspacio(){
     codigo:             isEdit ? editCod : '',
     nombre,
     tipo:               document.getElementById('esp-tipo').value,
+    depto:              document.getElementById('esp-depto').value,
     ubicacion:          document.getElementById('esp-ubicacion').value.trim(),
     responsableNombre:  respNombre,
     responsableEmail:   respEmail,
@@ -6226,13 +6273,14 @@ function renderDepartamentos(){
   tb.innerHTML = list.map(d=>{
     const activos_d  = activos.filter(a=>a.depto===d.nombre && a.estado!=='eliminado').length;
     const personas_d = Array.isArray(personas) ? personas.filter(p=>p.depto===d.nombre && p.estado!=='inactivo').length : 0;
+    const espacios_d = Array.isArray(espacios) ? espacios.filter(e=>e.depto===d.nombre && e.estado!=='eliminado').length : 0;
     return `<tr>
       <td class="code-cell">${d.codigo||'—'}</td>
       <td><strong>${sanitizeHTML(d.nombre||'')}</strong></td>
       <td style="font-size:11px;color:var(--text3)">${d.desc||'—'}</td>
       <td style="font-size:11px">${d.responsable||'—'}</td>
       <td><span class="badge s-${d.estado||'activo'}">${d.estado||'activo'}</span>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px">${activos_d} activos · ${personas_d} personas</div></td>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">${activos_d} activos · ${espacios_d} espacios · ${personas_d} personas</div></td>
       <td onclick="event.stopPropagation()">
         ${per.edit?`<button class="act-btn" onclick="openDepartamento('${d.codigo}')">✎</button>`:''}
         ${per.delete?`<button class="act-btn" onclick="eliminarDepartamento('${d.codigo}')" style="color:var(--red)">×</button>`:''}
