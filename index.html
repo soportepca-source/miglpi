@@ -1751,6 +1751,55 @@ tbody tr.clickable{cursor:pointer;}
 </div></div>
 
 <!-- MODAL MANTENIMIENTO -->
+
+<!-- MODAL DEVOLVER EQUIPO DE MANTENIMIENTO -->
+<div class="modal-bg" id="mod-devolver"><div class="modal" style="max-width:460px;">
+  <div class="modal-title">
+    <span>✅ Devolver equipo</span>
+    <button class="modal-close" onclick="closeModals()">✕</button>
+  </div>
+  <div style="background:#EAF3DE;border-radius:8px;padding:10px 14px;margin-bottom:14px;border-left:4px solid #1A7A4A;">
+    <div style="font-size:12px;font-weight:700;color:#1A7A4A" id="dev-activo-nombre">—</div>
+    <div style="font-size:11px;color:#444;margin-top:2px" id="dev-activo-codigo">—</div>
+  </div>
+  <div class="f-row">
+    <div class="f-lbl">Estado de retorno *</div>
+    <select class="f-inp f-sel" id="dev-estado">
+      <option value="activo">Activo — sin asignar</option>
+      <option value="asignado">Asignado — devuelto al usuario</option>
+      <option value="disponible">Disponible — listo para asignar</option>
+      <option value="descarte">Descarte — no reparable</option>
+    </select>
+  </div>
+  <div class="f-row">
+    <div class="f-lbl">Trabajo realizado *
+      <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">¿Qué se hizo al equipo?</span>
+    </div>
+    <textarea class="f-inp" id="dev-desc" rows="3" placeholder="Ej: Se reemplazó el disco duro, se instaló Windows 11, se verificó el funcionamiento..."></textarea>
+  </div>
+  <div class="f-2">
+    <div class="f-row">
+      <div class="f-lbl">Costo final ($)</div>
+      <input class="f-inp" type="number" id="dev-costo" placeholder="0.00" min="0" step="0.01">
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">Fecha de entrega</div>
+      <input class="f-inp" type="date" id="dev-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)">
+    </div>
+  </div>
+  <div class="f-row" style="background:#EBF1FF;border-radius:6px;padding:8px;">
+    <div class="f-lbl" style="color:var(--navy);font-weight:700">📧 Notificar al responsable
+      <span style="font-size:10px;font-weight:400;color:#666;display:block;margin-top:2px">Se avisará que el equipo fue devuelto</span>
+    </div>
+    <input class="f-inp" type="email" id="dev-email" placeholder="correo@dominio.com">
+    <div id="dev-email-info" style="font-size:11px;color:var(--navy);margin-top:4px;display:none;padding:4px 8px;background:var(--blue-l);border-radius:4px;border-left:3px solid var(--navy)"></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn" onclick="closeModals()">Cancelar</button>
+    <button class="btn btn-p" onclick="guardarDevolucion()" style="background:#1A7A4A;border-color:#1A7A4A">✅ Confirmar devolución</button>
+  </div>
+</div></div>
+
 <div class="modal-bg" id="mod-mant"><div class="modal" style="max-width:480px;">
   <div class="modal-title"><span>Registrar mantenimiento</span><button class="modal-close" onclick="closeModals()">✕</button></div>
   <div class="f-row"><div class="f-lbl">Tipo</div><select class="f-inp f-sel" id="mm-tipo"><option>Preventivo</option><option>Correctivo</option><option>Actualización</option><option>Limpieza</option><option>Reparación</option><option>Inspección</option></select></div>
@@ -2393,7 +2442,14 @@ function renderTopbarBtns(p){
     if(session.rol==='admin') c.innerHTML+='<button class="btn" onclick="abrirModalImportarUsuarios()" style="margin-left:6px" title="Importar usuarios desde CSV o Excel">⬆ Importar Excel</button>';
   }
   if(p==='detalle'&&activoActual){
-    if(per.edit)c.innerHTML+='<button class="btn btn-p" onclick="openActivo(activoActual.codigo)" style="margin-right:6px">✎ Editar</button><button class="btn" onclick="openMant()" style="margin-right:6px">+ Mantenimiento</button>';
+    if(per.edit){
+      c.innerHTML+='<button class="btn btn-p" onclick="openActivo(activoActual.codigo)" style="margin-right:6px">✎ Editar</button>';
+      if(activoActual.estado==='mantenimiento'){
+        c.innerHTML+='<button class="btn" onclick="openDevolverEquipo()" style="margin-right:6px;background:#1A7A4A;color:#fff;border-color:#1A7A4A">✅ Devolver equipo</button>';
+      } else {
+        c.innerHTML+='<button class="btn" onclick="openMant()" style="margin-right:6px">🔧 Mantenimiento</button>';
+      }
+    }
     if(per.delete&&activoActual.estado!=='eliminado')c.innerHTML+='<button class="btn btn-warn" onclick="openDelete(\'activo\',activoActual.codigo)">Eliminar</button>';
   }
 }
@@ -2966,6 +3022,99 @@ async function confirmDelete(){
   }
   closeModals();renderAll();if(type==='activo')go('activos',document.getElementById('nav-activos'));
 }
+
+
+// ── DEVOLUCIÓN DE EQUIPO DE MANTENIMIENTO ─────────────────────────
+function openDevolverEquipo(){
+  if(!activoActual) return;
+  // Mostrar info del activo en el modal
+  const nomEl = document.getElementById('dev-activo-nombre');
+  const codEl = document.getElementById('dev-activo-codigo');
+  if(nomEl) nomEl.textContent = activoActual.nombre;
+  if(codEl) codEl.textContent = activoActual.codigo + ' · ' + (activoActual.tipo||'') + ' · ' + (activoActual.marca||'');
+
+  // Estado por defecto según si tenía asignado previo
+  const selEst = document.getElementById('dev-estado');
+  if(selEst) selEst.value = activoActual.asignado && activoActual.asignado!=='—' ? 'asignado' : 'activo';
+
+  // Pre-llenar correo del responsable desde historial de entrada
+  const entradaEvt = (activoActual.historial||[]).slice().reverse().find(h=>h.tipo==='Entrada a Mantenimiento');
+  const emailPre = entradaEvt?.emailResp || activoActual.asignadoEmail || '';
+  const emailInp = document.getElementById('dev-email');
+  if(emailInp) emailInp.value = emailPre;
+
+  // Mostrar info del responsable si hay email
+  const emailInfo = document.getElementById('dev-email-info');
+  if(emailInfo && emailPre){
+    emailInfo.textContent = '📧 Se notificará a: ' + emailPre;
+    emailInfo.style.display = 'block';
+  } else if(emailInfo){
+    emailInfo.style.display = 'none';
+  }
+
+  // Fecha de hoy por defecto
+  const fechaInp = document.getElementById('dev-fecha');
+  if(fechaInp) fechaInp.value = new Date().toISOString().split('T')[0];
+
+  // Limpiar campos
+  const descInp = document.getElementById('dev-desc');
+  if(descInp) descInp.value = '';
+  const costoInp = document.getElementById('dev-costo');
+  if(costoInp) costoInp.value = '';
+
+  document.getElementById('mod-devolver').classList.add('open');
+}
+
+async function guardarDevolucion(){
+  if(!activoActual) return;
+  const desc  = document.getElementById('dev-desc').value.trim();
+  if(!desc){ showToast('Describe el trabajo realizado','error'); return; }
+
+  const estadoNuevo = document.getElementById('dev-estado').value;
+  const costo       = parseFloat(document.getElementById('dev-costo').value) || 0;
+  const fecha       = document.getElementById('dev-fecha').value || ts();
+  const email       = document.getElementById('dev-email').value.trim();
+
+  const btn = document.querySelector('#mod-devolver .btn-p');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+
+  try{
+    // Recuperar correo del evento de entrada si no se ingresó manualmente
+    const entradaEvt = (activoActual.historial||[]).slice().reverse().find(h=>h.tipo==='Entrada a Mantenimiento');
+    const emailFinal = email || entradaEvt?.emailResp || activoActual.asignadoEmail || '';
+
+    // Registrar evento de salida en historial
+    activoActual.historial = activoActual.historial || [];
+    activoActual.historial.push({
+      tipo:      'Salida de Mantenimiento',
+      desc:      `Equipo devuelto. ${desc}${costo>0?' | Costo: $'+costo:''}. Técnico: ${session.nombre}. Estado: ${estadoNuevo}.`,
+      tecnico:   session.nombre,
+      emailResp: emailFinal,
+      asignadoA: activoActual.asignado||'—',
+      costo,
+      fecha:     fecha || ts(),
+      usuario:   session.nombre,
+      color:     'green'
+    });
+
+    // Cambiar estado del activo
+    activoActual.estado = estadoNuevo;
+
+    await apiPost('activos','update', activoActual);
+    audit('EDITAR','Activo', activoActual.codigo, `Salida de mantenimiento. ${desc}`);
+
+    closeModals();
+    showDetalle(activoActual.codigo);
+    renderTopbarBtns('detalle');
+    showToast('✅ Equipo devuelto correctamente' + (emailFinal?' — se notificará a '+emailFinal:''), 'success');
+
+  }catch(e){
+    showToast('Error: '+e.message,'error');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='✅ Confirmar devolución'; }
+  }
+}
+// ──────────────────────────────────────────────────────────────────
 
 function openMant(){
   // Poblar select de técnicos con usuarios activos que sean admin o tecnico
