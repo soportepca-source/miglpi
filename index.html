@@ -1821,6 +1821,22 @@ tbody tr.clickable{cursor:pointer;}
     <div class="f-row"><div class="f-lbl">Fecha</div><input class="f-inp" type="date" id="mm-fecha" min="1990-01-01" max="2046-12-31" onchange="validateDateField(this)"></div>
   </div>
   <div class="f-row"><div class="f-lbl">Costo ($)</div><input class="f-inp" type="number" id="mm-costo" placeholder="0.00"></div>
+  <div class="f-2">
+    <div class="f-row">
+      <div class="f-lbl">📷 Foto ANTES (estado del problema)
+        <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">URL Google Drive con foto del equipo al entrar a mantenimiento</span>
+      </div>
+      <input class="f-inp" type="url" id="mm-foto-antes" placeholder="https://drive.google.com/..." autocomplete="off" oninput="toggleFotoPreview('mm-foto-antes','mm-prev-antes')">
+      <div id="mm-prev-antes" style="display:none;margin-top:4px"><a href="#" target="_blank" style="font-size:11px;color:var(--navy)">🔗 Ver foto</a></div>
+    </div>
+    <div class="f-row">
+      <div class="f-lbl">📷 Foto DESPUÉS (equipo reparado)
+        <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">URL Google Drive con foto del equipo al salir de mantenimiento</span>
+      </div>
+      <input class="f-inp" type="url" id="mm-foto-despues" placeholder="https://drive.google.com/..." autocomplete="off" oninput="toggleFotoPreview('mm-foto-despues','mm-prev-despues')">
+      <div id="mm-prev-despues" style="display:none;margin-top:4px"><a href="#" target="_blank" style="font-size:11px;color:var(--navy)">🔗 Ver foto</a></div>
+    </div>
+  </div>
   <!-- ── SECCIÓN SOLICITUD DE PIEZAS ──────────────────────── -->
   <div style="background:#F0F4F8;border-radius:8px;padding:12px;margin-top:6px;border:1px solid #CBD5E1">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
@@ -3169,6 +3185,8 @@ async function saveMant(){
 
   const emailRespManual = document.getElementById('mm-email-resp')?.value.trim() || '';
   const emailResp = emailRespManual || activoActual?.asignadoEmail || activoActual?.responsableEspacioEmail || '';
+  const fotoAntes   = document.getElementById('mm-foto-antes')?.value.trim()   || '';
+  const fotoDespues = document.getElementById('mm-foto-despues')?.value.trim() || '';
   const e = {
     tipo:     document.getElementById('mm-tipo').value,
     desc,
@@ -3177,6 +3195,8 @@ async function saveMant(){
     costo:    parseFloat(document.getElementById('mm-costo').value) || 0,
     usuario:  session.nombre,
     emailResp,
+    fotoAntes,
+    fotoDespues,
     color:    'amber'
   };
 
@@ -3220,7 +3240,7 @@ async function saveMant(){
   audit('CREAR','Mantenimiento',activoActual.codigo,`${e.tipo}: ${e.desc} | Técnico: ${e.tec}`);
 
   // Resetear campos del modal
-  ['mm-desc','mm-costo','mm-email-resp','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
+  ['mm-desc','mm-costo','mm-email-resp','mm-foto-antes','mm-foto-despues','mm-piezas-desc','mm-piezas-email','mm-piezas-presupuesto'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
   // Resetear fecha y técnico
@@ -3613,6 +3633,10 @@ function showDetalle(id){
           '</div>';
         }
         return '<div class="hist-item"><div class="hist-dot '+(h.color||'')+'"></div>' +
+          '<div style="flex:1"><div style="font-size:12px;color:var(--text)"><strong>'+h.tipo+'</strong> — '+h.desc+'</div>' +
+          '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+(h.fecha||'')+' · '+(h.usuario||'—')+(h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:'')+(h.costo?' · $'+h.costo:'')+'</div>' +
+          ((h.fotoAntes||h.fotoDespues)?'<div style="display:flex;gap:6px;margin-top:5px">'+  (h.fotoAntes?'<a href="'+h.fotoAntes+'" target="_blank" style="font-size:10px;background:#EFF6FF;color:#185FA5;padding:2px 8px;border-radius:4px;text-decoration:none">📷 Antes</a>':'')+(h.fotoDespues?'<a href="'+h.fotoDespues+'" target="_blank" style="font-size:10px;background:#EAF3DE;color:#3B6D11;padding:2px 8px;border-radius:4px;text-decoration:none">📷 Después</a>':'')+'</div>':'') +
+          '</div></div>';
           '<div><div style="font-size:12px;color:var(--text)"><strong>'+h.tipo+'</strong> — '+h.desc+'</div>' +
           '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+(h.fecha||'')+' · '+(h.usuario||'—')+(h.tec&&h.tec!==h.usuario?' · Técnico: '+h.tec:'')+(h.costo?' · $'+h.costo:'')+'</div></div>' +
           '</div>';
