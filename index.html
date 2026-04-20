@@ -1826,15 +1826,21 @@ tbody tr.clickable{cursor:pointer;}
       <div class="f-lbl">📷 Foto ANTES (estado del problema)
         <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">URL Google Drive con foto del equipo al entrar a mantenimiento</span>
       </div>
-      <input class="f-inp" type="url" id="mm-foto-antes" placeholder="https://drive.google.com/..." autocomplete="off" oninput="toggleFotoPreview('mm-foto-antes','mm-prev-antes')">
-      <div id="mm-prev-antes" style="display:none;margin-top:4px"><a href="#" target="_blank" style="font-size:11px;color:var(--navy)">🔗 Ver foto</a></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="f-inp" type="url" id="mm-foto-antes" placeholder="https://drive.google.com/..." autocomplete="off" style="flex:1;" oninput="toggleFotoPreview('mm-foto-antes','mm-prev-antes')">
+        <button type="button" class="btn" onclick="abrirDrivePicker('mm-foto-antes','Mantenimiento')" style="white-space:nowrap;padding:8px 12px;font-size:12px;">📷 Foto</button>
+      </div>
+      <div id="mm-prev-antes" style="display:none;margin-top:4px;font-size:11px;color:var(--navy);background:var(--blue-l);padding:5px 8px;border-radius:5px;border-left:3px solid var(--navy)">🔗 <a id="mm-prev-antes-link" href="#" target="_blank">Ver foto antes</a></div>
     </div>
     <div class="f-row">
       <div class="f-lbl">📷 Foto DESPUÉS (equipo reparado)
         <span style="font-size:10px;font-weight:400;color:var(--text3);display:block;margin-top:1px">URL Google Drive con foto del equipo al salir de mantenimiento</span>
       </div>
-      <input class="f-inp" type="url" id="mm-foto-despues" placeholder="https://drive.google.com/..." autocomplete="off" oninput="toggleFotoPreview('mm-foto-despues','mm-prev-despues')">
-      <div id="mm-prev-despues" style="display:none;margin-top:4px"><a href="#" target="_blank" style="font-size:11px;color:var(--navy)">🔗 Ver foto</a></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input class="f-inp" type="url" id="mm-foto-despues" placeholder="https://drive.google.com/..." autocomplete="off" style="flex:1;" oninput="toggleFotoPreview('mm-foto-despues','mm-prev-despues')">
+        <button type="button" class="btn" onclick="abrirDrivePicker('mm-foto-despues','Mantenimiento')" style="white-space:nowrap;padding:8px 12px;font-size:12px;">📷 Foto</button>
+      </div>
+      <div id="mm-prev-despues" style="display:none;margin-top:4px;font-size:11px;color:var(--green);background:var(--green-l);padding:5px 8px;border-radius:5px;border-left:3px solid var(--green)">🔗 <a id="mm-prev-despues-link" href="#" target="_blank">Ver foto después</a></div>
     </div>
   </div>
   <!-- ── SECCIÓN SOLICITUD DE PIEZAS ──────────────────────── -->
