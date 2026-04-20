@@ -6122,15 +6122,24 @@ function abrirDrivePicker(targetInputId, modulo){
 }
 
 function _detectarModulo(inputId){
-  if(inputId.startsWith('ea-')) return 'Activos';
-  if(inputId.startsWith('et-')) return 'Tickets';
+  if(inputId.startsWith('ea-'))  return 'Activos';
+  if(inputId.startsWith('et-'))  return 'Tickets';
   if(inputId.startsWith('mob-')) return 'Mobiliario';
+  if(inputId.startsWith('mm-'))  return 'Mantenimiento';
   return 'General';
 }
 
 async function _subirArchivoADrive(file, targetInputId, modulo){
   const btnId = targetInputId.replace('foto','') + 'btn-foto';
-  const prevId= targetInputId + '-preview';
+  // Calcular ID del preview — soporta patrón estándar y mantenimiento
+  const prevId = (()=>{
+    const standard = targetInputId + '-preview';
+    if(document.getElementById(standard)) return standard;
+    // Patrón mantenimiento: mm-foto-antes → mm-prev-antes
+    const mmMatch = targetInputId.match(/^mm-foto-(.+)$/);
+    if(mmMatch) return 'mm-prev-' + mmMatch[1];
+    return standard;
+  })();
 
   // Mostrar estado de carga en el botón
   const btns = document.querySelectorAll(`button[onclick*="${targetInputId}"]`);
