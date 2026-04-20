@@ -6172,14 +6172,29 @@ async function _subirArchivoADrive(file, targetInputId, modulo){
     // Quitar el prefijo data:...;base64,
     const base64data = base64.split(',')[1];
 
-    // Enviar al Apps Script
-    const result = await apiPost(null, 'uploadFoto', {
-      base64:          base64data,
-      mimeType:        file.type,
-      nombreArchivo:   file.name,
-      modulo:          modulo,
-      codigoRegistro:  ''
+    // ── Flujo 2 pasos para superar limitación CORS de Apps Script ──
+    // Paso 1: POST base64 con no-cors (Apps Script sube a Drive, guarda URL en Properties)
+    const fotoId = 'F' + Date.now().toString(36).toUpperCase();
+    await fetch(API, {
+      method: 'POST', mode: 'no-cors',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({sheet:null, action:'uploadFoto', payload:{
+        base64: base64data, mimeType: file.type,
+        nombreArchivo: file.name, modulo: modulo || 'General',
+        codigoRegistro: '', fotoId: fotoId, _apiToken: API_TOKEN
+      }})
     });
+    // Paso 2: GET recupera la URL con cors (puede leer la respuesta)
+    let result = null;
+    for(let i=0; i<5; i++){
+      await new Promise(r=>setTimeout(r, 1500 + i*500));
+      try{
+        const gp = new URLSearchParams({action:'getFotoUrl', fotoId, _apiToken:API_TOKEN});
+        const resp = await fetch(API + '?' + gp.toString(), {method:'GET', mode:'cors'});
+        const data = await resp.json();
+        if(data && data.ok && data.url){ result = data; break; }
+      }catch(e2){ /* reintentar */ }
+    }
 
     if(result && result.url){
       // Poner URL en el input
