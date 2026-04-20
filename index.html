@@ -1702,6 +1702,14 @@ tbody tr.clickable{cursor:pointer;}
       background:var(--blue-l);padding:6px 10px;border-radius:6px;border-left:3px solid var(--navy);">
     </div>
   </div>
+  <div class="f-row" id="et-fotoreporte-wrap" style="display:none;">
+    <div class="f-lbl">📷 Foto del problema (quien reportó)
+      <span style="font-size:10px;font-weight:400;color:var(--text3);display:block">Foto tomada por la persona que reportó el problema desde el portal o la app</span>
+    </div>
+    <div id="et-fotoreporte-preview" style="background:var(--green-l,#ECFDF5);padding:8px 12px;border-radius:6px;border-left:3px solid var(--green,#1D9E75);">
+      <a id="et-fotoreporte-link" href="#" target="_blank" style="font-size:12px;color:var(--green,#1D9E75);font-weight:600;">📷 Ver foto del problema</a>
+    </div>
+  </div>
   <div class="f-row" id="et-motivo-wrap" style="display:none;">
     <div class="req-note">Motivo obligatorio — queda registrado en auditoría.</div>
     <div class="f-lbl">Motivo de la edición *</div>
@@ -2954,6 +2962,16 @@ function openTicket(id){
     document.getElementById('et-prior').value=t.prior||'importante';document.getElementById('et-estado').value=t.estado||'abierto';
     document.getElementById('et-avance').value=t.avance||0;document.getElementById('et-dead').value=t.dead!=='—'?t.dead:'';
     document.getElementById('et-proy').value=t.proy!=='—'?t.proy:'';document.getElementById('et-desc').value=t.desc||'';const _etf=document.getElementById('et-foto');if(_etf)_etf.value=t.foto!=='—'?t.foto||'':'';
+    // Mostrar fotoReporte si existe
+    const _fotoRep = t.fotoReporte || '';
+    const _wrapFR = document.getElementById('et-fotoreporte-wrap');
+    const _linkFR = document.getElementById('et-fotoreporte-link');
+    if(_fotoRep && _fotoRep!=='—' && _fotoRep.startsWith('http')){
+      if(_wrapFR) _wrapFR.style.display='block';
+      if(_linkFR){ _linkFR.href=_fotoRep; _linkFR.textContent='📷 Ver foto del problema ↗'; }
+    } else {
+      if(_wrapFR) _wrapFR.style.display='none';
+    }
   }else{
     ['et-titulo','et-proy','et-desc'].forEach(i=>document.getElementById(i).value=''); document.getElementById('et-resp').value='';
     document.getElementById('et-avance').value=0;document.getElementById('et-estado').value='abierto';document.getElementById('et-dead').value='';document.getElementById('et-prior').value='importante';const _etFoto=document.getElementById('et-foto');if(_etFoto)_etFoto.value='';
@@ -3013,7 +3031,7 @@ async function saveTicket(){
     cntTickets = cntReal + 1;
     const aId=document.getElementById('et-activo').value;
     const aNom=aId?(activos.find(a=>a.codigo===aId)||{nombre:'—'}).nombre:'—';
-    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),foto:document.getElementById('et-foto')?.value.trim()||'—',historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
+    const t={id:code,codigo:code,titulo,activoId:aId||'',activoNombre:aNom,resp:document.getElementById('et-resp').value||'—',tipo:document.getElementById('et-tipo').value,prior:document.getElementById('et-prior').value,estado:document.getElementById('et-estado').value,avance:Math.min(100,Math.max(0,parseInt(document.getElementById('et-avance').value)||0)),dead:document.getElementById('et-dead').value||'—',proy:document.getElementById('et-proy').value.trim()||'—',desc:document.getElementById('et-desc').value.trim(),foto:document.getElementById('et-foto')?.value.trim()||'—',fotoReporte:'—',historial:[{tipo:'Creación',desc:'Creado por '+session.nombre,fecha:ts(),usuario:session.nombre,color:'green'}],fechaCreacion:ts()};
     tickets.push(t);
     if(aId){const act=activos.find(a=>a.codigo===aId);if(act){act.historial=act.historial||[];act.historial.push({tipo:'Ticket vinculado',desc:code+': '+titulo,fecha:ts(),usuario:session.nombre,color:'blue'});await apiPost('activos','update',act);if(t.tipo==='mantenimiento')act.estado='mantenimiento';}}
     const insertOk = await apiPost('tickets','insert',t);
@@ -3712,7 +3730,10 @@ function renderTickets(){
     <td><span class="badge s-${t.prior}">${t.prior}</span></td><td><span class="badge s-${t.estado}">${t.estado}</span></td>
     <td><div class="prog-wrap"><div class="prog-bg"><div class="prog-f" style="width:${t.avance||0}%"></div></div><span class="prog-t">${t.avance||0}%</span></div></td>
     <td style="font-size:11px;color:var(--text3)">${renderDead(t.dead)}</td>
-    <td style="text-align:center">${t.foto && t.foto!=='—' ? `<a href="${sanitizeHTML(t.foto)}" target="_blank" title="Ver foto/doc" style="font-size:16px;text-decoration:none">📎</a>` : '<span style="color:var(--text3);font-size:11px">—</span>'}</td>
+    <td style="text-align:center">
+      ${t.foto && t.foto!=='—' ? `<a href="${sanitizeHTML(t.foto)}" target="_blank" title="Ver foto/doc adjunto" style="font-size:16px;text-decoration:none">📎</a>` : '<span style="color:var(--text3);font-size:11px">—</span>'}
+      ${t.fotoReporte && t.fotoReporte!=='—' && t.fotoReporte.startsWith('http') ? `<a href="${sanitizeHTML(t.fotoReporte)}" target="_blank" title="Ver foto del problema (reportado)" style="font-size:16px;text-decoration:none;margin-left:4px">📷</a>` : ''}
+    </td>
     <td style="white-space:nowrap">
       ${(t.estado!=='cerrado'&&t.estado!=='eliminado'&&['admin','tecnico'].includes(session.rol)&&t.resp!==session.nombre)?
         `<button class="act-btn" style="background:#1B3A6B;color:#fff;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600" onclick="tomarTicket('${t.codigo}')">Tomar</button>`:
@@ -4128,8 +4149,8 @@ function pbiDrawDist(id, cats, catColors, prios, prioColors){
 }
 
 
-function filterA(f,el){filtroA=f;document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
-function filterTipo(f,el){filtroTipo=f;document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderActivos();}
+function filterA(f,el){if(filtroA===f&&f!=='todos'){filtroA='todos';document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));document.querySelector('#filter-row-estado .tab-btn').classList.add('on');}else{filtroA=f;document.querySelectorAll('#filter-row-estado .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}renderActivos();}
+function filterTipo(f,el){if(filtroTipo===f&&f!=='todos'){filtroTipo='todos';document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));document.getElementById('tipo-btn-todos').classList.add('on');}else{filtroTipo=f;document.querySelectorAll('#filter-row-tipo .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');}renderActivos();}
 function filterT(f,el){filtroT=f;document.querySelectorAll('#pnl-tickets .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderTickets();}
 function filterAud(f,el){filtroAud=f;document.querySelectorAll('#pnl-auditoria .tab-btn').forEach(b=>b.classList.remove('on'));el.classList.add('on');renderAudit();}
 function renderAll(){renderDash();renderActivos();renderTickets();populateSuggestions();renderKanban();renderAudit();}
